@@ -1,37 +1,37 @@
 @import 'tailwindcss';
 
 /*
- * Design tokens. See docs/design.md.
+ * The dressing room. See docs/design.md for the reasoning.
  *
- * The interface is a lookbook: uncoated stock by day, pine black by night,
- * and every photo on a white sweep in both, because the garment's colour is
- * what he is judging. Ink is the type and the one solid button. Bottle green
- * is the only accent and marks the active thing, a link, a saved mark.
- * Colour otherwise is Malin's own palette, shown as flat swatches.
+ * Petal paper by day, aubergine black by night. Aubergine ink is the type and
+ * the one solid button on a screen. Deep rose is the only interface colour
+ * and marks the active thing. Every garment photo sits on a white sweep in
+ * both schemes, because its colour is what she is judging. The arch, the
+ * shape of a dressing-room mirror, frames the pictures of her and of a whole
+ * look; nothing else is shaped like it. Colour otherwise is Rutu's own
+ * palette, as swatches.
  */
 :root {
   color-scheme: light dark;
 
-  /* The page's side margin; .bleed and .scroller run out through it. */
   --gutter: 1.25rem;
 
-  --ground: #f1f0ec;
-  --surface: #e7e6e1;
-  --raised: #ffffff;
-  --line: #d4d3cd;
-  --ink: #15181a;
-  --ink-2: #4b5054;
-  --ink-3: #737980;
-  --accent: #1f5b45;
-  --accent-soft: rgb(31 91 69 / 0.12);
-  --on-accent: #f3f6f3;
-  --on-ink: #f1f0ec;
-  --alert: #b0362b;
-  /* The sweep a product or piece photo sits on; the photo multiplies onto it. */
+  --ground: #f6e7e4;
+  --surface: #efd9d5;
+  --raised: #fbf3f1;
+  --line: rgb(46 22 48 / 0.12);
+  --line-strong: rgb(46 22 48 / 0.22);
+  --ink: #2e1630;
+  --ink-2: #5c4159;
+  --ink-3: #765a72;
+  --accent: #a3365f;
+  --accent-soft: rgb(163 54 95 / 0.1);
+  --on-ink: #fbf3f1;
+  --alert: #a8271f;
   --photo: #ffffff;
-  /* The edge of a swatch, so a pale colour still reads on the ground. */
-  --swatch-edge: rgb(0 0 0 / 0.12);
-  --scrim: rgb(21 24 26 / 0.55);
+  --swatch-edge: rgb(46 22 48 / 0.14);
+  --scrim: rgb(29 18 32 / 0.6);
+  --bar: rgb(246 231 228 / 0.82);
 }
 
 @media (min-width: 1024px) {
@@ -42,51 +42,56 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --ground: #141b18;
-    --surface: #1b2420;
-    --raised: #212c27;
-    --line: #2d3832;
-    --ink: #ecebe5;
-    --ink-2: #b0b6b0;
-    --ink-3: #828a83;
-    --accent: #8fcaa9;
-    --accent-soft: rgb(143 202 169 / 0.14);
-    --on-accent: #0f1a15;
-    --on-ink: #141b18;
-    --alert: #e8847a;
+    --ground: #1d1220;
+    --surface: #291a2c;
+    --raised: #332236;
+    --line: rgb(247 232 236 / 0.1);
+    --line-strong: rgb(247 232 236 / 0.2);
+    --ink: #f7e8ec;
+    --ink-2: #d3bccb;
+    --ink-3: #a98fa4;
+    --accent: #f2a0bd;
+    --accent-soft: rgb(242 160 189 / 0.12);
+    --on-ink: #1d1220;
+    --alert: #ff9b8f;
     /* Stays light: a dark sweep would shift the garment's colour. */
-    --photo: #ebe9e4;
-    --swatch-edge: rgb(255 255 255 / 0.14);
-    --scrim: rgb(0 0 0 / 0.6);
+    --photo: #f4eeee;
+    --swatch-edge: rgb(255 255 255 / 0.16);
+    --scrim: rgb(0 0 0 / 0.66);
+    --bar: rgb(29 18 32 / 0.84);
   }
 }
 
 @theme inline {
-  --font-sans: var(--font-instrument), system-ui, -apple-system, sans-serif;
+  --font-sans: var(--font-hanken), system-ui, -apple-system, sans-serif;
+  --font-serif: var(--font-bodoni), 'Didot', 'Bodoni 72', serif;
 
   --color-ground: var(--ground);
   --color-surface: var(--surface);
   --color-raised: var(--raised);
   --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
   --color-ink: var(--ink);
   --color-ink-2: var(--ink-2);
   --color-ink-3: var(--ink-3);
   --color-accent: var(--accent);
   --color-accent-soft: var(--accent-soft);
-  --color-on-accent: var(--on-accent);
   --color-on-ink: var(--on-ink);
   --color-alert: var(--alert);
   --color-photo: var(--photo);
 }
 
 @theme {
-  /* Strong curves. The built-in ease-out is too weak to read as intentional. */
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
 
-  --radius-tile: 0.25rem;
-  --radius-control: 0.375rem;
+  /* Product tiles and photos of a single piece. */
+  --radius-tile: 0.75rem;
+  /* Buttons, fields, cards that hold words. */
+  --radius-control: 0.875rem;
+  /* The arch: a mirror's semicircular head over straight sides. */
+  --radius-arch: 999px 999px 1.25rem 1.25rem;
 }
 
 @layer base {
@@ -102,7 +107,7 @@
     min-height: 100dvh;
     font-family: var(--font-sans);
     font-size: 1rem;
-    line-height: 1.5;
+    line-height: 1.55;
     font-feature-settings: 'kern', 'liga', 'calt';
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
@@ -113,6 +118,13 @@
   textarea,
   select {
     font-size: 1rem;
+  }
+
+  button,
+  a,
+  label,
+  summary {
+    touch-action: manipulation;
   }
 
   :focus-visible {
@@ -126,63 +138,73 @@
 }
 
 /*
- * Type. One family in two widths: condensed and heavy for the few words that
- * carry a screen (the cover line under the picture, a page's name), normal
- * for everything read. Tracking tightens as size grows.
+ * Type. Bodoni Moda for the few words that carry a screen, set large with its
+ * optical size up so the hairlines stay fine; Hanken Grotesk for everything
+ * read. Italic Bodoni is the stylist's voice: the one line that says why.
  */
 @layer components {
   .display {
-    font-stretch: 75%;
-    font-weight: 650;
-    letter-spacing: -0.022em;
-    line-height: 0.94;
+    font-family: var(--font-serif);
+    font-optical-sizing: auto;
+    font-weight: 500;
+    font-size: clamp(2.5rem, 1.6rem + 3.6vw, 4.25rem);
+    letter-spacing: -0.025em;
+    line-height: 0.98;
     text-wrap: balance;
   }
 
   .headline {
-    font-stretch: 82%;
-    font-weight: 620;
+    font-family: var(--font-serif);
+    font-optical-sizing: auto;
+    font-weight: 500;
+    font-size: clamp(1.625rem, 1.3rem + 1.2vw, 2.125rem);
     letter-spacing: -0.015em;
-    line-height: 1;
+    line-height: 1.06;
     text-wrap: balance;
   }
 
   .title {
-    font-stretch: 90%;
     font-weight: 600;
-    letter-spacing: -0.012em;
-    line-height: 1.1;
+    font-size: 1.0625rem;
+    letter-spacing: -0.008em;
+    line-height: 1.25;
+  }
+
+  .voice {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-weight: 400;
+    font-size: 1.1875rem;
+    line-height: 1.45;
+    color: var(--ink-2);
     text-wrap: pretty;
   }
 
-  /* A small line that names what follows, in sentence case, never tracked caps. */
   .caption {
     font-size: 0.8125rem;
     font-weight: 500;
-    line-height: 1.25rem;
+    line-height: 1.35;
     color: var(--ink-3);
   }
 
-  .prose {
+  .prose-measure {
+    max-width: 38rem;
     text-wrap: pretty;
+  }
+
+  .tabular {
+    font-variant-numeric: tabular-nums;
   }
 }
 
-/* Controls */
+/*
+ * Controls. One solid ink button per screen; everything else is quiet. Every
+ * pressable thing scales to 0.97 for 160ms, so the interface answers the tap.
+ */
 @layer components {
-  /*
-   * Anything pressable: instant feedback that the interface heard the touch,
-   * no long-press text selection, no double-tap wait.
-   */
   .pressable {
-    touch-action: manipulation;
-    user-select: none;
-    -webkit-user-select: none;
-    -webkit-touch-callout: none;
-    cursor: pointer;
     transition: transform 160ms var(--ease-out);
   }
-
   .pressable:active {
     transform: scale(0.97);
   }
@@ -194,610 +216,396 @@
     justify-content: center;
     gap: 0.5rem;
     border-radius: var(--radius-control);
-    padding: 0 1.25rem;
-    font-size: 1rem;
-    font-weight: 500;
-    line-height: 1.25;
+    padding: 0 1.375rem;
+    font-weight: 600;
+    font-size: 0.9375rem;
+    line-height: 1;
     white-space: nowrap;
-    touch-action: manipulation;
-    user-select: none;
-    -webkit-user-select: none;
-    -webkit-touch-callout: none;
     cursor: pointer;
+    user-select: none;
     transition:
       transform 160ms var(--ease-out),
       background-color 150ms ease,
-      border-color 150ms ease,
       color 150ms ease,
       opacity 150ms ease;
   }
-
-  .btn:active {
+  .btn:active:not(:disabled) {
     transform: scale(0.97);
   }
-
-  .btn:disabled {
-    cursor: default;
+  .btn:disabled,
+  .btn[aria-disabled='true'] {
     opacity: 0.45;
+    cursor: default;
   }
 
-  .btn:disabled:active {
-    transform: none;
-  }
-
-  /* The one solid button on a screen: ink, like a label sewn in. */
   .btn-primary {
     background: var(--ink);
     color: var(--on-ink);
   }
 
   .btn-quiet {
-    border: 1px solid var(--line);
     background: transparent;
     color: var(--ink);
+    box-shadow: inset 0 0 0 1px var(--line-strong);
   }
 
   .btn-small {
-    min-height: 2.5rem;
-    padding: 0 0.875rem;
-    font-size: 0.9375rem;
+    min-height: 2.75rem;
+    padding: 0 1rem;
+    font-size: 0.875rem;
   }
 
-  @media (hover: hover) and (pointer: fine) {
-    .btn-primary:hover {
-      background: color-mix(in srgb, var(--ink) 86%, var(--ground));
-    }
-
-    .btn-quiet:hover {
-      border-color: var(--ink-3);
-    }
-  }
-
-  /* A link that acts: green, no border, sits in a row of actions. */
-  .text-button {
+  /* A word that acts: rose, no box. Its hit area still reaches 44px. */
+  .link {
     display: inline-flex;
     min-height: 2.75rem;
+    align-items: center;
+    color: var(--accent);
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration-line: underline;
+    text-decoration-color: transparent;
+    text-underline-offset: 0.2em;
+    transition: text-decoration-color 150ms ease;
+  }
+
+  .danger {
+    color: var(--alert);
+  }
+
+  /* A choice in a row of them: a filter, a sub-page. Selected is ink. */
+  .chip {
+    position: relative;
+    display: inline-flex;
+    min-height: 2.5rem;
     align-items: center;
     gap: 0.375rem;
-    border-radius: var(--radius-control);
-    padding: 0 0.5rem;
-    font-size: 0.9375rem;
-    font-weight: 500;
-    white-space: nowrap;
-    color: var(--accent);
-    touch-action: manipulation;
-    user-select: none;
-    -webkit-user-select: none;
-    cursor: pointer;
-    transition: transform 160ms var(--ease-out);
-  }
-
-  .text-button:active {
-    transform: scale(0.97);
-  }
-
-  .text-button:disabled {
-    opacity: 0.45;
-    cursor: default;
-  }
-
-  /* Form fields: white sweep by day, a shade up from the ground by night. */
-  .field {
-    width: 100%;
-    min-height: 3rem;
-    border-radius: var(--radius-control);
-    border: 1px solid var(--line);
-    background: var(--raised);
-    padding: 0 0.875rem;
-    color: var(--ink);
-    font-size: 1rem;
-    line-height: 1.5;
-    transition:
-      border-color 150ms ease,
-      box-shadow 150ms ease;
-  }
-
-  .field::placeholder {
-    color: var(--ink-3);
-  }
-
-  .field:focus {
-    outline: none;
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px var(--accent-soft);
-  }
-
-  .field[aria-invalid='true'] {
-    border-color: var(--alert);
-  }
-
-  textarea.field {
-    padding: 0.75rem 0.875rem;
-    resize: vertical;
-  }
-
-  select.field {
-    appearance: none;
-    padding-right: 2.5rem;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23737980' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 0.875rem center;
-  }
-
-  input[type='search'].field {
-    appearance: none;
-  }
-
-  input[type='search'].field::-webkit-search-decoration,
-  input[type='search'].field::-webkit-search-cancel-button {
-    appearance: none;
-  }
-
-  /*
-   * Segmented choice: radios or buttons in a row. The chosen one fills with
-   * ink. Pressed tens of times, so the change is a colour fade and nothing moves.
-   */
-  .segment {
-    display: inline-flex;
-    min-height: 2.75rem;
-    align-items: center;
-    justify-content: center;
-    border-radius: var(--radius-control);
-    border: 1px solid var(--line);
-    padding: 0 0.875rem;
-    font-size: 0.9375rem;
+    border-radius: 999px;
+    padding: 0 1rem;
+    font-size: 0.875rem;
     font-weight: 500;
     color: var(--ink-2);
+    box-shadow: inset 0 0 0 1px var(--line-strong);
+    white-space: nowrap;
+    cursor: pointer;
     transition:
       transform 160ms var(--ease-out),
       background-color 150ms ease,
-      border-color 150ms ease,
       color 150ms ease;
   }
-
-  .segment[aria-pressed='true'],
-  .segment:has(input:checked) {
-    border-color: var(--ink);
+  .chip:active {
+    transform: scale(0.97);
+  }
+  .chip[aria-current='page'],
+  .chip[aria-pressed='true'],
+  .chip:has(input:checked) {
     background: var(--ink);
     color: var(--on-ink);
+    box-shadow: none;
   }
-
-  .segment:has(input:focus-visible) {
+  .chip input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .chip:has(input:focus-visible) {
     outline: 2px solid var(--accent);
     outline-offset: 3px;
   }
 
-  /* One of a short list of reasons: one tap and it is sent. */
-  .chip {
-    display: inline-flex;
-    min-height: 2.5rem;
-    align-items: center;
-    border-radius: var(--radius-control);
-    border: 1px solid var(--line);
-    padding: 0 0.75rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--ink);
-  }
-
-  @media (hover: hover) and (pointer: fine) {
-    .chip:hover {
-      border-color: var(--ink-3);
-    }
-  }
-
-  /*
-   * The page's sections as tabs under its name (Pieces, Looks, On me). The
-   * open one is ink with a rule under it; the others are quiet. A plain
-   * navigation, so nothing slides.
-   */
-  .subnav {
-    display: flex;
-    gap: 1.25rem;
-    border-bottom: 1px solid var(--line);
-  }
-
-  .subnav-item {
-    display: inline-flex;
-    min-height: 2.75rem;
-    align-items: center;
-    margin-bottom: -1px;
-    border-bottom: 2px solid transparent;
-    font-size: 0.9375rem;
-    font-weight: 500;
-    color: var(--ink-3);
-    transition: color 150ms ease;
-  }
-
-  .subnav-item[aria-current='page'] {
-    border-bottom-color: var(--ink);
-    color: var(--ink);
-  }
-
-  /* A palette colour as a toggle in a form. Chosen means an ink ring. */
-  .swatch-toggle {
-    position: relative;
+  .field-label {
     display: block;
-    border-radius: var(--radius-tile);
-    transition: transform 160ms var(--ease-out);
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: 0.375rem;
   }
 
-  .swatch-toggle::after {
-    content: '';
-    position: absolute;
-    inset: -4px;
-    border-radius: calc(var(--radius-tile) + 3px);
-    border: 2px solid var(--ink);
-    opacity: 0;
-    transition: opacity 150ms ease;
+  .input {
+    display: block;
+    width: 100%;
+    min-height: 3rem;
+    border-radius: var(--radius-control);
+    background: var(--raised);
+    padding: 0.75rem 0.9375rem;
+    color: var(--ink);
+    box-shadow: inset 0 0 0 1px var(--line-strong);
+    transition: box-shadow 150ms ease;
+  }
+  .input::placeholder {
+    color: var(--ink-3);
+  }
+  .input:focus {
+    outline: none;
+    box-shadow: inset 0 0 0 2px var(--accent);
+  }
+  .input[aria-invalid='true'] {
+    box-shadow: inset 0 0 0 2px var(--alert);
+  }
+  textarea.input {
+    min-height: 7rem;
+    line-height: 1.5;
+    resize: vertical;
+  }
+  select.input {
+    appearance: none;
+    padding-right: 2.5rem;
+    background-image:
+      linear-gradient(45deg, transparent 50%, var(--ink-3) 50%),
+      linear-gradient(135deg, var(--ink-3) 50%, transparent 50%);
+    background-position:
+      calc(100% - 1.25rem) 52%,
+      calc(100% - 0.9375rem) 52%;
+    background-size: 0.3125rem 0.3125rem;
+    background-repeat: no-repeat;
   }
 
-  .swatch-toggle:has(input:checked)::after {
-    opacity: 1;
-  }
-
-  .swatch-toggle:has(input:focus-visible) {
-    outline: 2px solid var(--accent);
-    outline-offset: 6px;
-  }
-
-  .swatch-toggle:active {
-    transform: scale(0.97);
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .pressable,
-    .btn,
-    .text-button,
-    .segment,
-    .swatch-toggle {
-      transition: none;
-    }
-
-    .pressable:active,
-    .btn:active,
-    .text-button:active,
-    .swatch-toggle:active {
-      transform: none;
-    }
+  /* Words in a box: a card that is not a photo. */
+  .card {
+    border-radius: var(--radius-control);
+    background: var(--raised);
   }
 }
 
-/* Pictures and colour */
+/*
+ * Pictures. A garment sits on the sweep, multiplied in, so a shop's white
+ * background becomes the tile. The arch frames her, and a whole look.
+ */
 @layer components {
-  /*
-   * A flat swatch of one colour, any size: a Pantone chip, not a paint
-   * splash. The colour comes in as --swatch so no element needs an inline
-   * background.
-   */
-  .swatch {
-    background-color: var(--swatch);
-    box-shadow: inset 0 0 0 1px var(--swatch-edge);
-  }
-
-  /*
-   * A colour's name, above the swatch under the mouse (colour-tip.tsx).
-   * Placed before it paints, and shown at once: it answers the pointer, so
-   * it has no entrance.
-   */
-  .colour-tip {
-    position: fixed;
-    top: 0;
-    left: 0;
-    z-index: 60;
-    max-width: 16rem;
-    padding: 0.3125rem 0.5625rem;
-    border-radius: var(--radius-tile);
-    background: var(--ink);
-    color: var(--on-ink);
-    font-size: 0.8125rem;
-    font-weight: 500;
-    line-height: 1.25;
-    white-space: nowrap;
-    pointer-events: none;
-  }
-
-  .colour-tip::first-letter {
-    text-transform: uppercase;
-  }
-
-  /* A colour to avoid: the swatch with one hairline struck through it. */
-  .swatch-struck {
+  .sweep {
     position: relative;
     overflow: hidden;
-  }
-
-  .swatch-struck::after {
-    content: '';
-    position: absolute;
-    left: -10%;
-    right: -10%;
-    top: 50%;
-    height: 1.5px;
-    background: var(--ink);
-    transform: rotate(-35deg);
-  }
-
-  /* A product photo on its sweep. See --photo. */
-  .photo {
+    border-radius: var(--radius-tile);
     background: var(--photo);
   }
-
-  .photo img {
+  .sweep img {
     mix-blend-mode: multiply;
   }
 
-  /* An image or row that runs to the screen's edge on the phone. */
-  .bleed {
-    margin-inline: calc(-1 * var(--gutter));
+  .arch {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--radius-arch);
+    background: var(--photo);
   }
 
-  /*
-   * A row of cards: native horizontal scroll with snap, so the browser's own
-   * physics carry the swipe. It bleeds to the screen edge, keeps its own
-   * overscroll, and hides its scrollbar: the next card peeking in is the cue.
-   */
+  .swatch {
+    display: inline-block;
+    border-radius: 0.375rem;
+    background: var(--swatch, var(--surface));
+    box-shadow: inset 0 0 0 1px var(--swatch-edge);
+  }
+
+  /* The name of a colour under the mouse; see components/shell/colour-tip.tsx. */
+  .colour-tip {
+    position: fixed;
+    z-index: 60;
+    pointer-events: none;
+    border-radius: 0.5rem;
+    background: var(--ink);
+    color: var(--on-ink);
+    padding: 0.3125rem 0.625rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  /* A row that scrolls sideways on the phone and is a grid from sm up. */
   .scroller {
-    display: flex;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 68vw;
+    gap: 0.875rem;
     overflow-x: auto;
-    scroll-snap-type: x mandatory;
     overscroll-behavior-x: contain;
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
-    padding-inline: var(--gutter);
+    scroll-snap-type: x mandatory;
     scroll-padding-inline: var(--gutter);
+    padding-inline: var(--gutter);
+    margin-inline: calc(var(--gutter) * -1);
+    scrollbar-width: none;
   }
-
   .scroller::-webkit-scrollbar {
     display: none;
   }
-
   .scroller > * {
     scroll-snap-align: start;
-    flex-shrink: 0;
   }
 
-  /* A photo tile arriving after an upload. Transition, not keyframes, so a
-     second upload landing mid-fade retargets instead of restarting. */
-  .tile-enter {
-    opacity: 1;
-    transform: scale(1);
-    transition:
-      opacity 240ms var(--ease-out),
-      transform 240ms var(--ease-out);
+  .skeleton {
+    border-radius: var(--radius-tile);
+    background: var(--surface);
+  }
+}
 
-    @starting-style {
+/* The tab bar: the page scrolls under it on the phone. */
+@layer components {
+  .tabbar {
+    background: var(--bar);
+    -webkit-backdrop-filter: saturate(1.4) blur(18px);
+    backdrop-filter: saturate(1.4) blur(18px);
+  }
+
+  .tab {
+    color: var(--ink-3);
+    transition:
+      color 150ms ease,
+      transform 160ms var(--ease-out);
+  }
+  .tab:active {
+    transform: scale(0.97);
+  }
+  .tab[aria-current='page'] {
+    color: var(--ink);
+  }
+  /* The active mark is a small arch, the mirror again. */
+  .tab-mark {
+    width: 1.25rem;
+    height: 0.3125rem;
+    border-radius: 999px 999px 0 0;
+    background: var(--accent);
+    opacity: 0;
+    transform: scaleX(0.6);
+    transition:
+      opacity 150ms ease,
+      transform 200ms var(--ease-out);
+  }
+  .tab[aria-current='page'] .tab-mark {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .btn-primary:hover:not(:disabled) {
+    background: color-mix(in oklab, var(--ink) 88%, var(--accent));
+  }
+  .btn-quiet:hover:not(:disabled) {
+    background: var(--accent-soft);
+  }
+  .link:hover {
+    text-decoration-color: currentColor;
+  }
+  .chip:hover:not([aria-current='page']):not([aria-pressed='true']):not(:has(input:checked)) {
+    color: var(--ink);
+    background: var(--accent-soft);
+  }
+  .tab:hover {
+    color: var(--ink);
+  }
+  .lift img {
+    transition: transform 300ms var(--ease-out);
+  }
+  .lift:hover img {
+    transform: scale(1.025);
+  }
+}
+
+/*
+ * Motion. It only answers a tap: content swapping in place crossfades, a card
+ * leaves after an action, the viewer opens, a tile arrives after an upload.
+ * No page-load animation anywhere.
+ */
+@layer components {
+  .crossfade {
+    animation: crossfade 220ms var(--ease-out);
+  }
+  @keyframes crossfade {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+  }
+
+  .tile-enter {
+    animation: tile-enter 260ms var(--ease-out);
+  }
+  @keyframes tile-enter {
+    from {
       opacity: 0;
       transform: scale(0.96);
     }
   }
 
-  @media (prefers-reduced-motion: reduce) {
-    .tile-enter {
-      transition: opacity 200ms ease;
+  .leaving {
+    opacity: 0;
+    transform: scale(0.97);
+    transition:
+      opacity 180ms var(--ease-out),
+      transform 180ms var(--ease-out);
+    pointer-events: none;
+  }
+
+  .viewer {
+    animation: viewer-in 240ms var(--ease-out);
+  }
+  .viewer-scrim {
+    animation: scrim-in 200ms ease;
+  }
+  @keyframes viewer-in {
+    from {
+      opacity: 0;
+      transform: scale(0.96);
     }
   }
-}
-
-/* States and waiting */
-@layer components {
-  @keyframes fade {
+  @keyframes scrim-in {
     from {
       opacity: 0;
     }
-    to {
-      opacity: 1;
+  }
+
+  /* Held back 300ms so a quick load shows nothing at all. */
+  .delayed {
+    animation: delayed 1ms 300ms both;
+  }
+  @keyframes delayed {
+    from {
+      visibility: hidden;
     }
   }
 
-  /*
-   * Loading placeholders (src/components/skeleton.tsx). Held back 300 ms so a
-   * quick load never flashes them, then a short fade, opacity only. Static:
-   * no shimmer.
-   */
-  .bone {
-    background: var(--surface);
-  }
-
-  .skeleton {
-    animation: fade 200ms var(--ease-out) 300ms both;
-  }
-
-  .spinner {
+  .spin {
     animation: spin 700ms linear infinite;
   }
-
   @keyframes spin {
     to {
       transform: rotate(360deg);
     }
   }
 
-  /* Content that swaps in place (a new option, the actions giving way to their reasons): a short crossfade, nothing moves. */
-  .tray {
-    opacity: 1;
-    transition: opacity 150ms ease;
-
-    @starting-style {
-      opacity: 0;
-    }
-  }
-
-  /*
-   * A find he acted on leaves at once, before the server's answer: a quick
-   * fade and a slight settle, then the next render drops it.
-   */
-  .find {
-    transition:
-      opacity 180ms var(--ease-out),
-      transform 180ms var(--ease-out);
-  }
-
-  .find[data-gone='true'] {
-    opacity: 0;
-    transform: scale(0.97);
-    pointer-events: none;
-  }
-
-  /*
-   * Hold to confirm. The fill is a progress indicator, so the press is linear
-   * and slow; the release snaps back fast.
-   */
-  .hold {
-    position: relative;
-    overflow: hidden;
-    isolation: isolate;
-  }
-
+  /* Hold to confirm: the fill runs slow while she decides, snaps back fast. */
   .hold-fill {
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    background: var(--alert);
     clip-path: inset(0 100% 0 0);
     transition: clip-path 200ms var(--ease-out);
   }
-
-  .hold[data-holding='true'] .hold-fill {
+  .hold:active .hold-fill {
     clip-path: inset(0 0 0 0);
-    transition: clip-path var(--hold-ms, 1200ms) linear;
-  }
-
-  /*
-   * A search's progress: a hairline filled to --share (0 to 1) by transform
-   * alone, so each step it takes is a short slide on the compositor.
-   */
-  .progress-line {
-    transform: scaleX(var(--share, 0));
-    transition: transform 250ms var(--ease-out);
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .skeleton {
-      /* Still held back, so nothing flashes; appears without the fade. */
-      animation: fade 1ms linear 300ms both;
-    }
-
-    .find {
-      transition: opacity 150ms ease;
-    }
-
-    .find[data-gone='true'] {
-      transform: none;
-    }
-
-    .progress-line {
-      transition: none;
-    }
+    transition: clip-path 1.6s linear;
   }
 }
 
-/* The shell */
-@layer components {
-  /*
-   * The tab bar on the phone: a translucent material the page scrolls under,
-   * padded for the home indicator. On the laptop it is a rail down the left.
-   */
-  .tabbar {
-    background: color-mix(in srgb, var(--ground) 86%, transparent);
-    backdrop-filter: blur(20px) saturate(160%);
-    -webkit-backdrop-filter: blur(20px) saturate(160%);
+@media (prefers-reduced-motion: reduce) {
+  .pressable:active,
+  .btn:active:not(:disabled),
+  .chip:active,
+  .tab:active {
+    transform: none;
   }
-
-  @media (prefers-reduced-transparency: reduce) {
-    .tabbar {
-      background: var(--ground);
-      backdrop-filter: none;
-      -webkit-backdrop-filter: none;
-    }
-  }
-
-  .tab {
-    color: var(--ink-3);
-    transition: color 150ms ease;
-  }
-
-  .tab[aria-current='page'] {
-    color: var(--ink);
-  }
-
-  /* The dot under the open tab's name on the phone. */
-  .tab-mark {
-    width: 0.25rem;
-    height: 0.25rem;
-    border-radius: 9999px;
-    background: var(--accent);
-    opacity: 0;
-    transition: opacity 150ms ease;
-  }
-
-  .tab[aria-current='page'] .tab-mark {
-    opacity: 1;
-  }
-
-  /*
-   * The try-on viewer, a native modal dialog: full screen on the phone, a
-   * sheet on the laptop. It answers a tap, so it fades and settles in under
-   * 300ms and leaves faster than it came; the backdrop only fades.
-   */
+  .crossfade,
+  .tile-enter,
   .viewer {
-    opacity: 1;
-    transform: scale(1);
-    transition:
-      opacity 220ms var(--ease-out),
-      transform 220ms var(--ease-out),
-      overlay 220ms allow-discrete,
-      display 220ms allow-discrete;
-
-    @starting-style {
+    animation: fade 160ms ease;
+  }
+  .leaving {
+    transform: none;
+  }
+  .lift:hover img {
+    transform: none;
+  }
+  .spin {
+    animation-duration: 1.6s;
+  }
+  @keyframes fade {
+    from {
       opacity: 0;
-      transform: scale(0.98);
-    }
-  }
-
-  .viewer:not([open]) {
-    opacity: 0;
-    transform: scale(0.98);
-    transition-duration: 150ms;
-  }
-
-  .viewer::backdrop {
-    background: var(--scrim);
-    opacity: 1;
-    transition:
-      opacity 220ms var(--ease-out),
-      overlay 220ms allow-discrete,
-      display 220ms allow-discrete;
-
-    @starting-style {
-      opacity: 0;
-    }
-  }
-
-  .viewer:not([open])::backdrop {
-    opacity: 0;
-    transition-duration: 150ms;
-  }
-
-  /* The page under an open viewer stays put. */
-  html:has(.viewer[open]) {
-    overflow: hidden;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .viewer,
-    .viewer:not([open]) {
-      transform: none;
-      transition:
-        opacity 150ms ease,
-        overlay 150ms allow-discrete,
-        display 150ms allow-discrete;
-    }
-
-    @starting-style {
-      .viewer {
-        transform: none;
-      }
     }
   }
 }

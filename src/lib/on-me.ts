@@ -6,9 +6,9 @@ import { STALE_MINUTES, findColour, showableTryOn, type PieceSent } from './try-
 import { GARMENT_TYPES, type GarmentType, type WornFor } from './wardrobe-values.ts'
 
 /*
- * The On me page: every picture of him OpenAI made, newest first, each with
- * what it was made from (his photo, and the find, the look's pieces or the
- * pieces he chose), and the choices for a new one of his own pieces and
+ * The On me page: every picture of her OpenAI made, newest first, each with
+ * what it was made from (her photo, and the find, the look's pieces or the
+ * pieces she chose), and the choices for a new one of her own pieces and
  * saved finds. A picture lives until "delete photos" takes it; a failed
  * request has no picture, so it is not shown.
  */
@@ -20,13 +20,13 @@ export type Source = {
   garment_type: GarmentType | null
   colour_hex: string | null
   colour_name: string | null
-  /** His own photo of the piece, while it is kept. */
+  /** Her own photo of the piece, while it is kept. */
   photo: PiecePhoto | null
   /** The shop's photo that was sent. */
   image: ProductImage | null
-  /** How it reached OpenAI: his photo, the shop's photo, or only in words. */
+  /** How it reached OpenAI: her photo, the shop's photo, or only in words. */
   shown: 'photo' | 'product' | 'words'
-  /** One of his pieces, a find he saved and chose, or the find a "See it on me" was tapped on. */
+  /** One of her pieces, a find she saved and chose, or the find a "See it on me" was tapped on. */
   kind: 'piece' | 'saved' | 'find'
   /** The piece's page or the shop's, while it is still there. */
   href: string | null
@@ -44,7 +44,7 @@ export type OnMeImage = {
   height: number | null
   usd: number | null
   started_at: Date
-  /** His full-length photo it was made from. */
+  /** Her full-length photo it was made from. */
   photo_id: number
   photo_taken: Date
   subject: Subject
@@ -121,7 +121,7 @@ export function outfitTitle(names: string[]): string {
 
 /**
  * The rows with their sources looked up as they are now: which pieces are
- * still in the wardrobe, which of his piece photos are still kept, and where
+ * still in the wardrobe, which of her piece photos are still kept, and where
  * a find lives and whether it is still saved, in three queries for the whole page.
  */
 async function resolve(sql: Sql, rows: Row[]): Promise<OnMeDetail[]> {
@@ -182,7 +182,7 @@ async function resolve(sql: Sql, rows: Row[]): Promise<OnMeDetail[]> {
     const sources = (row.pieces ?? []).map((piece, index): Source => {
       const owned = piece.piece_id !== null
       const href = owned
-        ? kept.has(piece.piece_id!) ? `/wardrobe/${piece.piece_id}` : null
+        ? kept.has(piece.piece_id!) ? `/closet/${piece.piece_id}` : null
         : piece.product_id ? (urlById.get(piece.product_id) ?? null) : null
       return {
         key: owned ? `p${piece.piece_id}` : piece.product_id ? `f${piece.product_id}` : `x${index}`,
@@ -210,7 +210,7 @@ async function resolve(sql: Sql, rows: Row[]): Promise<OnMeDetail[]> {
 // Choosing pieces for a new one
 // ---------------------------------------------------------------------------
 
-/** Something he can put on: one of his pieces or a find he saved. */
+/** Something she can put on: one of her pieces or a find she saved. */
 export type Choice = {
   /** "p12" for a piece, "f34" for a saved find; what the form posts. */
   key: string
@@ -230,9 +230,9 @@ export type Choice = {
 export type Choices = { pieces: Choice[]; finds: Choice[] }
 
 /**
- * Each outfit already put on him, by outfitKey, and the picture to open for
+ * Each outfit already put on her, by outfitKey, and the picture to open for
  * it (ready before one in the making, then the newest): the chooser offers
- * that picture, not a new one, when what he ticked is one of these.
+ * that picture, not a new one, when what she ticked is one of these.
  */
 export async function keptOutfits(sql: Sql = db()): Promise<Record<string, number>> {
   const rows = await sql<{ outfit_key: string; id: number }[]>`
@@ -244,7 +244,7 @@ export async function keptOutfits(sql: Sql = db()): Promise<Record<string, numbe
   return Object.fromEntries(rows.map((row) => [row.outfit_key, row.id]))
 }
 
-/** His pieces still in the wardrobe, in shelf order, and his saved finds, newest first. */
+/** Her pieces still in the wardrobe, in shelf order, and her saved finds, newest first. */
 export async function outfitChoices(sql: Sql = db()): Promise<Choices> {
   const [pieces, finds] = await Promise.all([
     listPieces(sql),

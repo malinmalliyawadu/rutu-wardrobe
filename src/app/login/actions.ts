@@ -6,7 +6,7 @@ import { redirect } from 'next/navigation'
 import type { ActionState } from '@/lib/action-state'
 import { SESSION_COOKIE, appPassword, issueSession, passwordMatches, safeNext, sessionCookieOptions } from '@/lib/auth'
 
-/** A wrong guess waits this long, which makes guessing slow and costs Malin nothing. */
+/** A wrong guess waits this long, which makes guessing slow and costs Rutu nothing. */
 const WRONG_PASSWORD_DELAY_MS = 800
 
 export async function signIn(_previous: ActionState, form: FormData): Promise<ActionState> {

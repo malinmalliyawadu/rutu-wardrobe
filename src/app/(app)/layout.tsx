@@ -1,38 +1,36 @@
 import { Suspense } from 'react'
 
-import { ColourTip } from '@/components/colour-tip'
-import { LivePalette } from '@/components/live-palette'
-import { Nav, NavShell, Wordmark } from '@/components/nav'
-import { PaletteStrip } from '@/components/palette-strip'
+import { ColourTip } from '@/components/shell/colour-tip'
+import { Nav, NavShell, Wordmark } from '@/components/shell/nav'
+import { LivePalette, PaletteRibbon } from '@/components/shell/palette'
 
 /**
- * The frame. On the laptop, where this is mostly read, a rail down the left
- * holds the wordmark, his palette and the five tabs, and the page beside it
- * is a wide spread. On the phone the wordmark and palette sit at the top and
- * the tabs along the bottom. The sign-in page sits outside it, with none of
- * this to show.
+ * The frame. A top bar holds the wordmark, her palette and, from the laptop
+ * up, the five tabs as words; on the phone the tabs are a bar along the
+ * bottom. The page is one centred column, as wide as a spread needs. The
+ * sign-in page sits outside all of this.
  */
 export default function AppLayout({ children }: LayoutProps<'/'>) {
-  const strip = (
-    <Suspense fallback={<PaletteStrip colours={null} />}>
-      <LivePalette />
-    </Suspense>
-  )
   return (
-    <div className="lg:grid lg:min-h-dvh lg:grid-cols-[15rem_minmax(0,1fr)]">
-      <Suspense fallback={<NavShell strip={strip} />}>
-        <Nav strip={strip} />
-      </Suspense>
-      <div className="min-w-0">
-        <header className="flex items-center justify-between px-[var(--gutter)] pt-[calc(0.875rem+env(safe-area-inset-top))] pb-3 lg:hidden">
+    <>
+      <header className="mx-auto flex w-full max-w-[82rem] items-center justify-between gap-6 px-[var(--gutter)] pt-[calc(0.5rem+env(safe-area-inset-top))] pb-2 lg:pt-5 lg:pb-5">
+        <div className="flex items-center gap-4">
           <Wordmark />
-          {strip}
-        </header>
-        <main className="mx-auto w-full max-w-[76rem] px-[var(--gutter)] pt-2 pb-[calc(6.5rem+env(safe-area-inset-bottom))] lg:pt-12 lg:pb-24">
-          {children}
-        </main>
-      </div>
+          <Suspense fallback={<PaletteRibbon colours={null} />}>
+            <LivePalette />
+          </Suspense>
+        </div>
+        <Suspense fallback={<NavShell />}>
+          <Nav />
+        </Suspense>
+      </header>
+      <main
+        id="main"
+        className="mx-auto w-full max-w-[82rem] px-[var(--gutter)] pt-6 pb-[calc(7rem+env(safe-area-inset-bottom))] lg:pt-10 lg:pb-28"
+      >
+        {children}
+      </main>
       <ColourTip />
-    </div>
+    </>
   )
 }
