@@ -1,0 +1,14 @@
+node_modules
+.next
+.git
+.github
+.env
+.env.*
+!.env.example
+.claude
+docs
+data/*
+!data/retailers.json
+tests
+*.md
+.DS_Store
