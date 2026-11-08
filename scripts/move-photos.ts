@@ -10,7 +10,7 @@
  * the same MD5 is not sent again. A local file is deleted only with --prune,
  * and only once R2's copy has the same MD5.
  *
- * Then it asks R2 for every file a row names (his photos and their thumbs,
+ * Then it asks R2 for every file a row names (her photos and their thumbs,
  * pieces, finds, try-ons, flat lays) and lists any it does not have, so the
  * move is known to be complete before the volume goes.
  *

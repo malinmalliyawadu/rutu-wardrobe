@@ -3,20 +3,20 @@ import { checkUpload, normaliseImage, removePair, storePair, thumbName } from '.
 import { files } from './storage.ts'
 
 /*
- * Photos of finds he adds by hand, from a store the finder cannot read
+ * Photos of finds she adds by hand, from a store the finder cannot read
  * (migration 0012). Usually the shop's own product photo, saved from its page
- * on his phone. Stored like his photos (src/lib/photos.ts): a metadata-free
+ * on her phone. Stored like her photos (src/lib/photos.ts): a metadata-free
  * master and thumb in the file store, under finds/, served only through
  * /photos/finds/:id. The product's images list names that address, so the
  * cards, the try-on viewer and a piece bought from it show it like any shop
- * photo. It goes nowhere but the try-on editor, on his tap. The same kind of
- * photo is what he adds as his own for a find from a store that is read
+ * photo. It goes nowhere but the try-on editor, on her tap. The same kind of
+ * photo is what she adds as her own for a find from a store that is read
  * (src/lib/product-photos.ts).
  */
 
 export const FIND_DIR = 'finds'
 
-/** A photo chosen for a find he then never added is cleared after this long. */
+/** A photo chosen for a find she then never added is cleared after this long. */
 const ORPHAN_HOURS = 24
 
 export type FindPhoto = { id: number; width: number; height: number }
@@ -43,7 +43,7 @@ export async function storeFindPhoto(input: { bytes: Buffer; mime: string }, sql
 /**
  * Photos no product shows: chosen for a find never added, or replaced since.
  * A product shows one as a find added by hand (find_photo_id) or as the photo
- * he chose for it (chosen_image, src/lib/product-photos.ts).
+ * she chose for it (chosen_image, src/lib/product-photos.ts).
  */
 export async function clearFindOrphans(sql: Sql = db()): Promise<number> {
   const rows = await sql<{ path: string }[]>`

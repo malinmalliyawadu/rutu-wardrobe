@@ -17,8 +17,8 @@ import type { ProductImage } from './shopify.ts'
  * Stage 3: Claude judges each candidate the filter let through, once per
  * version of the product. Sonnet, because this is volume work; adaptive
  * thinking at low effort, the starting point for classification. Everything
- * that is the same for every product in a run (instructions, his profile, the
- * guide, the open slots, what he dismissed lately) is one cached system
+ * that is the same for every product in a run (instructions, her profile, the
+ * guide, the open slots, what she dismissed lately) is one cached system
  * prefix, so each call pays full price only for the product and its picture.
  */
 
@@ -42,15 +42,15 @@ export const ScoreSchema = z.object({
   colour: z
     .string()
     .nullable()
-    .describe('The colour option you judged, copied exactly from the colours offered in his size, or null when there is only one.'),
+    .describe('The colour option you judged, copied exactly from the colours offered in her size, or null when there is only one.'),
   colour_verdict: z
     .string()
-    .describe('A few words on the colour against his palette, naming the nearest palette colour: "close to your pine, reads slightly cooler".'),
-  fit_verdict: z.string().describe('A few words on the cut against his fit and proportion rules.'),
+    .describe('A few words on the colour against her palette, naming the nearest palette colour: "close to your pine, reads slightly cooler".'),
+  fit_verdict: z.string().describe('A few words on the cut against her fit and proportion rules.'),
   fabric_notes: z.string().describe('A few words on fabric and make from the description, or "not stated".'),
   why: z
     .string()
-    .describe('One sentence to him, under 25 words, saying why this does or does not fill the slot. Plain and specific, no sales talk.'),
+    .describe('One sentence to her, under 25 words, saying why this does or does not fill the slot. Plain and specific, no sales talk.'),
   alternatives: z
     .array(z.object({ slot_id: z.number().int(), score: z.number().int().min(0).max(100) }))
     .describe('Other compatible slots it could also fill, with their scores. Empty when there are none.'),
@@ -58,22 +58,22 @@ export const ScoreSchema = z.object({
 
 export type ScoreOutput = z.infer<typeof ScoreSchema>
 
-export const SCORE_SYSTEM_PROMPT = `You are an experienced womenswear stylist working for one client. Every night a private app reads New Zealand womenswear shops and END. (UK, ships to New Zealand), keeps the products that are the right garment, in his size and inside his budget, and asks you about each one. You have his profile, his style guide and the open slots of his wardrobe blueprint: each slot is an archetype he wants to buy, such as "pine fine-gauge merino crewneck".
+export const SCORE_SYSTEM_PROMPT = `You are an experienced womenswear stylist working for one client. Every night a private app reads womenswear shops in New Zealand and a few overseas that ship here, keeps the products that are the right garment, in her size and inside her budget, and asks you about each one. You have her profile, her style guide and the open slots of her wardrobe blueprint: each slot is an archetype she wants to buy, such as "pine fine-gauge merino cardigan" or "black leather ankle boot with a low block heel".
 
 For each product you get its photo, its listing and the ids of the slots it could fill by garment type. Decide which of those slots it fills best, if any, and score it against that slot.
 
 Scale:
-- 90 to 100: buy this. The slot's archetype, a colour from his best colours or neutrals, a cut that follows his rules, and fabric that earns the price.
-- 75 to 89: a strong match worth his attention, with one small compromise you name.
-- 60 to 74: plausible, but a real compromise: the colour is near his palette rather than in it, the fabric is weaker than the slot asks, or the cut is uncertain.
+- 90 to 100: buy this. The slot's archetype, a colour from her best colours or neutrals, a cut that follows her rules, and fabric that earns the price.
+- 75 to 89: a strong match worth her attention, with one small compromise you name.
+- 60 to 74: plausible, but a real compromise: the colour is near her palette rather than in it, the fabric is weaker than the slot asks, or the cut is uncertain.
 - 40 to 59: wrong in one important way.
-- Below 40: not the slot's archetype, or not for him.
+- Below 40: not the slot's archetype, or not for her.
 
-Colour is the point of the app, so judge it from the photo as well as the name: a listing called "olive" can photograph khaki, and studio light flatters. Compare against his palette hexes and say which palette colour it is closest to. A colour from his avoid list near the face scores below 40. When several colours are offered in his size, judge the best of them for him and name it.
+Colour is the point of the app, so judge it from the photo as well as the name: a listing called "olive" can photograph khaki, and studio light flatters. Compare against her palette hexes and say which palette colour it is closest to. A colour from her avoid list near the face scores below 40. When several colours are offered in her size, judge the best of them for her and name it.
 
-Judge the cut against the slot's fit and the guide's rules for his height and build, from what the photo and listing show. Graphics, slogans and large logos count against a slot that does not ask for them. Respect his no-gos absolutely. Products he dismissed lately, with his reason, tell you what he does not want; weigh similar products down.
+Judge the cut against the slot's fit and the guide's rules for her height, build and waist, from what the photo and listing show: the neckline, where the waist sits, the length of a hem or a sleeve, the leg of a trouser, a shoe's heel height and toe, a bag's scale, a jewellery piece's size and metal. A model's styling is not the product: judge the garment, not how it is pinned or belted. Graphics, slogans and large logos count against a slot that does not ask for them. Respect her no-gos absolutely. Products she dismissed lately, with her reason, tell you what she does not want; weigh similar products down.
 
-Price is not your concern: the app has already checked the budget band. Do not invent facts the listing does not give; say "not stated". Write to him in the second person, in plain English, and use a plain hyphen rather than a dash.`
+Price is not your concern: the app has already checked the budget band. Do not invent facts the listing does not give; say "not stated". Write to her in the second person, in plain English, and use a plain hyphen rather than a dash.`
 
 export type ScoringContext = {
   profile: Profile
@@ -101,8 +101,8 @@ export function contextBlock(context: ScoringContext): string {
     budget_nzd: { min: dollars(slot.budget_min_cents), max: dollars(slot.budget_max_cents) },
   }))
   const parts = [
-    `His profile:\n\n${JSON.stringify(profileBrief(context.profile))}`,
-    `His style guide:\n\n${JSON.stringify(
+    `Her profile:\n\n${JSON.stringify(profileBrief(context.profile))}`,
+    `Her style guide:\n\n${JSON.stringify(
       {
         palette: context.guide.palette,
         silhouette: context.guide.silhouette,
@@ -111,10 +111,10 @@ export function contextBlock(context: ScoringContext): string {
         fit_vocabulary: context.guide.fit_vocabulary,
       },
     )}`,
-    `The open slots of his blueprint:\n\n${JSON.stringify(slots)}`,
+    `The open slots of her blueprint:\n\n${JSON.stringify(slots)}`,
   ]
   if (context.dismissals.length > 0) {
-    parts.push(`Products he dismissed lately, most recent first:\n\n${JSON.stringify(context.dismissals)}`)
+    parts.push(`Products she dismissed lately, most recent first:\n\n${JSON.stringify(context.dismissals)}`)
   }
   return parts.join('\n\n')
 }
@@ -129,7 +129,7 @@ export type ProductForScoring = {
   tags: string[]
   body_html: string | null
   images: ProductImage[]
-  /** Colour options in stock in his size. */
+  /** Colour options in stock in her size. */
   colours: string[]
   sizes: string[]
   slot_ids: number[]
@@ -145,7 +145,7 @@ export function buildScoreRequest(context: string, product: ProductForScoring) {
     product_type: product.product_type,
     tags: product.tags.slice(0, 24),
     description: plainText(product.body_html).slice(0, 1500) || null,
-    colours_in_his_size: product.colours,
+    colours_in_her_size: product.colours,
     sizes_in_stock: product.sizes,
   }
   const content: Anthropic.Beta.BetaContentBlockParam[] = []

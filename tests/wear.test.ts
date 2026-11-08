@@ -29,7 +29,7 @@ describe('the lines and the rules', () => {
     assert.equal(lookWearLine({ offered: 1, on_today: 0, worn: ['2026-11-07'] }), 'Offered once. Worn once, on 7 November.')
   })
 
-  test('what he passes over most comes first, then the least worn, then the longest since', () => {
+  test('what she passes over most comes first, then the least worn, then the longest since', () => {
     const rows = [
       { id: 1, offered: 3, worn: 3, last_worn: '2026-11-06' },
       { id: 2, offered: 8, worn: 1, last_worn: '2026-11-01' },
@@ -73,11 +73,11 @@ describe('the counts', () => {
     sql = connect({ max: 2 })
     const typed = { source: 'typed' as const, photo_id: null, product_id: null }
     for (const [name, garment_type] of [
-      ['Ecru oxford', 'shirt'],
+      ['Ecru poplin shirt', 'shirt'],
       ['Pine crew', 'knitwear'],
-      ['Putty chinos', 'trousers'],
+      ['Putty trousers', 'trousers'],
       ['Brown Chelseas', 'boots'],
-      ['Rust overshirt', 'overshirt'],
+      ['Rust satin skirt', 'skirt'],
     ] as const) {
       ids.push(
         await createPiece(
@@ -120,12 +120,12 @@ describe('the counts', () => {
   }
 
   test('an offer is a set or a day, a day counts once, and pieces count through their looks', async () => {
-    const [shirt, crew, chinos, boots] = ids as [number, number, number, number, number]
+    const [shirt, crew, trousers, boots] = ids as [number, number, number, number, number]
     assert.equal((await readWear()).since, null, 'nothing offered yet')
 
-    await saveSet(draft([[shirt, chinos, boots], [crew, shirt, chinos, boots]]), { note: null, pieces: 5, date: '2026-11-04', weather: 'mild' })
+    await saveSet(draft([[shirt, trousers, boots], [crew, shirt, trousers, boots]]), { note: null, pieces: 5, date: '2026-11-04', weather: 'mild' })
     const [plain, layered] = (await readLooks()).fresh.map((look) => look.id) as [number, number]
-    await saveSet(draft([[boots, chinos, shirt]]), { note: null, pieces: 5, date: '2026-11-05', weather: 'mild' })
+    await saveSet(draft([[boots, trousers, shirt]]), { note: null, pieces: 5, date: '2026-11-05', weather: 'mild' })
     // Asked again on the same day: two day sets, one day.
     await offerOnDay('2026-11-06', [plain])
     await offerOnDay('2026-11-06', [plain, layered])
@@ -148,10 +148,10 @@ describe('the counts', () => {
 
     assert.deepEqual(await wearOf(shirt), { offered: 4, looks: 2, worn: 1, last_worn: page.saved[0]!.worn[0] })
     assert.deepEqual(await wearOf(crew), { offered: 2, looks: 1, worn: 1, last_worn: page.saved[0]!.worn[0] })
-    assert.deepEqual(page.never.map((piece) => piece.name), ['Rust overshirt'])
+    assert.deepEqual(page.never.map((piece) => piece.name), ['Rust satin skirt'])
     assert.deepEqual(
       page.rotate.map((piece) => piece.name),
-      ['Ecru oxford', 'Putty chinos', 'Brown Chelseas'],
+      ['Ecru poplin shirt', 'Putty trousers', 'Brown Chelseas'],
       'offered four times, worn once: one in four',
     )
     assert.deepEqual(page.pieces.map((piece) => piece.name), ['Pine crew'], 'worn on one of two offers stays')

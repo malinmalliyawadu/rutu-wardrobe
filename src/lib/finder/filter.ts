@@ -10,8 +10,8 @@ import { familiesOfColours } from './photo-colour.ts'
 /*
  * Stage 2: rules and SQL only, no Claude. A product is a candidate for a slot
  * when it is womenswear, still in the feed, the same garment (and, for
- * accessories, the same kind), in stock in his size, inside the slot's budget
- * band in NZD, not dismissed or bought, from a store he has on, and not
+ * accessories, the same kind), in stock in her size, inside the slot's budget
+ * band in NZD, not dismissed or bought, from a store she has on, and not
  * plainly the wrong colour (see colour.ts). Slots that are wanted or already
  * have a saved candidate are open; owned and retired slots are not.
  *
@@ -25,7 +25,7 @@ export type SlotTarget = {
   kind: string | null
   min_cents: number | null
   max_cents: number | null
-  /** Null when his size for this garment is not known; any size in stock passes. */
+  /** Null when her size for this garment is not known; any size in stock passes. */
   sizes: string[] | null
   /** The colour families the slot accepts. Null when its colour words name none. */
   families: Family[] | null

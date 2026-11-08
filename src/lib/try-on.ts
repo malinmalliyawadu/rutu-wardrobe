@@ -12,14 +12,14 @@ import { productImageAt } from './product-image.ts'
 import { files } from './storage.ts'
 
 /*
- * Try-on: "See it on me" on a feed find, on a look, on pieces he chose
- * himself on the On me page (an outfit: any mix of his wardrobe pieces and the
- * finds he saved), or on a statement piece with the pieces of his Claude said
- * it wears with. One of Malin's full-length photos goes to OpenAI's image
+ * Try-on: "See it on me" on a feed find, on a look, on pieces she chose
+ * herself on the On me page (an outfit: any mix of her wardrobe pieces and the
+ * finds she saved), or on a statement piece with the pieces of her Claude said
+ * it wears with. One of Rutu's full-length photos goes to OpenAI's image
  * editor with the product's own photo (a find), or with the photos of the
- * pieces (a look or an outfit), and it returns him wearing it. Agreed with Malin on 2026-11-04, with the photo rule
- * in docs/plan.md section 1.1: made on request only, one at a time (a unique
- * index holds that), kept in the file store, deleted with his photos.
+ * pieces (a look or an outfit), and it returns her wearing it. By the photo
+ * rule in docs/plan.md section 1.1: made on request only, one at a time (a unique
+ * index holds that), kept in the file store, deleted with her photos.
  * OpenAI does not train on API data and keeps requests up to 30 days for
  * abuse monitoring.
  *
@@ -45,7 +45,7 @@ const GENERATE_ENDPOINT = 'https://api.openai.com/v1/images/generations'
 /** US dollars per million tokens, from developers.openai.com/api/docs/pricing (2026-11-04). */
 export const RATES = { textInput: 5, imageInput: 8, output: 30 } as const
 
-/** Longest edge asked of the model; his photos are 1568 on the long edge. */
+/** Longest edge asked of the model; her photos are 1568 on the long edge. */
 export const OUTPUT_EDGE = 1536
 const PRODUCT_EDGE = 1536
 const CALL_TIMEOUT_MS = 4 * 60 * 1000
@@ -53,7 +53,7 @@ export const STALE_MINUTES = 6
 
 export const TRY_ON_DIR = 'try-ons'
 
-/** The editor takes at most 16 images: him, and up to 15 garments. */
+/** The editor takes at most 16 images: her, and up to 15 garments. */
 export const MAX_GARMENT_IMAGES = 15
 
 export class TryOnError extends Error {}
@@ -77,10 +77,10 @@ export type OnMe = {
 // ---------------------------------------------------------------------------
 
 /**
- * The output size: his photo's own aspect, long edge OUTPUT_EDGE, both edges a
- * multiple of 16 as the model requires. Keeping his aspect matters: a square
- * or a different crop would squash or stretch him, and his proportions are
- * half of what he is judging.
+ * The output size: her photo's own aspect, long edge OUTPUT_EDGE, both edges a
+ * multiple of 16 as the model requires. Keeping her aspect matters: a square
+ * or a different crop would squash or stretch her, and her proportions are
+ * half of what she is judging.
  */
 export function outputSize(width: number, height: number): { width: number; height: number } {
   const ratio = Math.min(3, Math.max(1 / 3, width / height))
@@ -123,37 +123,52 @@ export function placement(garmentType: string | null): Placement {
   switch (garmentType) {
     case 'tee':
     case 'tank':
-    case 'polo':
+    case 'top':
     case 'shirt':
     case 'knitwear':
     case 'sweatshirt':
-      return { noun: 'top', how: 'in place of the top he is wearing' }
-    case 'overshirt':
+      return { noun: 'top', how: 'in place of the top she is wearing' }
+    case 'dress':
+    case 'jumpsuit':
+      return {
+        noun: garmentType,
+        how: 'in place of the top and the skirt or trousers she is wearing, with the same neckline, waist and hem length as in image 2',
+      }
     case 'jacket':
     case 'coat':
     case 'tailoring':
-      return { noun: 'outer layer', how: 'over the top he is wearing, open or closed as in image 2' }
+      return { noun: 'outer layer', how: 'over the top she is wearing, open or closed as in image 2' }
+    case 'skirt':
+      return { noun: 'skirt', how: 'in place of the skirt or trousers she is wearing, at the same waist and hem length as in image 2' }
     case 'trousers':
     case 'jeans':
     case 'shorts':
-      return { noun: 'trousers', how: 'in place of the trousers he is wearing, with the same hem break as in image 2' }
-    case 'shoes':
+      return {
+        noun: garmentType,
+        how: 'in place of the skirt or trousers she is wearing, with the same rise, leg and length as in image 2',
+      }
+    case 'heels':
+      return { noun: 'pair of shoes', how: 'in place of the shoes she is wearing, with the same heel height as in image 2' }
+    case 'flats':
+    case 'sandals':
     case 'boots':
     case 'sneakers':
-      return { noun: 'pair of shoes', how: 'in place of the shoes he is wearing' }
+      return { noun: 'pair of shoes', how: 'in place of the shoes she is wearing' }
     case 'bag':
       return { noun: 'bag', how: 'carried the way it is meant to be carried' }
     case 'belt':
-      return { noun: 'belt', how: 'through the belt loops of the trousers he is wearing' }
+      return { noun: 'belt', how: 'at the waist, worn the way image 2 shows it' }
+    case 'jewellery':
+      return { noun: 'piece of jewellery', how: 'worn where it is meant to be worn, at the same scale as in image 2' }
     case 'accessory':
       return { noun: 'accessory', how: 'worn the way it is meant to be worn' }
     default:
-      return { noun: 'piece', how: 'in place of the matching piece he is wearing' }
+      return { noun: 'piece', how: 'in place of the matching piece she is wearing' }
   }
 }
 
-const KEEP_HIM =
-  'Keep him exactly as he is: face, hair, skin tone, build, body shape, height and proportions, pose, expression, camera angle, lighting and background. Do not slim, lengthen, straighten or flatter him. That is his body, not the clothes: what he puts on keeps its own cut and volume, and may stand away from him.'
+const KEEP_HER =
+  'Keep her exactly as she is: face, hair, skin tone, build, body shape, height and proportions, pose, expression, camera angle, lighting and background. Do not slim, lengthen, reshape or flatter her, and do not change her waist, bust or hips. That is her body, not the clothes: what she puts on keeps its own cut and volume, and may stand away from her.'
 
 /** A sentence, ending in a full stop. */
 function sentence(text: string): string {
@@ -163,22 +178,22 @@ function sentence(text: string): string {
 
 /**
  * The fit line when a find's cut was read (src/lib/garment-cut.ts): its
- * shape in positions, measured against his own frame, never taken in.
+ * shape in positions, measured against her own frame, never taken in.
  */
 function cutLine(cut: Cut): string {
   return [
     `Its cut, as the shop photographs it${cut.fit ? `: ${cut.fit}` : ''}.`,
     sentence(cut.silhouette),
-    'Keep exactly that cut on him, measured against his own shoulders, arms and waist; never take it in to his shape. Let it drape with natural creases and no smoothing.',
+    'Keep exactly that cut on her, measured against her own shoulders, arms, waist and hips; never take it in to her shape. Let it drape with natural creases and no smoothing.',
   ].join(' ')
 }
 
 /**
- * The instruction. Image 1 is him, image 2 the product. What it asks for, in
- * order of what matters: him unchanged (proportions are what he is judging),
+ * The instruction. Image 1 is her, image 2 the product. What it asks for, in
+ * order of what matters: her unchanged (proportions are what she is judging),
  * the garment exactly as sold (colour first, since colour is the point of the
  * app), then the fit it is cut for: in words when its cut was read, since the
- * editor left to the photo fits everything close to him. It asks for no
+ * editor left to the photo fits everything close to her. It asks for no
  * flattery.
  */
 export function tryOnPrompt(
@@ -188,20 +203,20 @@ export function tryOnPrompt(
   const { noun, how } = placement(product.garment_type)
   const colour = product.colour ? `, in ${product.colour}` : ''
   return [
-    `Image 1 is a photo of a man. Image 2 is a shop's product photo of "${product.title}"${colour}.`,
-    `Make a photograph of the man in image 1 wearing that exact ${noun} ${how}, so he can judge honestly whether to buy it.`,
-    KEEP_HIM,
-    `Reproduce the ${noun} exactly as in image 2: the same colour and shade, shown under the light of image 1 without shifting its hue, brightness or saturation; the same fabric, texture, weight, pattern, cut, length, collar, buttons, pockets, stitching and hardware. Add nothing that is not in image 2: no logos, text or details.`,
-    `Change nothing else he is wearing. If image 2 shows a model or other clothes, take only the ${noun}.`,
+    `Image 1 is a photo of a woman. Image 2 is a shop's product photo of "${product.title}"${colour}.`,
+    `Make a photograph of the woman in image 1 wearing that exact ${noun} ${how}, so she can judge honestly whether to buy it.`,
+    KEEP_HER,
+    `Reproduce the ${noun} exactly as in image 2: the same colour and shade, shown under the light of image 1 without shifting its hue, brightness or saturation; the same fabric, texture, sheen, weight, pattern, cut, length, neckline, straps, collar, buttons, pockets, stitching and hardware. Add nothing that is not in image 2: no logos, text or details.`,
+    `Change nothing else she is wearing. If image 2 shows a model or other clothes, take only the ${noun}.`,
     cut
       ? cutLine(cut)
-      : 'Let it keep the cut image 2 shows, on his frame: the same room, length and line, never taken in to his shape. Let it drape with natural creases and no smoothing.',
+      : 'Let it keep the cut image 2 shows, on her frame: the same room, length and line, never taken in to her shape. Let it drape with natural creases and no smoothing.',
   ].join('\n')
 }
 
 /**
  * A piece of a look or an outfit as it was sent, kept on the row so a remake
- * can be compared: one of his wardrobe pieces (piece_id), or a find he saved
+ * can be compared: one of her wardrobe pieces (piece_id), or a find she saved
  * (product_id, on outfits only).
  */
 export type PieceSent = {
@@ -215,7 +230,7 @@ export type PieceSent = {
   colour_hex: string | null
   fabric: string | null
   fit: string | null
-  /** How it was shown: his own photo of it, the shop's photo, or only in words. */
+  /** How it was shown: her own photo of it, the shop's photo, or only in words. */
   shown: { kind: 'photo'; photo_id: number } | { kind: 'product'; src: string } | { kind: 'words' }
 }
 
@@ -227,7 +242,7 @@ function colourWords(piece: Pick<PieceSent, 'colour_name' | 'colour_hex'>): stri
 
 /**
  * One line per piece, numbering the photos from image 2 in order and
- * describing a piece with no photo in words. A piece of his says the fit he
+ * describing a piece with no photo in words. A piece of her says the fit she
  * filed it as; a find whose cut was read says it in positions, by product id.
  */
 function pieceLines(pieces: PieceSent[], cuts: Map<number, Cut> = new Map()): { lines: string[]; lastImage: number } {
@@ -249,28 +264,28 @@ function pieceLines(pieces: PieceSent[], cuts: Map<number, Cut> = new Map()): { 
 }
 
 const EACH_AS_PHOTOGRAPHED =
-  'Reproduce each piece exactly as in its photo: the same colour and shade, shown under the light of image 1 without shifting its hue, brightness or saturation; the same fabric, texture, weight, pattern, cut, length, collar, buttons, pockets, stitching and hardware. Take only the garment from each photo, nothing of the bed, floor, hanger, model or other clothes around it. Make a piece given only in words plainly, in exactly that colour, with no pattern, logos or details that are not described. Add no logos, text or details anywhere.'
+  'Reproduce each piece exactly as in its photo: the same colour and shade, shown under the light of image 1 without shifting its hue, brightness or saturation; the same fabric, texture, sheen, weight, pattern, cut, length, neckline, straps, collar, buttons, pockets, stitching and hardware. Take only the garment from each photo, nothing of the bed, floor, hanger, model or other clothes around it. Make a piece given only in words plainly, in exactly that colour, with no pattern, logos or details that are not described. Add no logos, text or details anywhere.'
 
 const NATURAL_FIT =
-  'Let each piece keep its own cut, as its photo and its line show it, on his frame: the same room, length and line, never taken in to his shape. Let each drape with natural creases and no smoothing.'
+  'Let each piece keep its own cut, as its photo and its line show it, on her frame: the same room, length and line, never taken in to her shape. Let each drape with natural creases and no smoothing.'
 
 /**
- * The instruction for a whole look. Image 1 is him; the pieces with a photo
+ * The instruction for a whole look. Image 1 is her; the pieces with a photo
  * follow in the look's order, outermost first, and a piece with no photo is
- * described in words. The same priorities as a find: him unchanged, every
+ * described in words. The same priorities as a find: her unchanged, every
  * piece exactly as it is (colour first), a believable fit, no flattery.
  */
 export function lookTryOnPrompt(look: { title: string; styling: string | null; pieces: PieceSent[] }): string {
   const { lines, lastImage } = pieceLines(look.pieces)
-  const photos = lastImage > 1 ? `Images 2 to ${lastImage} are photos of clothes he owns, some laid flat or on a hanger, some a shop's photo.` : null
+  const photos = lastImage > 1 ? `Images 2 to ${lastImage} are photos of clothes she owns, some laid flat or on a hanger, some a shop's photo.` : null
   return [
-    ['Image 1 is a photo of a man.', photos].filter(Boolean).join(' '),
-    `Make a photograph of the man in image 1 dressed in this whole outfit, "${look.title}", so he can judge honestly how it looks on him. The pieces, from the outermost layer in:`,
+    ['Image 1 is a photo of a woman.', photos].filter(Boolean).join(' '),
+    `Make a photograph of the woman in image 1 dressed in this whole outfit, "${look.title}", so she can judge honestly how it looks on her. The pieces, from the outermost layer in:`,
     ...lines,
     look.styling ? `Wear it this way: ${look.styling}` : null,
-    KEEP_HIM,
+    KEEP_HER,
     EACH_AS_PHOTOGRAPHED,
-    'Replace everything he is wearing with this outfit, layered in the order listed, the outer layer over the rest.',
+    'Replace everything she is wearing with this outfit, layered in the order listed, the outer layer over the rest.',
     NATURAL_FIT,
   ]
     .filter((line): line is string => line !== null)
@@ -278,10 +293,10 @@ export function lookTryOnPrompt(look: { title: string; styling: string | null; p
 }
 
 /**
- * The instruction for pieces he chose himself, in layer order. They need not
- * make a whole outfit (a saved jacket over the tee he has on is a fair
- * question), so each goes in place of the matching thing he is wearing and
- * the rest of what he has on stays.
+ * The instruction for pieces she chose herself, in layer order. They need not
+ * make a whole outfit (a saved jacket over the tee she has on is a fair
+ * question), so each goes in place of the matching thing she is wearing and
+ * the rest of what she has on stays.
  */
 export function outfitTryOnPrompt(pieces: PieceSent[], cuts: Map<number, Cut> = new Map()): string {
   const { lines, lastImage } = pieceLines(pieces, cuts)
@@ -292,21 +307,21 @@ export function outfitTryOnPrompt(pieces: PieceSent[], cuts: Map<number, Cut> = 
     lastImage < 2
       ? null
       : owned && saved
-        ? `Images 2 to ${lastImage} are photos of clothes: some he owns, laid flat, on a hanger or in a shop's photo, and some a shop's photo of a piece he is thinking of buying.`
+        ? `Images 2 to ${lastImage} are photos of clothes: some she owns, laid flat, on a hanger or in a shop's photo, and some a shop's photo of a piece she is thinking of buying.`
         : saved
           ? one
-            ? "Image 2 is a shop's photo of a piece he is thinking of buying."
-            : `Images 2 to ${lastImage} are shops' photos of pieces he is thinking of buying.`
+            ? "Image 2 is a shop's photo of a piece she is thinking of buying."
+            : `Images 2 to ${lastImage} are shops' photos of pieces she is thinking of buying.`
           : one
-            ? "Image 2 is a photo of a piece he owns, laid flat, on a hanger or in a shop's photo."
-            : `Images 2 to ${lastImage} are photos of clothes he owns, some laid flat or on a hanger, some a shop's photo.`
+            ? "Image 2 is a photo of a piece she owns, laid flat, on a hanger or in a shop's photo."
+            : `Images 2 to ${lastImage} are photos of clothes she owns, some laid flat or on a hanger, some a shop's photo.`
   return [
-    ['Image 1 is a photo of a man.', photos].filter(Boolean).join(' '),
-    `Make a photograph of the man in image 1 wearing ${pieces.length === 1 ? 'this piece' : 'these pieces together'}, so he can judge honestly how ${pieces.length === 1 ? 'it looks' : 'they look'} on him. ${pieces.length === 1 ? 'The piece:' : 'The pieces, from the outermost layer in:'}`,
+    ['Image 1 is a photo of a woman.', photos].filter(Boolean).join(' '),
+    `Make a photograph of the woman in image 1 wearing ${pieces.length === 1 ? 'this piece' : 'these pieces together'}, so she can judge honestly how ${pieces.length === 1 ? 'it looks' : 'they look'} on her. ${pieces.length === 1 ? 'The piece:' : 'The pieces, from the outermost layer in:'}`,
     ...lines,
-    KEEP_HIM,
+    KEEP_HER,
     EACH_AS_PHOTOGRAPHED,
-    `Put each piece on in place of the matching thing he is wearing${pieces.length === 1 ? '' : ', layered in the order listed, the outer layer over the rest'}. Change nothing else he is wearing.`,
+    `Put each piece on in place of the matching thing she is wearing${pieces.length === 1 ? '' : ', layered in the order listed, the outer layer over the rest'}. Change nothing else she is wearing.`,
     NATURAL_FIT,
   ]
     .filter((line): line is string => line !== null)
@@ -321,29 +336,34 @@ export function layer(garmentType: string | null): number {
     case 'jacket':
     case 'tailoring':
       return 1
-    case 'overshirt':
-      return 2
     case 'knitwear':
     case 'sweatshirt':
-      return 3
+      return 2
     case 'shirt':
-    case 'polo':
-      return 4
+    case 'top':
+      return 3
     case 'tee':
     case 'tank':
     case 'activewear':
+      return 4
+    case 'dress':
+    case 'jumpsuit':
       return 5
+    case 'skirt':
     case 'trousers':
     case 'jeans':
     case 'shorts':
       return 6
-    case 'shoes':
+    case 'flats':
+    case 'heels':
+    case 'sandals':
     case 'boots':
     case 'sneakers':
       return 7
     case 'belt':
-    case 'bag':
+    case 'jewellery':
     case 'accessory':
+    case 'bag':
       return 8
     default:
       return 9
@@ -365,7 +385,7 @@ const ErrorSchema = z.object({
 
 export type EditRequest = {
   /**
-   * In the order the prompt names them: for a try-on him first, then the
+   * In the order the prompt names them: for a try-on her first, then the
    * product photo or the photos of the pieces; for a look's flat lay the
    * pieces' photos alone. With none, the picture is drawn from the prompt.
    */
@@ -450,7 +470,7 @@ export function productImageUrl(src: string, width = PRODUCT_EDGE): string {
  * photo would sit.
  */
 export async function fetchProductImage(src: string, fetchImpl: typeof fetch = fetch): Promise<Buffer> {
-  // A find he added by hand shows the photo he chose, which is on our own volume.
+  // A find she added by hand shows the photo she chose, which is on our own volume.
   const own = findPhotoId(src)
   if (own !== null) {
     const bytes = await findPhotoFile(own, 'master')
@@ -460,7 +480,7 @@ export async function fetchProductImage(src: string, fetchImpl: typeof fetch = f
   let response: Response
   try {
     response = await fetchImpl(productImageUrl(src), {
-      headers: { 'user-agent': 'wardrobe/0.1 (personal womenswear stylist)' },
+      headers: { 'user-agent': 'wardrobe/0.1 (a personal womenswear app)' },
       signal: AbortSignal.timeout(30_000),
     })
   } catch {
@@ -484,7 +504,7 @@ async function asJpeg(bytes: Buffer, unreadable: string): Promise<Buffer> {
   }
 }
 
-/** His own photo of a piece, the stored master. Never fetched from a shop. */
+/** Her own photo of a piece, the stored master. Never fetched from a shop. */
 export async function piecePhoto(sql: Sql, photoId: number): Promise<Buffer> {
   const [row] = await sql<{ path: string }[]>`select path from wardrobe_photos where id = ${photoId}`
   if (!row) throw new TryOnError('A piece’s photo has changed since you asked. Try again.')
@@ -544,7 +564,7 @@ export const showableTryOn = (sql: Sql) => sql`
   (t.status = 'ready' or (t.status = 'making' and t.started_at >= now() - make_interval(mins => ${STALE_MINUTES})))
 `
 
-/** The newest kept picture of this outfit, ready before one in the making, from a photo he still has. */
+/** The newest kept picture of this outfit, ready before one in the making, from a photo she still has. */
 export async function keptTryOn(key: string, sql: Sql = db()): Promise<number | null> {
   const [row] = await sql<{ id: number }[]>`
     select t.id::int as id
@@ -624,8 +644,8 @@ export async function lookForTryOn(sql: Sql, lookId: number): Promise<LookForTry
 }
 
 /**
- * How each piece is shown to the editor: his own photo first (it is the piece
- * he owns, as it is now), else the shop's photo, else in words. Past the
+ * How each piece is shown to the editor: her own photo first (it is the piece
+ * she owns, as it is now), else the shop's photo, else in words. Past the
  * editor's image limit, the rest go in words.
  */
 export function showPieces(pieces: (Omit<PieceSent, 'shown'> & { photo_id: number | null; image: string | null })[]): PieceSent[] {
@@ -727,9 +747,9 @@ export const findColour = (sql: Sql) => sql`
 type Choosable = Omit<PieceSent, 'shown'> & { photo_id: number | null; image: string | null }
 
 /**
- * Which finds an outfit may hold: those he saved, as the On me chooser offers
+ * Which finds an outfit may hold: those she saved, as the On me chooser offers
  * them, or any the shops listed (a statement piece, or a picture made again
- * after he cleared the find).
+ * after she cleared the find).
  */
 type FindsTaken = 'saved' | 'any'
 
@@ -768,11 +788,11 @@ async function chosenPieces(sql: Sql, choice: OutfitChoice, finds: FindsTaken): 
 }
 
 /**
- * Record a request for a try-on of pieces he chose: wardrobe pieces and saved
+ * Record a request for a try-on of pieces she chose: wardrobe pieces and saved
  * finds, put on in layer order; or answer with the picture of exactly those
  * already kept (of a look, a find, or an earlier choice). Refuses when there
  * is no key, no full-length photo, nothing or too much chosen, something
- * chosen has since left the wardrobe or his saved finds, or another try-on is
+ * chosen has since left the wardrobe or her saved finds, or another try-on is
  * still being made.
  */
 export async function startOutfitTryOn(choice: OutfitChoice, sql: Sql = db(), options: StartOptions = {}): Promise<Started> {
@@ -784,7 +804,7 @@ export async function startOutfitTryOn(choice: OutfitChoice, sql: Sql = db(), op
 }
 
 /**
- * Record a request for a statement piece worn with the pieces of his Claude
+ * Record a request for a statement piece worn with the pieces of her Claude
  * said it wears with, as its card shows them; or answer with the picture of
  * that outfit already kept. The find need not be saved. Refuses, besides as
  * startOutfitTryOn does, when those pieces are not ones a verdict on the find
@@ -869,7 +889,7 @@ async function startChosen(
 
 /**
  * "Make it again" from the On me page: the same find, the same look, or the
- * same chosen pieces, as they are now, on his newest full-length photo.
+ * same chosen pieces, as they are now, on her newest full-length photo.
  */
 export async function startAgain(tryOnId: number, sql: Sql = db()): Promise<Started> {
   const [row] = await sql<{ product_id: number | null; look_id: number | null; pieces: PieceSent[] | null }[]>`
@@ -879,7 +899,7 @@ export async function startAgain(tryOnId: number, sql: Sql = db()): Promise<Star
   const again = { again: true }
   if (row.product_id !== null) return startTryOn(row.product_id, sql, again)
   if (row.look_id !== null) return startLookTryOn(row.look_id, sql, again)
-  // The same pieces and finds, whether or not he still has the finds saved: he is asking for this picture again.
+  // The same pieces and finds, whether or not she still has the finds saved: she is asking for this picture again.
   const pieces = row.pieces ?? []
   return startChosen(
     {
@@ -920,7 +940,7 @@ async function garmentImages(sql: Sql, row: Making, fetchImpl: typeof fetch): Pr
  * a find in it has had its cut read (src/lib/garment-cut.ts). The read is
  * made here rather than on the tap, so the card shows the picture in the
  * making at once; a find read before is not read again. A look holds only
- * his own pieces, whose fit is on the piece, so its prompt stands.
+ * her own pieces, whose fit is on the piece, so its prompt stands.
  */
 async function promptWithCuts(sql: Sql, row: Making, read: CutReader | undefined): Promise<string> {
   if (row.look_id !== null) return row.prompt
@@ -978,7 +998,7 @@ export async function makeTryOn(
       fetchImpl,
     )
 
-    // Re-encoded through sharp like his photos, which also drops any metadata.
+    // Re-encoded through sharp like her photos, which also drops any metadata.
     let file: { data: Buffer; info: OutputInfo }
     try {
       file = await sharp(result.image, { failOn: 'none' })

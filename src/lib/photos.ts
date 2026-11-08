@@ -30,7 +30,7 @@ export class PhotoError extends Error {}
 
 export type Normalised = { master: { data: Buffer; info: OutputInfo }; thumb: Buffer; sha256: string }
 
-/** The type and size rules every upload follows, his photos and his clothes alike. */
+/** The type and size rules every upload follows, her photos and her clothes alike. */
 export function checkUpload(input: { bytes: Buffer; mime: string }): void {
   if (!ACCEPTED_MIMES.includes(input.mime)) {
     throw new PhotoError('Use a JPEG, PNG, WebP or HEIC photo.')
@@ -129,7 +129,7 @@ export async function removePhoto(id: number, sql: Sql = db()): Promise<void> {
 
 /**
  * "Delete photos, keep the derived profile." The try-ons go too, since each is
- * a picture of him; their rows stay, without the files, so what they cost is
+ * a picture of her; their rows stay, without the files, so what they cost is
  * still counted.
  */
 export async function removeAllPhotos(sql: Sql = db()): Promise<{ photos: number; tryOns: number }> {
@@ -140,7 +140,7 @@ export async function removeAllPhotos(sql: Sql = db()): Promise<{ photos: number
   `
   await Promise.all(rows.map((row) => removePair(row.path)))
   // Every try-on, not only those of the photos just deleted: one made from a
-  // photo deleted earlier is still a picture of him.
+  // photo deleted earlier is still a picture of her.
   const tryOns = await removeTryOns(sql, null)
   return { photos: rows.length, tryOns }
 }

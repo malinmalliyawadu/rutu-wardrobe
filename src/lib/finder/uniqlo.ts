@@ -6,9 +6,9 @@ import { FetchError, type PoliteClient } from './http.ts'
 import { contentHash, type NormalisedProduct, type NormalisedVariant, type ProductImage } from './shopify.ts'
 
 /*
- * Uniqlo, read one product at a time from a link Malin pastes. Uniqlo has no
+ * Uniqlo, read one product at a time from a link Rutu pastes. Uniqlo has no
  * NZ online store, so its site is never walked; a link exists to add a piece
- * he owns (or one he means to buy on a trip) with its photo and details.
+ * she owns (or one she means to buy on a trip) with its photo and details.
  *
  * The product page is server-rendered with the whole product in
  * window.__PRELOADED_STATE__: name, the gender and category it sits under,
@@ -20,7 +20,7 @@ import { contentHash, type NormalisedProduct, type NormalisedVariant, type Produ
  * price is the lowest of them, the "from" price the page itself shows.
  *
  * Uniqlo sells each colour of a product under one page; the wardrobe needs
- * the colour he has, with its own photo, so each colour is stored as its own
+ * the colour she has, with its own photo, so each colour is stored as its own
  * product, the way Country Road lists them. A link names its colour as
  * ?colorDisplayCode=09; one that names none is fine for a product sold in one
  * colour, and otherwise has to say which.

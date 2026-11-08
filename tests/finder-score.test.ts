@@ -27,7 +27,7 @@ const output: ScoreOutput = {
   colour_verdict: 'Close to your pine.',
   fit_verdict: 'Slim through the body, set-in shoulder.',
   fabric_notes: 'Extra-fine merino.',
-  why: 'Your pine — in a fine gauge that layers under the overshirt.',
+  why: 'Your pine \u2014 in a fine gauge that layers under a dress.',
   alternatives: [
     { slot_id: 13, score: 60 },
     { slot_id: 99, score: 70 },
@@ -61,12 +61,12 @@ test('tidying holds the verdict to the slots it was offered and the colours on s
   const tidy = tidyScore(output, product)
   assert.equal(tidy.slot_id, 5)
   assert.deepEqual(tidy.alternatives, [{ slot_id: 13, score: 60 }], 'a slot it was not offered is dropped')
-  assert.equal(tidy.why, 'Your pine - in a fine gauge that layers under the overshirt.')
+  assert.equal(tidy.why, 'Your pine - in a fine gauge that layers under a dress.')
 
   const stray = tidyScore({ ...output, slot_id: 99, score: 90, colour: 'Mustard' }, product)
   assert.equal(stray.slot_id, 13, 'an unoffered slot falls back to the best offered alternative')
   assert.equal(stray.score, 60, 'at that alternative score, not the unoffered one')
-  assert.equal(stray.colour, null, 'a colour that is not on sale in his size is dropped')
+  assert.equal(stray.colour, null, 'a colour that is not on sale in her size is dropped')
 
   const none = tidyScore({ ...output, slot_id: null, alternatives: [] }, product)
   assert.equal(none.slot_id, null)

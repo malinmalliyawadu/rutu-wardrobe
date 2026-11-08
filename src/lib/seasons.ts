@@ -5,7 +5,7 @@ export type SeasonSwatch = { hex: string; name: string }
 
 export type SeasonInfo = {
   family: 'spring' | 'summer' | 'autumn' | 'winter'
-  /** One sentence for Malin, written as a stylist would say it. */
+  /** One sentence for Rutu, written as a stylist would say it. */
   traits: string
   metal: 'gold' | 'silver' | 'mixed'
   /** Six representative colours, named. The style guide (M2) refines these. */

@@ -14,7 +14,8 @@ import {
  * The adapter against a real page: products saved from Huffer's men's
  * collection, Barkers and END. on 2026-11-04, trimmed to the cases that
  * matter (colour and size options, a sale, a one-size product, END.'s
- * zero-price placeholders, its "XLarge" labels).
+ * zero-price placeholders, its "XLarge" labels). They are menswear, which
+ * the womenswear rule turns away however the store files its catalogue.
  */
 
 const page = ShopifyPageSchema.parse(JSON.parse(readFileSync(new URL('./fixtures/shopify-page.json', import.meta.url), 'utf8')))
@@ -40,7 +41,7 @@ test('colour and size come from the options they are named for, prices in cents'
   const tee = normalised('NIGHT CAMO BOX TEE')
   assert.equal(tee.external_id, '9634913648808')
   assert.equal(tee.garment_type, 'tee')
-  assert.equal(tee.womenswear, true)
+  assert.equal(tee.womenswear, false, "a 'mens' tag in a womenswear catalogue is still menswear")
   const small = tee.variants.find((variant) => variant.option_size === 'S')!
   assert.equal(small.option_colour, 'BLACK')
   assert.equal(small.price_cents, 8999)
@@ -61,7 +62,7 @@ test('a compare-at price only counts when it is above the price', () => {
 
 test('END. zero prices are placeholders, not free, and its "XLarge" is XL', () => {
   const tee = normalised('PICANTE Peaks Patch T-Shirt', 'mixed')
-  assert.equal(tee.womenswear, true, 'gender:Mens tag')
+  assert.equal(tee.womenswear, false, 'gender:Mens tag')
   assert.equal(tee.garment_type, 'tee')
   assert.ok(tee.variants.every((variant) => variant.price_cents === 0 && !variant.available))
   assert.deepEqual(

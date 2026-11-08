@@ -64,24 +64,24 @@ describe('the pure parts', () => {
   test('a read colour snaps to the palette only when it is close enough to be that colour', () => {
     // A little lighter than the guide's oxblood, as a photo in daylight reads it.
     assert.deepEqual(snapToGuide('#83352a', guideFixture), { hex: '#7a2e1f', name: 'oxblood', inPalette: true })
-    // Cobalt is no colour of his.
+    // Cobalt is no colour of hers.
     assert.deepEqual(snapToGuide('#1f4fd1', guideFixture), { hex: '#1f4fd1', name: null, inPalette: false })
     assert.deepEqual(snapToGuide('#ABC', null), { hex: '#aabbcc', name: null, inPalette: false })
   })
 
   test('the form parses, blanks are nulls, and a bad colour or garment says so in words', () => {
-    const ok = parsePieceForm(form({ name: ' Pine overshirt ', garment_type: 'overshirt', colour_hex: '#2F4A3A', warmth: 'warm', slot_id: '7' }))
+    const ok = parsePieceForm(form({ name: ' Pine knit dress ', garment_type: 'dress', colour_hex: '#2F4A3A', warmth: 'warm', slot_id: '7' }))
     assert.ok(ok.ok)
-    assert.equal(ok.data.name, 'Pine overshirt')
+    assert.equal(ok.data.name, 'Pine knit dress')
     assert.equal(ok.data.colour_hex, '#2f4a3a')
     assert.equal(ok.data.fabric, null)
     assert.equal(ok.data.slot_id, 7)
-    assert.equal(ok.data.worn_for, 'everyday', 'worn every day unless he says otherwise')
-    const gym = parsePieceForm(form({ name: 'Pine tank', garment_type: 'tank', worn_for: 'gym' }))
+    assert.equal(ok.data.worn_for, 'everyday', 'worn every day unless she says otherwise')
+    const gym = parsePieceForm(form({ name: 'Pine sports bra', garment_type: 'tank', worn_for: 'gym' }))
     assert.ok(gym.ok)
     assert.equal(gym.data.worn_for, 'gym')
 
-    const bad = parsePieceForm(form({ name: '', garment_type: 'cape', colour_hex: 'teal' }))
+    const bad = parsePieceForm(form({ name: '', garment_type: 'overshirt', colour_hex: 'teal' }))
     assert.ok(!bad.ok)
     assert.equal(bad.errors.name, 'Fill this in')
     assert.equal(bad.errors.garment_type, 'Choose what kind of piece it is')
@@ -101,11 +101,11 @@ describe('the pure parts', () => {
 
   test('pieces are shelved in the page order and empty shelves are left out', () => {
     const shelves = shelve(
-      (['boots', 'tee', 'jeans', 'shirt'] as const).map((garment_type) => ({ garment_type, worn_for: 'everyday' as const })),
+      (['boots', 'tee', 'jeans', 'shirt', 'jewellery', 'dress', 'skirt'] as const).map((garment_type) => ({ garment_type, worn_for: 'everyday' as const })),
     )
     assert.deepEqual(
       shelves.map((shelf) => [shelf.title, shelf.pieces.length]),
-      [['Tops', 2], ['Trousers', 1], ['Shoes', 1]],
+      [['Tops', 2], ['Dresses', 1], ['Skirts and trousers', 2], ['Shoes', 1], ['Bags and jewellery', 1]],
     )
   })
 
@@ -123,19 +123,20 @@ describe('the pure parts', () => {
   })
 
   test('sport kit from a shop becomes the garment it is, worn for the gym', () => {
-    assert.deepEqual(asPiece('Metal Vent Tech Tank', 'activewear'), { garment_type: 'tank', worn_for: 'gym' })
-    assert.deepEqual(asPiece('Pace Breaker Lined Short 7"', 'activewear'), { garment_type: 'shorts', worn_for: 'gym' })
-    assert.deepEqual(asPiece('Brooks Adrenaline GTS 24 Trainer', 'activewear'), { garment_type: 'sneakers', worn_for: 'gym' })
-    assert.deepEqual(asPiece('ABC Pant', 'activewear'), { garment_type: 'trousers', worn_for: 'gym' })
-    assert.deepEqual(asPiece('Metal Vent Tech', 'activewear'), { garment_type: 'activewear', worn_for: 'gym' }, 'no garment in the name: he says')
-    assert.deepEqual(asPiece('Lucas Chelsea Boot', 'boots'), { garment_type: 'boots', worn_for: 'everyday' })
+    assert.deepEqual(asPiece('Swiftly Tech Tank', 'activewear'), { garment_type: 'tank', worn_for: 'gym' })
+    assert.deepEqual(asPiece('Energy Sports Bra', 'activewear'), { garment_type: 'tank', worn_for: 'gym' })
+    assert.deepEqual(asPiece('Speed Up Short 4"', 'activewear'), { garment_type: 'shorts', worn_for: 'gym' })
+    assert.deepEqual(asPiece('Gel-Nimbus 26 Trainer', 'activewear'), { garment_type: 'sneakers', worn_for: 'gym' })
+    assert.deepEqual(asPiece('Align High-Rise Legging', 'activewear'), { garment_type: 'trousers', worn_for: 'gym' })
+    assert.deepEqual(asPiece('Swiftly Tech', 'activewear'), { garment_type: 'activewear', worn_for: 'gym' }, 'no garment in the name: she says')
+    assert.deepEqual(asPiece('Lucas Ankle Boot', 'boots'), { garment_type: 'boots', worn_for: 'everyday' })
   })
 
   test('the palette colour Claude names wins only when it is really in the guide', () => {
     const read: PieceRead = {
       is_garment: true,
-      name: 'pine brushed cotton overshirt',
-      garment_type: 'overshirt',
+      name: 'pine brushed cotton shirt dress',
+      garment_type: 'dress',
       colour_words: 'Pine',
       palette_hex: '#2F4A3A',
       fabric: 'Brushed cotton',
@@ -147,7 +148,7 @@ describe('the pure parts', () => {
     }
     const fromClaude = valuesFromRead(read, '#555555', guideFixture)
     assert.equal(fromClaude.colour_hex, '#2f4a3a')
-    assert.equal(fromClaude.name, 'Pine brushed cotton overshirt')
+    assert.equal(fromClaude.name, 'Pine brushed cotton shirt dress')
     assert.equal(fromClaude.colour_name, 'pine')
     assert.equal(fromClaude.fabric, 'brushed cotton')
     assert.equal(fromClaude.worn_for, 'everyday')
@@ -226,7 +227,7 @@ describe('pieces and slots together', () => {
     assert.equal((await piecesOf(crew)).length, 0)
     assert.equal(await getPiece(made.id), null, 'an untouched placeholder is deleted')
 
-    // Once he has edited it, it is his: it stays, unlinked.
+    // Once she has edited it, it is hers: it stays, unlinked.
     await setSlotStatus(crew, 'owned')
     const [again] = await piecesOf(crew)
     await updatePiece(again!.id, values({ name: 'My oxblood crew', slot_id: crew }))

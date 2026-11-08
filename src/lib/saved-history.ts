@@ -1,11 +1,11 @@
 /*
- * What happened to a saved find since he saved it, replayed from
+ * What happened to a saved find since she saved it, replayed from
  * price_observations: one row per variant per change of price or stock, so a
  * stable price costs nothing and every change is there.
  *
- * Only the variants in his size count when his size for the garment is
- * known: a drop on a size he cannot wear is not news, and "back in stock"
- * means back in his size. When it is not known, every variant counts, and the
+ * Only the variants in her size count when her size for the garment is
+ * known: a drop on a size she cannot wear is not news, and "back in stock"
+ * means back in her size. When it is not known, every variant counts, and the
  * copy says "in stock" rather than "your size".
  *
  * Pure, so the rules are tested without a database.
@@ -30,9 +30,9 @@ export type SavedEvent =
 type Moment = { at: Date; price: number | null }
 
 export type SavedHistory = {
-  /** Newest first. Only what happened after he saved it. */
+  /** Newest first. Only what happened after she saved it. */
   events: SavedEvent[]
-  /** The lowest price seen in stock since he saved it, store currency. */
+  /** The lowest price seen in stock since she saved it, store currency. */
   lowest: number | null
 }
 
@@ -65,7 +65,7 @@ export function savedHistory(
     if (moments.length === 0 || moments.at(-1)!.price !== price) moments.push({ at, price })
   }
 
-  // The moment in force when he saved it, and every one since.
+  // The moment in force when she saved it, and every one since.
   const firstAfter = moments.findIndex((moment) => moment.at.getTime() > savedAt.getTime())
   const since = firstAfter === -1 ? moments.slice(-1) : moments.slice(Math.max(0, firstAfter - 1))
   const prices = since.map((moment) => moment.price).filter((price): price is number => price !== null)

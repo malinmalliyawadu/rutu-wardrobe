@@ -34,22 +34,22 @@ import { latestTryOns } from './try-on.ts'
 import { GARMENT_LABELS, GARMENT_TYPES, type GarmentType } from './wardrobe-values.ts'
 
 /*
- * On-demand search (M5 Reach). Malin types what he wants on the Search tab;
+ * On-demand search (M5 Reach). Rutu types what she wants on the Search tab;
  * the pipeline runs for that request at once, over what the nightly run last
  * read:
  *
  *   1. read     Sonnet turns the words into the filter's terms: garment,
  *               colours, price, fit, and a few words to rank by
- *   2. filter   the nightly filter, with the request as its one target (his
+ *   2. filter   the nightly filter, with the request as its one target (her
  *               size, the price, not plainly the wrong colour, not dismissed)
- *   3. score    Sonnet judges the closest matches against the request and his
- *               guide, within the search's spend; closest to his words first,
+ *   3. score    Sonnet judges the closest matches against the request and her
+ *               guide, within the search's spend; closest to her words first,
  *               so the cap cuts the furthest
  *   4. check    what the page will show is re-read from the shop, one request
- *               each, for a current price and stock in his size
+ *               each, for a current price and stock in her size
  *
  * No blueprint slot is made. The request is the target, kept on the search;
- * a result he saves is saved without a slot, like a pasted link.
+ * a result she saves is saved without a slot, like a pasted link.
  */
 
 /** The id the request goes by when the scorer is shown it as a slot. Never a real slot's id. */
@@ -77,7 +77,7 @@ export class SearchError extends Error {}
 export const RequestReadSchema = z.object({
   understood: z
     .boolean()
-    .describe('True when this is a piece of womenswear the shops could sell, specific enough to search for.'),
+    .describe('True when this is a piece of womenswear (or a unisex piece a woman wears) the shops could sell, specific enough to search for.'),
   garment_type: z
     .enum(GARMENT_TYPES)
     .nullable()
@@ -85,51 +85,56 @@ export const RequestReadSchema = z.object({
   words: z
     .array(z.string())
     .describe(
-      'One to four lowercase words a matching listing would use for this item, beyond its colour: "overshirt", "chelsea", "corduroy", "merino", "crewneck". Empty when the garment type says it all.',
+      'One to four lowercase words a matching listing would use for this item, beyond its colour: "midi", "slip", "wrap", "slingback", "hoops", "merino", "cardigan". Empty when the garment type says it all.',
     ),
-  colours: z.array(z.string()).describe('The colour words he used, lowercase, as he wrote them. Empty when he named none.'),
-  min_nzd: z.number().nullable().describe('The lowest price he asked for, in NZ dollars, or null.'),
-  max_nzd: z.number().nullable().describe('The highest price he asked for, in NZ dollars, or null.'),
-  fit: z.enum(FITS).nullable().describe('The cut he asked for, when he named one. Null otherwise.'),
-  fabrics: z.array(z.string()).describe('Fabrics he named, lowercase. Empty when none.'),
+  colours: z.array(z.string()).describe('The colour words she used, lowercase, as she wrote them. Empty when she named none.'),
+  min_nzd: z.number().nullable().describe('The lowest price she asked for, in NZ dollars, or null.'),
+  max_nzd: z.number().nullable().describe('The highest price she asked for, in NZ dollars, or null.'),
+  fit: z.enum(FITS).nullable().describe('The cut she asked for, when she named one. Null otherwise.'),
+  fabrics: z.array(z.string()).describe('Fabrics she named, lowercase. Empty when none.'),
   summary: z
     .string()
-    .describe('His request as a short heading in his own terms, sentence case, under 60 characters: "A navy overshirt under $300".'),
+    .describe('Her request as a short heading in her own terms, sentence case, under 60 characters: "A navy midi skirt under $200".'),
   problem: z
     .string()
     .nullable()
-    .describe('When not understood, one short sentence to him saying why and what to type instead. Null otherwise.'),
+    .describe('When not understood, one short sentence to her saying why and what to type instead. Null otherwise.'),
 })
 
 export type RequestRead = z.infer<typeof RequestReadSchema>
 
-export const READ_SYSTEM_PROMPT = `You read one shopping request Malin typed into his private womenswear app, and turn it into the terms the app's filter uses. The app then searches New Zealand womenswear shops and END. (UK, ships to New Zealand) for products in his size, and a stylist judges the closest against his request and his style guide.
+export const READ_SYSTEM_PROMPT = `You read one shopping request Rutu typed into her private womenswear app, and turn it into the terms the app's filter uses. The app then searches womenswear shops in New Zealand and a few overseas that ship here for products in her size, and a stylist judges the closest against her request and her style guide.
 
 Garment types, and what each covers:
-- tee: t-shirts
-- tank: tank tops and singlets
-- polo: polo shirts, including knitted polos
-- shirt: shirts with a collar and buttons, short or long sleeved
-- overshirt: overshirts and shirt jackets (shackets), worn over a tee
-- knitwear: jumpers, cardigans, knitted vests, quarter zips in knit
+- tee: t-shirts, including long-sleeved tees
+- tank: tanks, camisoles and singlets
+- top: blouses, bodysuits, corset and bustier tops, knit-look tops, tunics and other tops that are not a tee, a tank or a shirt
+- shirt: shirts with a collar and buttons, short or long sleeved, and shirt jackets (shackets)
+- knitwear: jumpers, cardigans, knitted vests, knit polos
 - sweatshirt: sweatshirts and hoodies
-- trousers: chinos, tailored and casual trousers, cargo pants
+- dress: dresses of every length, including shirt dresses, slip dresses and knit dresses
+- jumpsuit: jumpsuits, playsuits and overalls
+- skirt: skirts of every length
+- trousers: tailored, wide-leg and casual trousers, dress pants, cargo pants, culottes
 - jeans: jeans
-- shorts: shorts, including swim shorts
-- tailoring: suits, blazers and sport coats
-- jacket: jackets: bomber, chore, field, trucker, harrington, rain shell, puffer, gilet
-- coat: overcoats, topcoats, trench coats, peacoats, parkas
-- activewear: running and gym kit
-- shoes: dress and casual shoes, loafers, derbies
-- boots: boots, including chelsea and chukka
+- shorts: shorts
+- tailoring: blazers, suits and tailored waistcoats
+- jacket: jackets: leather, denim, bomber, chore, rain jacket, puffer, gilet
+- coat: coats, trench coats, wool coats, parkas
+- activewear: gym, yoga and running kit
+- flats: ballet flats, loafers, mules, slingbacks without a heel, Mary Janes, and other flat shoes
+- heels: shoes with a heel of any height, including heeled sandals, kitten heels and wedges
+- sandals: flat sandals and slides
+- boots: boots of every height, including ankle, knee-high and chelsea boots
 - sneakers: sneakers and trainers
 - belt: belts
-- accessory: scarves, beanies, caps, watches, socks, ties, sunglasses
-- bag: bags
+- bag: bags: totes, shoulder bags, crossbody bags, clutches
+- jewellery: earrings, necklaces, bracelets and rings
+- accessory: scarves, hats and caps, hair clips, gloves, watches
 
 Prices are in New Zealand dollars: "under $300" is a maximum of 300; "around $200" is about 160 to 240. A request may name a colour, a cut, a fabric, a price, all of these or none.
 
-It is not understood when it is not a piece of clothing, footwear or an accessory, when it is womenswear, or when it is too vague to search for ("something nice"). Then say why in one short sentence to him, in the second person. Use a plain hyphen rather than a dash.`
+It is not understood when it is not a piece of clothing, footwear, jewellery or an accessory, when it is menswear (a men's suit, a men's shirt), when it is underwear, swimwear or sleepwear, which the shops are not read for, or when it is too vague to search for ("something nice"). Then say why in one short sentence to her, in the second person. Use a plain hyphen rather than a dash.`
 
 function readRequestRequest(request: string) {
   // Without `parse`, the SDK passes the schema through and leaves the text alone.
@@ -141,7 +146,7 @@ function readRequestRequest(request: string) {
     betas: ['server-side-fallback-2026-07-01'],
     fallbacks: 'default' as const,
     system: READ_SYSTEM_PROMPT,
-    messages: [{ role: 'user' as const, content: `His request: ${JSON.stringify(request)}` }],
+    messages: [{ role: 'user' as const, content: `Her request: ${JSON.stringify(request)}` }],
     output_config: { effort: 'low' as const, format },
   }
 }
@@ -173,9 +178,9 @@ export type SearchTarget = SlotTarget & {
 }
 
 /**
- * The read as a slot target: the garment, the kind for an accessory, his size
- * from the profile, the price, the colour families he named and their
- * neighbours, and the cuts allowed (his, when he named one, else the guide's).
+ * The read as a slot target: the garment, the kind for an accessory, her size
+ * from the profile, the price, the colour families she named and their
+ * neighbours, and the cuts allowed (hers, when she named one, else the guide's).
  */
 export function searchTarget(
   read: RequestRead & { garment_type: GarmentType },
@@ -207,7 +212,7 @@ function tidyWords(words: string[]): string[] {
   return [...new Set(words.map((word) => word.trim().toLowerCase()).filter((word) => word.length > 1))]
 }
 
-/** "overshirts" finds "overshirt" and "overshirts"; short words match whole. */
+/** "cardigans" finds "cardigan" and "cardigans"; short words match whole. */
 function stem(word: string): string {
   return word.length > 4 ? word.replace(/(es|s)$/, '') : word
 }
@@ -218,10 +223,10 @@ function hits(text: string, words: string[]): number {
 }
 
 /**
- * The candidates in the order they are offered to Claude: his words in the
+ * The candidates in the order they are offered to Claude: her words in the
  * title count twice, in the type, tags or description once; then a colour
- * he named that the listing names too; then the store's newest first. A
- * stable order, so a cap always cuts the furthest from what he typed.
+ * she named that the listing names too; then the store's newest first. A
+ * stable order, so a cap always cuts the furthest from what she typed.
  */
 export function rankForRequest<T extends Pick<ProductForScoring, 'product_id' | 'title' | 'vendor' | 'product_type' | 'tags' | 'body_html' | 'colours'>>(
   products: T[],
@@ -246,7 +251,7 @@ export function rankForRequest<T extends Pick<ProductForScoring, 'product_id' | 
 // 3. What the scorer is told
 // ---------------------------------------------------------------------------
 
-export const SEARCH_PREAMBLE = `This is not the nightly run. He typed a request into the app just now, and every product below is judged against that request alone: it is the only slot, id ${SEARCH_SLOT}. His words decide what the slot is. Where they part from his guide (a colour from his avoid list, a cut the guide advises against), judge the product as what he asked for, say plainly in the verdict how it sits with his guide, and keep the score under 75.`
+export const SEARCH_PREAMBLE = `This is not the nightly run. She typed a request into the app just now, and every product below is judged against that request alone: it is the only slot, id ${SEARCH_SLOT}. Her words decide what the slot is. Where they part from her guide (a colour from her avoid list, a cut the guide advises against), judge the product as what she asked for, say plainly in the verdict how it sits with her guide, and keep the score under 75.`
 
 export function searchContextBlock(context: {
   profile: Profile
@@ -260,7 +265,7 @@ export function searchContextBlock(context: {
   const slot = {
     id: SEARCH_SLOT,
     name: context.summary,
-    why: `He asked for this himself: ${JSON.stringify(context.request)}`,
+    why: `She asked for this herself: ${JSON.stringify(context.request)}`,
     garment_type: target.garment_type,
     colour_family: target.colours.length > 0 ? target.colours.join(', ') : null,
     fabrics: target.fabrics,
@@ -269,18 +274,18 @@ export function searchContextBlock(context: {
   }
   const parts = [
     SEARCH_PREAMBLE,
-    `His profile:\n\n${JSON.stringify(profileBrief(context.profile))}`,
-    `His style guide:\n\n${JSON.stringify({
+    `Her profile:\n\n${JSON.stringify(profileBrief(context.profile))}`,
+    `Her style guide:\n\n${JSON.stringify({
       palette: context.guide.palette,
       silhouette: context.guide.silhouette,
       shoes: context.guide.shoes,
       accessories: context.guide.accessories,
       fit_vocabulary: context.guide.fit_vocabulary,
     })}`,
-    `His request, the one slot to judge against:\n\n${JSON.stringify([slot])}`,
+    `Her request, the one slot to judge against:\n\n${JSON.stringify([slot])}`,
   ]
   if (context.dismissals.length > 0) {
-    parts.push(`Products he dismissed lately, most recent first:\n\n${JSON.stringify(context.dismissals)}`)
+    parts.push(`Products she dismissed lately, most recent first:\n\n${JSON.stringify(context.dismissals)}`)
   }
   return parts.join('\n\n')
 }
@@ -419,7 +424,7 @@ export async function runSearch(
     const { candidates, stats: filtered } = await findCandidates(sql, [target], fx.rates)
     stats.matched = filtered.matched
     stats.candidates = candidates.length
-    // What he has already saved is in Saved on Today; it is not paid for twice.
+    // What she has already saved is in Saved on Today; it is not paid for twice.
     const saved = new Set(await savedProductIds(sql))
     const fresh = candidates.filter((candidate) => !saved.has(candidate.product_id))
     const ranked = rankForRequest(await forScoring(sql, fresh, { onlyUnscored: false }), target).slice(0, MAX_OFFERED)
@@ -474,7 +479,7 @@ export async function runSearch(
     }
     await save('checking')
 
-    // 4. Re-read what will be shown, for a current price and stock in his size.
+    // 4. Re-read what will be shown, for a current price and stock in her size.
     const shown = await toShow(sql, id)
     const checked = await recheck(sql, options.client ?? new PoliteClient(), id, shown, target, fx.rates)
     stats.checked = checked.checked
@@ -541,7 +546,7 @@ async function recentDismissals(sql: Sql) {
 
 /**
  * What the page shows: the results over the bar, best first, that are still
- * in stock and that he has not saved, dismissed or bought since; with none
+ * in stock and that she has not saved, dismissed or bought since; with none
  * over the bar, the closest few.
  */
 async function toShow(sql: Sql, searchId: number): Promise<{ product_id: number; score: number }[]> {
@@ -565,7 +570,7 @@ async function toShow(sql: Sql, searchId: number): Promise<{ product_id: number;
 /**
  * Reads each product the page will show from its shop, stores it like any
  * other read, and runs the filter again over those products alone: one the
- * shop no longer has, or no longer has in his size or price, is marked out of
+ * shop no longer has, or no longer has in her size or price, is marked out of
  * stock; the rest get their current sizes and price.
  */
 async function recheck(
@@ -737,7 +742,7 @@ export async function getSearch(id: number, sql: Sql = db()): Promise<SearchView
   return { ...row, results, closest: results.length > 0 && results.every((result) => result.score < SHOW_THRESHOLD) }
 }
 
-/** "Overshirts in navy or blue, $150 to $300, in your M." from the read, for the line under the heading. */
+/** "Skirts in navy or blue, $150 to $300, in your 10." from the read, for the line under the heading. */
 export function targetLine(target: SearchTarget): string {
   const garment = GARMENT_LABELS[target.garment_type].toLowerCase()
   const plural = /s$/.test(garment) ? garment : `${garment}s`

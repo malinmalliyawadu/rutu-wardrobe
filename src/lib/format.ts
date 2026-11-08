@@ -3,7 +3,7 @@ export function money(cents: number): string {
   return `$${Math.round(cents / 100).toLocaleString('en-NZ')}`
 }
 
-/** A budget band as Malin reads it. */
+/** A budget band as Rutu reads it. */
 export function band(minCents: number | null, maxCents: number | null): string | null {
   if (minCents === null && maxCents === null) return null
   if (minCents === null) return `Up to ${money(maxCents as number)}`
@@ -66,7 +66,7 @@ export function lookWearLine(look: { offered: number; on_today: number; worn: st
   return wearLine({ offered: look.offered, on_today: look.on_today, worn: look.worn.length, last_worn: look.worn[0] ?? null })
 }
 
-/** "two tops, a pair of trousers and a pair of shoes" */
+/** "a tote, a belt and gold hoops" */
 export function list(items: string[]): string {
   if (items.length <= 1) return items.join('')
   return `${items.slice(0, -1).join(', ')} and ${items.at(-1)}`
@@ -75,7 +75,7 @@ export function list(items: string[]): string {
 const ZONE = 'Pacific/Auckland'
 
 /**
- * When something happened, as he would say it in Wellington: "last night"
+ * When something happened, as she would say it in Wellington: "last night"
  * (after 8pm yesterday or before 8am today, which is when the finder runs),
  * "today", "yesterday", "on Tuesday" within the week, then "on 4 November".
  */

@@ -4,7 +4,7 @@ import { z } from 'zod'
 
 import { MODELS, callUsd } from './claude.ts'
 import { db, type Sql } from './db.ts'
-import { BOTTOMS, FOOTWEAR, isWhole, LAYER_ORDER, TOPS } from './look-rules.ts'
+import { BOTTOMS, FOOTWEAR, isWhole, LAYER_ORDER, ONE_PIECES, TOPS, WHOLE_OUTFIT } from './look-rules.ts'
 import { inPalette, listPieces, type Piece } from './pieces.ts'
 import type { Profile } from './profile.ts'
 import { generate, type GenerationMeta } from './structured.ts'
@@ -14,19 +14,20 @@ import { limitForPrompt, pieceWarmth, WARMTH_RULES, warmthLimit } from './warmth
 import { forEveryday, forGym, type GarmentType, type SlotStatus } from './wardrobe-values.ts'
 
 /*
- * Looks (migration 0007): outfits Opus puts together from the pieces he owns,
- * against his style guide, proportions, week and Wellington's weather. Made
- * on his tap, six at a time. Claude is sent the pieces' words, never their
+ * Looks (migration 0007): outfits Opus puts together from the pieces she owns,
+ * against her style guide, proportions, week and Wellington's weather. Made
+ * on her tap, six at a time. Claude is sent the pieces' words, never their
  * photos. Code holds the result to what a look must be (tidyLooks): only
- * pieces he has, each once, one pair of trousers, one pair of shoes, at least
- * one top; a look that fails is dropped, never shown half right.
+ * pieces she has, each once, a dress or jumpsuit or else a top with one
+ * skirt or pair of trousers, one pair of shoes; a look that fails is
+ * dropped, never shown half right.
  *
  * Gym fits (migration 0014) are looks of the gym occasion, made only from
  * pieces worn for the gym or both; every other look leaves gym-only kit out.
  *
  * Looks around a piece (migration 0018) are a set of their own kind, made on
  * a tap on that piece's page: a few looks that each wear it, from the rest of
- * what he owns. Code keeps only the ones that do.
+ * what she owns. Code keeps only the ones that do.
  */
 
 export const OCCASIONS = ['office', 'weekend', 'evening', 'travel', 'gym'] as const
@@ -64,30 +65,38 @@ export type Readiness = { ready: boolean; missing: string[] }
 
 type Shelved = Pick<Piece, 'garment_type' | 'set_aside_at' | 'worn_for'>
 
-/** Enough to dress him: two tops, a pair of trousers and a pair of shoes, gym kit aside. */
+/**
+ * Enough to dress her: a dress or jumpsuit, or two tops and a skirt or pair
+ * of trousers, and a pair of shoes, gym kit aside.
+ */
 export function readiness(pieces: Shelved[]): Readiness {
   const active = pieces.filter((piece) => !piece.set_aside_at && forEveryday(piece))
   const count = (types: GarmentType[]) => active.filter((piece) => types.includes(piece.garment_type)).length
   const missing: string[] = []
   const tops = count(TOPS)
-  if (tops < 2) missing.push(tops === 0 ? 'two tops' : 'one more top')
-  if (count(BOTTOMS) === 0) missing.push('a pair of trousers or jeans')
+  const bottoms = count(BOTTOMS)
+  if (count(ONE_PIECES) === 0 && (tops < 2 || bottoms === 0)) {
+    if (tops >= 2) missing.push('a skirt, trousers or jeans, or a dress')
+    else if (bottoms > 0) missing.push(tops === 0 ? 'two tops, or a dress' : 'one more top, or a dress')
+    else missing.push('a dress, or two tops with a skirt or trousers')
+  }
   if (count(FOOTWEAR) === 0) missing.push('a pair of shoes')
   return { ready: missing.length === 0, missing }
 }
 
 /**
- * Enough for a gym fit: a top, shorts or trousers, and shoes, among the
- * pieces worn for the gym or both. A piece still filed as activewear says
- * nothing about what it is, so it does not count until he names it.
+ * Enough for a gym fit: a top (a sports bra counts, filed as a tank), shorts
+ * or leggings, and shoes, among the pieces worn for the gym or both. A piece
+ * still filed as activewear says nothing about what it is, so it does not
+ * count until she names it.
  */
 export function gymReadiness(pieces: Shelved[]): Readiness {
   const kit = pieces.filter((piece) => !piece.set_aside_at && forGym(piece) && piece.garment_type !== 'activewear')
   const has = (types: GarmentType[]) => kit.some((piece) => types.includes(piece.garment_type))
   const missing: string[] = []
   if (!has(TOPS)) missing.push('a top')
-  if (!has(BOTTOMS)) missing.push('shorts or joggers')
-  if (!has(FOOTWEAR)) missing.push('trainers')
+  if (!has(BOTTOMS)) missing.push('shorts or leggings')
+  if (!has(FOOTWEAR)) missing.push('sneakers')
   return { ready: missing.length === 0, missing }
 }
 
@@ -104,7 +113,7 @@ export function readinessAround(piece: Pick<Piece, 'worn_for'>, pieces: Shelved[
   return { ...everyday, gym: false }
 }
 
-/** The pieces Claude may dress him in: in the wardrobe and named for what they are. */
+/** The pieces Claude may dress her in: in the wardrobe and named for what they are. */
 export function dressable<T extends Pick<Piece, 'garment_type' | 'set_aside_at'>>(pieces: T[]): T[] {
   return pieces.filter((piece) => !piece.set_aside_at && piece.garment_type !== 'activewear')
 }
@@ -114,25 +123,25 @@ export function dressable<T extends Pick<Piece, 'garment_type' | 'set_aside_at'>
 // ---------------------------------------------------------------------------
 
 export const LookDraftSchema = z.object({
-  title: z.string().describe('A name for the look, two to five words, plain, no puns: "Navy and putty office day".'),
+  title: z.string().describe('A name for the look, two to five words, plain, no puns: "Rust knit and navy midi".'),
   occasion: z.enum(OCCASIONS),
   weather: z
     .string()
     .describe('The Wellington day it is dressed for, a few words: "mild and still", "cold southerly with showers".'),
   piece_ids: z
     .array(z.number().int())
-    .describe('Ids of the pieces it is made of, from the list only: the outermost layer first, down to the shoes, then any accessories.'),
+    .describe('Ids of the pieces it is made of, from the list only: the outermost layer first, down to the shoes, then any jewellery, accessories and bag.'),
   why: z
     .string()
-    .describe('Two sentences to him: the colour story in his palette, then the proportion or fit move from his guide that makes it work.'),
+    .describe('Two sentences to her: the colour story in her palette, then the proportion or fit move from her guide that makes it work (where the waist sits, the neckline, the hem against the shoe).'),
   styling: z
     .string()
     .nullable()
-    .describe('One short instruction for wearing it: "tuck the tee, one cuff on the jeans". Null when there is nothing to add.'),
+    .describe('One short instruction for wearing it: "half-tuck the shirt, belt at the natural waist", "black tights with the boots". Null when there is nothing to add.'),
   better_with: z
     .object({
-      slot_id: z.number().int().describe('The id of one slot from his wanted list.'),
-      why: z.string().describe('A few words on what it would add: "a lighter shoe would lift the navy".'),
+      slot_id: z.number().int().describe('The id of one slot from her wanted list.'),
+      why: z.string().describe('A few words on what it would add: "a gold hoop would lift the navy".'),
     })
     .nullable()
     .describe('One wanted slot that would clearly lift this look, or null. Use it in at most two looks of the set.'),
@@ -145,29 +154,29 @@ export const LooksSchema = z.object({
 export const PieceLooksSchema = z.object({
   looks: z
     .array(LookDraftSchema)
-    .describe(`${LOOKS_AROUND_A_PIECE} looks, each wearing the piece he chose, each a different outfit around it.`),
+    .describe(`${LOOKS_AROUND_A_PIECE} looks, each wearing the piece she chose, each a different outfit around it.`),
 })
 
 export type LookDraft = z.infer<typeof LookDraftSchema>
 
 /** What a gym fit is, for both the looks and the outfit of the day. */
-export const GYM_FIT_RULES = `Each piece says what it is worn for: everyday, gym, or both. An everyday look uses only everyday and both pieces. A gym fit (occasion gym) is what he trains in and wears there: only gym and both pieces, at least one top, exactly one pair of shorts or trousers, exactly one pair of shoes, and a layer for the walk there when the day is cold, windy or wet, if he has one. Colour still counts in a gym fit: build it on his palette like any look (tonal, or one strong colour on a neutral) and say so in the why; its fit move is about moving well and what the cut shows. Nothing carried but a cap or a bag. Its styling, when there is any, is for the gym: "sleeves pushed up, the hoodie off once warm".`
+export const GYM_FIT_RULES = `Each piece says what it is worn for: everyday, gym, or both. An everyday look uses only everyday and both pieces. A gym fit (occasion gym) is what she trains in and wears there: only gym and both pieces, at least one top (a sports bra is filed as a tank and counts as one), exactly one pair of shorts, leggings or trousers, exactly one pair of shoes, and a layer for the walk there when the day is cold, windy or wet, if she has one. Colour still counts in a gym fit: build it on her palette like any look (tonal, or one strong colour on a neutral) and say so in the why; its fit move is about moving well and what the cut shows. No jewellery, and nothing carried but a cap or a bag. Its styling, when there is any, is for the gym: "sleeves pushed up, the zip-through off once warm".`
 
-export const LOOKS_SYSTEM_PROMPT = `You are an experienced womenswear stylist putting outfits together for one client from clothes he already owns. You have his confirmed profile (colouring, proportions, sizes, his week), the style guide written for him, the list of his pieces, and what he did with the looks you made before. A private app shows him the looks as a lookbook page; he saves the ones he likes, dismisses the rest with a reason, and logs the days he wears one.
+export const LOOKS_SYSTEM_PROMPT = `You are an experienced womenswear stylist putting outfits together for one client from clothes she already owns. You have her confirmed profile (colouring, proportions, sizes, her week), the style guide written for her, the list of her pieces, and what she did with the looks you made before. A private app shows her the looks as a lookbook page; she saves the ones she likes, dismisses the rest with a reason, and logs the days she wears one.
 
-Each look is one complete outfit he could put on today: at least one top, exactly one pair of trousers, jeans or shorts, exactly one pair of shoes, and an outer layer when the weather asks for it. Accessories only when they add something, and then in his metal. Use only the pieces on the list, by id, each piece at most once in a look; never invent a garment he does not have.
+Each look is one complete outfit she could put on today: ${WHOLE_OUTFIT}; and an outer layer when the weather asks for it. A dress can take a knit, a shirt or a blazer over it, or a tee under it. Jewellery, a belt and a bag only when they add something: jewellery in her metal and scaled to her frame, a bag that suits the occasion. Shoes she can walk Wellington's hills and footpaths in, with a fine high heel only for an evening out. Use only the pieces on the list, by id, each piece at most once in a look; never invent a garment she does not have.
 
-${GYM_FIT_RULES} Make gym fits only when his gym kit is ready (gym.kit_ready). In a set for his week, make one gym fit when he trains up to three days a week and two when he trains more, and none when he gave no gym days. When he asks for gym fits, every look is one; his kit is small, so they may share pieces, but no two are the same.
+${GYM_FIT_RULES} Make gym fits only when her gym kit is ready (gym.kit_ready). In a set for her week, make one gym fit when she trains up to three days a week and two when she trains more, and none when she gave no gym days. When she asks for gym fits, every look is one; her kit is small, so they may share pieces, but no two are the same.
 
-Dress him for Wellington in the month you are given. You have its usual weather and warmth_limit, read from the month's usual high: make most looks for an ordinary day of that month, within that limit, and one for a colder, wetter or windier day than usual, which may go past it. ${WARMTH_RULES} Match warmth: a light linen shirt is not a winter look, a wool knit and a jacket are not a summer one.
+Dress her for Wellington in the month you are given. You have its usual weather and warmth_limit, read from the month's usual high: make most looks for an ordinary day of that month, within that limit, and one for a colder, wetter or windier day than usual, which may go past it. ${WARMTH_RULES} Match warmth: a linen slip dress is not a winter look, a wool knit and a coat are not a summer one. Wind lifts a short or full skirt and a loose hem: on a windy day prefer a skirt with weight, a midi or trousers.
 
-Spread the set across his week. Weight the occasions by the days he gave for office, the gym, evenings out and the rest; where he gave nothing, assume office days, weekends and evenings out. Office means smart casual unless his profile says otherwise. Travel only when he travels.
+Spread the set across her week. Weight the occasions by the days she gave for office, the gym, evenings out and the rest; where she gave nothing, assume office days, weekends and evenings out. Office means smart casual unless her profile says otherwise. Travel only when she travels.
 
-Colour is the point. Build each look on his palette: say in the why which of his colours carry it and why they sit together (tonal, contrast near the face, a neutral base with one strong colour). Respect the proportion and fit rules in his guide, and name the one that the look uses. Respect his no-gos absolutely.
+Colour is the point. Build each look on her palette: say in the why which of her colours carry it and why they sit together (tonal, contrast near the face, a neutral base with one strong colour). Respect the proportion and fit rules in her guide (where her waist is marked, necklines, hem lengths against the shoe), and name the one that the look uses. Respect her no-gos absolutely.
 
-Make the set varied: no two everyday looks share more than two pieces, and none repeats a look he saved or dismissed. Learn from the reasons he dismissed looks for. Prefer pieces he has worn less lately, so the whole wardrobe gets used. When a look would clearly be better with one of the slots he still wants, say so in better_with, in at most two looks; otherwise leave it null.
+Make the set varied: no two everyday looks share more than two pieces, and none repeats a look she saved or dismissed. Learn from the reasons she dismissed looks for. Prefer pieces she has worn less lately, so the whole wardrobe gets used. When a look would clearly be better with one of the slots she still wants, say so in better_with, in at most two looks; otherwise leave it null.
 
-Write to him in the second person, plainly, without praise or sales talk. Plain hyphens only.`
+Write to her in the second person, plainly, without praise or sales talk. Plain hyphens only.`
 
 // ---------------------------------------------------------------------------
 // Wellington
@@ -198,7 +207,7 @@ export type WantedSlot = { id: number; name: string; garment_type: GarmentType; 
 export type History = {
   saved: { title: string; piece_ids: number[] }[]
   dismissed: { title: string; piece_ids: number[]; reason: LookDismissReason }[]
-  /** How many times each piece was in a look he wore in the last three weeks. */
+  /** How many times each piece was in a look she wore in the last three weeks. */
   worn: Map<number, number>
 }
 
@@ -230,9 +239,9 @@ export function buildLooksMessages(input: {
   wanted: WantedSlot[]
   history: History
   note: string | null
-  /** A set for his week, or gym fits only. */
+  /** A set for her week, or gym fits only. */
   kind?: LookKind
-  /** The piece he chose on its page: every look wears it. */
+  /** The piece she chose on its page: every look wears it. */
   around?: Pick<Piece, 'id' | 'name' | 'worn_for'>
   now?: Date
 }): Anthropic.Beta.BetaMessageParam[] {
@@ -252,17 +261,17 @@ export function buildLooksMessages(input: {
     },
     pieces: dressable(input.pieces).map((piece) => pieceForPrompt(piece, input.guide, input.history.worn)),
     wanted_slots: input.wanted.map((slot) => ({ id: slot.id, name: slot.name, garment: slot.garment_type })),
-    looks_he_saved: input.history.saved,
-    looks_he_dismissed: input.history.dismissed,
+    looks_she_saved: input.history.saved,
+    looks_she_dismissed: input.history.dismissed,
   }
   const what =
     input.kind === 'gym'
-      ? `up to ${LOOKS_PER_SET} gym fits from his gym kit, fewer if it cannot make that many that differ`
+      ? `up to ${LOOKS_PER_SET} gym fits from her gym kit, fewer if it cannot make that many that differ`
       : `${LOOKS_PER_SET} looks`
   const ask = input.around
     ? aroundAsk(input.around, input.note)
     : input.note
-      ? `He asked for this set: "${input.note}". Make ${what} with that in mind.`
+      ? `She asked for this set: "${input.note}". Make ${what} with that in mind.`
       : `Make ${what}.`
   return [{ role: 'user', content: `${JSON.stringify(body, null, 2)}\n\n${ask}` }]
 }
@@ -274,13 +283,13 @@ function aroundAsk(piece: Pick<Piece, 'id' | 'name' | 'worn_for'>, note: string 
     piece.worn_for === 'gym'
       ? ' It is gym kit, so they are gym fits.'
       : piece.worn_for === 'both'
-        ? ' He wears it to the gym and every day, so one may be a gym fit if his kit is ready.'
+        ? ' She wears it to the gym and every day, so one may be a gym fit if her kit is ready.'
         : ''
   return [
-    `He chose one of his pieces to build on: "${piece.name}" (id ${piece.id}).`,
+    `She chose one of her pieces to build on: "${piece.name}" (id ${piece.id}).`,
     `Make ${n} looks that each wear it: ${n} different ways to wear it, for the occasions and days it suits best, each a whole outfit around it.`,
-    `Apart from it, no two of the looks share more than one piece. Make fewer if the rest of his wardrobe cannot make ${n} that differ.${kind}`,
-    note ? `He added: "${note}". Make them with that in mind.` : '',
+    `Apart from it, no two of the looks share more than one piece. Make fewer if the rest of her wardrobe cannot make ${n} that differ.${kind}`,
+    note ? `She added: "${note}". Make them with that in mind.` : '',
   ]
     .filter(Boolean)
     .join(' ')
@@ -289,7 +298,7 @@ function aroundAsk(piece: Pick<Piece, 'id' | 'name' | 'worn_for'>, note: string 
 export const LOOK_KINDS = ['week', 'gym'] as const
 export type LookKind = (typeof LOOK_KINDS)[number]
 
-/** How often he trains and whether his kit makes a gym fit, for the prompts. */
+/** How often she trains and whether her kit makes a gym fit, for the prompts. */
 export function gymForPrompt(profile: Pick<Profile, 'life'>, pieces: Shelved[]) {
   const kit = gymReadiness(pieces)
   return {
@@ -336,11 +345,12 @@ export function signature(ids: number[]): string {
 /**
  * Holds Claude to what a look must be. Unknown or set-aside pieces, pieces
  * not worn for its occasion (gym kit in an everyday look, everyday clothes in
- * a gym fit) and repeats within a look are dropped first; then a look needs at least one
- * top, exactly one pair of trousers and one pair of shoes, at most one coat
- * or jacket and one tailored jacket, at most three things carried, and must
- * not repeat a look in the set or one he saved or dismissed. Its pieces are
- * put in layer order, and a better_with that is not one of his wanted slots
+ * a gym fit) and repeats within a look are dropped first; then a look must be
+ * whole (isWhole: a dress or jumpsuit, or a top with one skirt or pair of
+ * trousers, one pair of shoes, at most one coat or jacket and one blazer, at
+ * most four things worn or carried), and must not repeat a look in the set or
+ * one she saved or dismissed. Its pieces are
+ * put in layer order, and a better_with that is not one of her wanted slots
  * is dropped.
  */
 export function tidyLooks<T extends LookDraft>(
@@ -454,9 +464,9 @@ export function lookKey(look: { occasion: string; piece_ids: number[] }): string
 
 /**
  * Every look a new one may turn out to be, by lookKey: saved ones, and ones
- * offered before (in a set of looks, or on a day) that he has not dismissed
+ * offered before (in a set of looks, or on a day) that she has not dismissed
  * and that no remake replaced.
- * Where more than one has the same pieces, the one he saved wins, then one
+ * Where more than one has the same pieces, the one she saved wins, then one
  * with a picture already drawn, then the newest. A dismissed look is never
  * reused; tidyLooks and tidyDay keep the recent ones out, and an older one
  * comes back as a new look.
@@ -480,7 +490,7 @@ export async function matchingLooks(sql: Sql | postgres.TransactionSql): Promise
 
 /**
  * One look of a set, at its place: the look already made with the same
- * pieces (matchingLooks), so it keeps its pictures and what he did with it,
+ * pieces (matchingLooks), so it keeps its pictures and what she did with it,
  * else a new one. Returns the look's id.
  */
 export async function offerLook(
@@ -530,19 +540,19 @@ export type Look = {
   styling: string | null
   /** The wanted slot that would lift it, with its colours' names from the guide. */
   better: { slot_id: number; name: string; colours: string[]; colour_names: (string | null)[]; why: string | null } | null
-  /** Replaced: remade (look-remake.ts), kept for the days he wore it. */
+  /** Replaced: remade (look-remake.ts), kept for the days she wore it. */
   status: 'new' | 'saved' | 'dismissed' | 'replaced'
   piece_count: number
   pieces: Piece[]
-  /** Days he wore it, newest first, as YYYY-MM-DD in New Zealand. */
+  /** Days she wore it, newest first, as YYYY-MM-DD in New Zealand. */
   worn: string[]
   /** How often it was offered: each set it was in, each day on Today (look_offers, migration 0022). */
   offered: number
   /** Of those, the days it was one of the day's options or the gym fit. */
   on_today: number
-  /** The latest try-on of the whole look, if he asked for one. */
+  /** The latest try-on of the whole look, if she asked for one. */
   on_me: OnMe | null
-  /** The pieces he marked, while a remake of it is being made. */
+  /** The pieces she marked, while a remake of it is being made. */
   remaking: { swap: number[]; remove: number[] } | null
 }
 
@@ -560,7 +570,7 @@ export type LooksPage = {
   /** Saved from earlier sets, the most recently worn first. */
   saved: Look[]
   latest: LookSet | null
-  /** The newest set, less what he dismissed. */
+  /** The newest set, less what she dismissed. */
   fresh: Look[]
   total: { sets: number; usd: number }
 }
@@ -630,10 +640,10 @@ export async function getLooks(ids: number[], sql: Sql = db()): Promise<Look[]> 
 }
 
 /**
- * The newest set's looks he has not dismissed (one an earlier set or day
- * made, when it offered that again), and the looks he saved from earlier
- * sets. The outfit of the day's sets are not sets he made here, so
- * the newest is the newest he made; a day's look he saved or wore is with
+ * The newest set's looks she has not dismissed (one an earlier set or day
+ * made, when it offered that again), and the looks she saved from earlier
+ * sets. The outfit of the day's sets are not sets she made here, so
+ * the newest is the newest she made; a day's look she saved or wore is with
  * the saved.
  */
 export async function readLooks(sql: Sql = db()): Promise<LooksPage> {
@@ -656,7 +666,7 @@ export async function readLooks(sql: Sql = db()): Promise<LooksPage> {
     sql`l.status = 'saved' or (l.status = 'new' and l.id in ${sql(offered.length > 0 ? [...place.keys()] : [0])})`,
     sql`l.acted_at desc nulls last, l.id`,
   )
-  // A look saved from the newest set stays where it is, so a tap never moves the card under his finger.
+  // A look saved from the newest set stays where it is, so a tap never moves the card under her finger.
   const inLatest = (look: Look) => place.has(look.id)
   return {
     saved: looks.filter((look) => !inLatest(look)).sort((a, b) => (b.worn[0] ?? '').localeCompare(a.worn[0] ?? '')),
@@ -669,12 +679,12 @@ export async function readLooks(sql: Sql = db()): Promise<LooksPage> {
 export type PieceLooks = {
   /** The newest set made around the piece, if any. */
   latest: LookSet | null
-  /** Its looks he has not dismissed, in the order they were made. */
+  /** Its looks she has not dismissed, in the order they were made. */
   looks: Look[]
 }
 
 /**
- * The newest looks made around one piece, less what he dismissed and what a
+ * The newest looks made around one piece, less what she dismissed and what a
  * remake replaced (the remake is in its place). One saved stays, marked saved.
  */
 export async function readPieceLooks(pieceId: number, sql: Sql = db()): Promise<PieceLooks> {
@@ -705,7 +715,7 @@ export type LookAction = z.infer<typeof LookActionSchema>
 
 /**
  * Save, un-save, dismiss with a reason, and wore it today (or undo that).
- * Wearing a look he had not saved saves it: a look worn is one he likes.
+ * Wearing a look she had not saved saves it: a look worn is one she likes.
  */
 export async function actOnLook(input: LookAction, sql: Sql = db()): Promise<void> {
   const action = LookActionSchema.parse(input)

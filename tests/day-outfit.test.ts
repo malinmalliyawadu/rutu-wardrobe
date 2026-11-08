@@ -45,16 +45,17 @@ const piece = (id: number, garment_type: Shelf['garment_type'], name: string, ex
 const shelf: Shelf[] = [
   piece(1, 'coat', 'Ink wool coat'),
   piece(2, 'knitwear', 'Pine merino crewneck'),
-  piece(3, 'shirt', 'White oxford button-down'),
-  piece(4, 'trousers', 'Putty chinos'),
+  piece(3, 'shirt', 'White poplin shirt'),
+  piece(4, 'skirt', 'Putty midi skirt'),
   piece(5, 'jeans', 'Indigo jeans'),
-  piece(6, 'boots', 'Brown chelsea boots'),
+  piece(6, 'boots', 'Brown ankle boots'),
   piece(7, 'sneakers', 'White sneakers', { worn_for: 'both' }),
-  piece(8, 'tank', 'Pine training tank', { worn_for: 'gym' }),
-  piece(9, 'shorts', 'Black training shorts', { worn_for: 'gym' }),
+  piece(8, 'tank', 'Pine sports bra', { worn_for: 'gym' }),
+  piece(9, 'trousers', 'Black leggings', { worn_for: 'gym' }),
   piece(10, 'tee', 'Cream tee'),
-  piece(11, 'overshirt', 'Olive cotton overshirt'),
+  piece(11, 'jacket', 'Olive cotton jacket'),
   piece(12, 'sweatshirt', 'Grey hoodie', { worn_for: 'both' }),
+  piece(13, 'dress', 'Rust ponte midi dress'),
 ]
 
 const option = (piece_ids: number[], extra: Partial<DayOption> = {}): DayOption => ({
@@ -86,7 +87,7 @@ const forecast: Forecast = {
 }
 
 describe('the pure parts', () => {
-  test('a look he saved may come back; one he dismissed or wore this week may not; at most three are kept', () => {
+  test('a look she saved may come back; one she dismissed or wore this week may not; at most three are kept', () => {
     const kept = tidyDay(
       [
         option([1, 3, 4, 6]),
@@ -108,24 +109,29 @@ describe('the pure parts', () => {
     assert.equal(kept[0]?.today, 'Showers from 3pm: the coat.', 'the day sentence survives the tidy')
   })
 
-  test('an option that is not a whole outfit is dropped', () => {
-    assert.deepEqual(tidyDay([option([3, 4]), option([3, 4, 5, 6])], shelf, { dismissed: [] }, []), [])
+  test('an option that is not a whole outfit is dropped; a dress and shoes is one', () => {
+    assert.deepEqual(tidyDay([option([3, 4]), option([3, 4, 5, 6]), option([13, 4, 6])], shelf, { dismissed: [] }, []), [])
+    assert.deepEqual(
+      tidyDay([option([6, 13, 2])], shelf, { dismissed: [] }, []).map((o) => o.piece_ids),
+      [[2, 13, 6]],
+      'a knit over the dress, in layer order',
+    )
   })
 
   test('a gym fit is never one of the day’s options', () => {
     assert.deepEqual(tidyDay([option([8, 9, 7], { occasion: 'gym' })], shelf, { dismissed: [] }, []), [])
   })
 
-  test('the gym fit is gym kit only; it may repeat one he wore this week, never one he dismissed', () => {
-    const gym = option([7, 9, 8], { occasion: 'weekend', title: ' Tank and shorts ' })
+  test('the gym fit is gym kit only; it may repeat one she wore this week, never one she dismissed', () => {
+    const gym = option([7, 9, 8], { occasion: 'weekend', title: ' Bra and leggings ' })
     assert.deepEqual(tidyGym(gym, shelf, { dismissed: [] }), {
       ...gym,
       occasion: 'gym',
-      title: 'Tank and shorts',
+      title: 'Bra and leggings',
       piece_ids: [8, 9, 7],
       better_with: null,
     })
-    assert.equal(tidyGym(option([8, 4, 7]), shelf, { dismissed: [] }), null, 'everyday trousers are not gym kit')
+    assert.equal(tidyGym(option([8, 4, 7]), shelf, { dismissed: [] }), null, 'an everyday skirt is not gym kit')
     assert.equal(tidyGym(gym, shelf, { dismissed: [{ title: 'x', piece_ids: [7, 8, 9], reason: 'colours' }] }), null)
   })
 
@@ -133,7 +139,7 @@ describe('the pure parts', () => {
     const options = [
       option([10, 11, 3, 4, 7]), // three layers
       option([2, 3, 4, 6]), // a wool knit
-      option([10, 11, 4, 7]), // a tee and an overshirt
+      option([10, 11, 4, 7]), // a tee and a jacket
       option([3, 5, 7]), // a shirt
     ]
     assert.deepEqual(
@@ -156,7 +162,7 @@ describe('the pure parts', () => {
     assert.notEqual(lookKey({ occasion: 'office', piece_ids: [2, 4, 6] }), lookKey({ occasion: 'office', piece_ids: [2, 4, 6, 1] }))
   })
 
-  test('his week says which days he trains', () => {
+  test('her week says which days she trains', () => {
     const profile = { life: { gym_days: ['monday' as const, 'friday' as const] } }
     assert.equal(trainsOn(profile, '2026-11-06'), true, 'a Friday')
     assert.equal(trainsOn(profile, '2026-11-07'), false, 'a Saturday')
@@ -191,19 +197,20 @@ describe('the pure parts', () => {
       read_from: 'feels like 13° at the warmest',
       most_layers: null,
       most_warm_pieces: null,
-      garments_ruled_out: [],
+      garments_ruled_out: ['shorts', 'sandals'],
+      bare_legs: false,
     })
-    assert.deepEqual(body.gym, { days_a_week: 0, days: null, kit_ready: false, kit_missing: ['a top', 'shorts or joggers', 'trainers'] })
+    assert.deepEqual(body.gym, { days_a_week: 0, days: null, kit_ready: false, kit_missing: ['a top', 'shorts or leggings', 'sneakers'] })
   })
 
-  test('on a gym day the prompt says he trains', () => {
+  test('on a gym day the prompt says she trains', () => {
     const profile = { ...profileFixture, life: { gym: 2, gym_days: ['friday' as const, 'sunday' as const] } }
     const body = JSON.parse(String(buildDayMessages(input({ profile }))[0]!.content).split('\n\n')[0]!)
     assert.equal(body.day.trains_today, true)
     assert.equal(body.gym.days_a_week, 2)
   })
 
-  test('with no forecast it is dressed for the month, and his note leads the ask', () => {
+  test('with no forecast it is dressed for the month, and her note leads the ask', () => {
     const [message] = buildDayMessages(input({ forecast: null, note: 'dinner out tonight', now: new Date('2026-11-05T20:00:00Z') }))
     const content = String(message!.content)
     const body = JSON.parse(content.split('\n\n')[0]!)
@@ -212,7 +219,7 @@ describe('the pure parts', () => {
     assert.equal(body.warmth_limit.read_from, "the month's usual high, 17°")
     assert.equal(body.warmth_limit.most_layers, 3)
     assert.equal(body.day.dressing_for, 'today')
-    assert.match(content, /He says this is on: "dinner out tonight"/)
+    assert.match(content, /She says this is on: "dinner out tonight"/)
   })
 })
 
@@ -234,9 +241,9 @@ describe('a day made, read and turned', () => {
     sql = connect({ max: 2 })
     const typed = { source: 'typed' as const, photo_id: null, product_id: null }
     for (const [name, garment_type] of [
-      ['Ecru oxford', 'shirt'],
+      ['Ecru poplin shirt', 'shirt'],
       ['Pine crew', 'knitwear'],
-      ['Putty chinos', 'trousers'],
+      ['Putty trousers', 'trousers'],
       ['Brown Chelseas', 'boots'],
       ['Navy tee', 'tee'],
     ] as const) {
@@ -303,11 +310,11 @@ describe('a day made, read and turned', () => {
 
   test('the options are saved best first; one that matches a saved look is that look', async () => {
     await saveGuide(guideFixture, meta)
-    const [shirt, crew, chinos, boots, tee] = ids as [number, number, number, number, number]
-    // A look he saved from the Looks tab, and that tab's newest set.
+    const [shirt, crew, trousers, boots, tee] = ids as [number, number, number, number, number]
+    // A look she saved from the Looks tab, and that tab's newest set.
     await saveSet(
       {
-        looks: [{ title: 'Saved one', occasion: 'office', weather: 'mild', piece_ids: [crew, shirt, chinos, boots], why: 'Saved why.', styling: null, better_with: null }],
+        looks: [{ title: 'Saved one', occasion: 'office', weather: 'mild', piece_ids: [crew, shirt, trousers, boots], why: 'Saved why.', styling: null, better_with: null }],
         proposed: 1,
         meta,
         usd: 0.2,
@@ -327,8 +334,8 @@ describe('a day made, read and turned', () => {
         id,
         sql,
         drafted([
-          option([shirt, chinos, boots, crew], { title: 'Claude renamed it', today: 'Cool and showery: the crew over the oxford.' }),
-          option([tee, chinos, boots], { title: 'Tee and putty', today: 'Warm by 2pm.' }),
+          option([shirt, trousers, boots, crew], { title: 'Claude renamed it', today: 'Cool and showery: the crew over the poplin shirt.' }),
+          option([tee, trousers, boots], { title: 'Tee and putty', today: 'Warm by 2pm.' }),
         ]),
       )
     } finally {
@@ -341,17 +348,17 @@ describe('a day made, read and turned', () => {
     assert.deepEqual(
       day?.options.map((o) => [o.look.title, o.today]),
       [
-        ['Saved one', 'Cool and showery: the crew over the oxford.'],
+        ['Saved one', 'Cool and showery: the crew over the poplin shirt.'],
         ['Tee and putty', 'Warm by 2pm.'],
       ],
     )
     assert.equal(day?.options[0]?.look.id, savedId, 'the saved look itself, not a copy')
     assert.deepEqual(drawn, [savedId], 'the option on show, and only it, is drawn')
     assert.equal(day?.options[0]?.image, null, 'no picture until one is drawn')
-    assert.equal(day?.gym, null, 'no gym fit on a day he does not train')
-    assert.deepEqual(day?.options[1]?.look.pieces.map((p) => p.name), ['Navy tee', 'Putty chinos', 'Brown Chelseas'])
+    assert.equal(day?.gym, null, 'no gym fit on a day she does not train')
+    assert.deepEqual(day?.options[1]?.look.pieces.map((p) => p.name), ['Navy tee', 'Putty trousers', 'Brown Chelseas'])
 
-    // The Looks tab is not disturbed: its newest set is still the one he made there.
+    // The Looks tab is not disturbed: its newest set is still the one she made there.
     const page = await readLooks(sql)
     assert.equal(page.latest?.id, before.latest?.id)
     assert.deepEqual(page.total, { sets: 1, usd: 0.2 })
@@ -362,8 +369,8 @@ describe('a day made, read and turned', () => {
     assert.ok((await readLooks(sql)).saved.some((l) => l.title === 'Tee and putty'))
   })
 
-  test('on a day he trains, the gym fit is kept apart from the options, and is not drawn without a tap', async () => {
-    const [shirt, , chinos, boots] = ids as [number, number, number, number, number]
+  test('on a day she trains, the gym fit is kept apart from the options, and is not drawn without a tap', async () => {
+    const [shirt, , trousers, boots] = ids as [number, number, number, number, number]
     const [tank, shorts, trainers] = kit as [number, number, number]
     const id = await making('2026-11-09')
     drawn.length = 0
@@ -374,7 +381,7 @@ describe('a day made, read and turned', () => {
         id,
         sql,
         drafted(
-          [option([shirt, chinos, boots], { title: 'Oxford and putty', today: 'Mild.' })],
+          [option([shirt, trousers, boots], { title: 'Poplin and putty', today: 'Mild.' })],
           option([tank, shorts, trainers], { occasion: 'gym', title: 'Pine tank session', today: 'Cold walk there: the tank under your coat.' }),
         ),
       )
@@ -382,7 +389,7 @@ describe('a day made, read and turned', () => {
       console.info = info
     }
     const day = await readDay('2026-11-09', sql)
-    assert.deepEqual(day?.options.map((o) => o.look.title), ['Oxford and putty'])
+    assert.deepEqual(day?.options.map((o) => o.look.title), ['Poplin and putty'])
     assert.equal(day?.gym?.look.title, 'Pine tank session')
     assert.equal(day?.gym?.look.occasion, 'gym')
     assert.equal(day?.gym?.today, 'Cold walk there: the tank under your coat.')
@@ -393,19 +400,19 @@ describe('a day made, read and turned', () => {
   })
 
   test('an option that is a look offered before is that look, picture and all; a dismissed one is not reused', async () => {
-    const [shirt, crew, chinos, boots, tee] = ids as [number, number, number, number, number]
+    const [shirt, crew, trousers, boots, tee] = ids as [number, number, number, number, number]
     const [tank, shorts, trainers] = kit as [number, number, number]
     const earlier = (await readDay('2026-11-09', sql))!
     const oxford = earlier.options[0]!.look
     const gymFit = earlier.gym!.look
     assert.equal(oxford.status, 'new', 'offered on another day, never saved')
 
-    // A set from the Looks tab: a look that is drawn, and one he dismissed.
+    // A set from the Looks tab: a look that is drawn, and one she dismissed.
     const look = (title: string, piece_ids: number[]) =>
       ({ title, occasion: 'weekend', weather: 'mild', piece_ids, why: 'Why.', styling: null, better_with: null }) as const
     const setId = await saveSet(
       {
-        looks: [look('Drawn twin', [crew, tee, chinos, boots]), look('Dismissed one', [crew, chinos, boots])],
+        looks: [look('Drawn twin', [crew, tee, trousers, boots]), look('Dismissed one', [crew, trousers, boots])],
         proposed: 2,
         meta,
         usd: 0.2,
@@ -424,7 +431,7 @@ describe('a day made, read and turned', () => {
       insert into looks (set_id, position, title, occasion, weather, why, piece_count)
       values (${setId}, 9, 'Undrawn twin', 'weekend', 'mild', 'Why.', 4) returning id::int as id
     `
-    await sql`insert into look_pieces ${sql([crew, tee, chinos, boots].map((piece_id, position) => ({ look_id: twin!.id, piece_id, position })))}`
+    await sql`insert into look_pieces ${sql([crew, tee, trousers, boots].map((piece_id, position) => ({ look_id: twin!.id, piece_id, position })))}`
     await actOnLook({ action: 'dismiss', look_id: idOf('Dismissed one'), reason: 'not_me' }, sql)
     const countLooks = async () => (await sql<{ count: number }[]>`select count(*)::int as count from looks`)[0]!.count
     const looksBefore = await countLooks()
@@ -439,9 +446,9 @@ describe('a day made, read and turned', () => {
         sql,
         drafted(
           [
-            option([boots, chinos, shirt], { title: 'Claude called it something else', today: 'Mild again.' }),
-            option([tee, crew, chinos, boots], { occasion: 'weekend', title: 'Tee under the crew', today: 'Cool morning.' }),
-            option([crew, chinos, boots], { title: 'Crew and putty', today: 'Dry all day.' }),
+            option([boots, trousers, shirt], { title: 'Claude called it something else', today: 'Mild again.' }),
+            option([tee, crew, trousers, boots], { occasion: 'weekend', title: 'Tee under the crew', today: 'Cool morning.' }),
+            option([crew, trousers, boots], { title: 'Crew and putty', today: 'Dry all day.' }),
           ],
           option([trainers, tank, shorts], { occasion: 'gym', title: 'Same kit', today: 'A still evening.' }),
         ),
@@ -455,7 +462,7 @@ describe('a day made, read and turned', () => {
     assert.deepEqual(
       day.options.map((o) => [o.look.title, o.today]),
       [
-        ['Oxford and putty', 'Mild again.'],
+        ['Poplin and putty', 'Mild again.'],
         ['Drawn twin', 'Cool morning.'],
         ['Crew and putty', 'Dry all day.'],
       ],
@@ -479,7 +486,7 @@ describe('a day made, read and turned', () => {
     assert.equal((await readDay('2026-11-06', sql))?.shown, 0)
   })
 
-  test('a day already dressed is left alone, unless he asks again; one in the making blocks another', async () => {
+  test('a day already dressed is left alone, unless she asks again; one in the making blocks another', async () => {
     const now = new Date('2026-11-05T20:00:00Z') // 9am on the 6th in Wellington
     const existing = (await readDay('2026-11-06', sql))!
     assert.deepEqual(await startDay({ now }, sql), { ok: true, id: existing.id })

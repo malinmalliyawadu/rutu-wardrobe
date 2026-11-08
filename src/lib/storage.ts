@@ -5,13 +5,13 @@ import path from 'node:path'
 import { AwsClient } from 'aws4fetch'
 
 /*
- * Where every photo file lives: his photos, try-ons, flat lays, and the photos
- * of his pieces and of finds he added by hand. A key is the path a row keeps
+ * Where every photo file lives: her photos, try-ons, flat lays, and the photos
+ * of her pieces and of finds she added by hand. A key is the path a row keeps
  * (`3e3f….jpg`, `wardrobe/….thumb.jpg`, `try-ons/12-….jpg`), the same in both
  * stores, so moving between them is copying files and never touches a row.
  *
- * In production it is a private Cloudflare R2 bucket (Malin's call,
- * 2026-11-07, so photos do not fill the Coolify server). The bucket is never
+ * In production it is a private Cloudflare R2 bucket, so photos do not fill
+ * the Coolify server. The bucket is never
  * public: the app reads it with its own key and /photos/* stays the one door,
  * behind the sign-in. Without the R2 settings it is a folder (PHOTOS_DIR),
  * which is what dev and the tests use.

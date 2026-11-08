@@ -5,16 +5,16 @@ import { getLooks, type Look } from './looks.ts'
 import { listPieces, type Piece } from './pieces.ts'
 
 /*
- * What gets worn and what only gets offered, asked for by Malin on 2026-11-07
- * so he can start discarding outfits and pieces. Nothing new is recorded: an
+ * What gets worn and what only gets offered, so she can start discarding
+ * outfits and pieces. Nothing new is recorded: an
  * offer is a set of looks a look was in or a day it was on Today (the
  * look_offers view, migration 0022), and a wear is a look_wears row. A piece
  * is offered when a look wearing it is, and worn on a day a look wearing it
  * was; a day or a set counts once for a piece, however many of its looks wore
  * it. Wears of looks since dismissed or remade still count for their pieces,
- * since he did wear them.
+ * since she did wear them.
  *
- * Both lists put first what he passes over most: offered the most times more
+ * Both lists put first what she passes over most: offered the most times more
  * than it was worn, then the least worn, then the longest since it was.
  *
  * Pieces to rotate out are picked by a rule the page states, so the list is
@@ -33,7 +33,7 @@ export type PieceWear = {
   offered: number
   /** The looks it was offered in, whatever became of them. */
   looks: number
-  /** Days he wore a look with it in. */
+  /** Days she wore a look with it in. */
   worn: number
   /** YYYY-MM-DD in New Zealand. */
   last_worn: string | null
@@ -44,11 +44,11 @@ export type WornPiece = Piece & { wear: PieceWear }
 export type WearPage = {
   /** The day the first look was offered, in New Zealand, as YYYY-MM-DD. */
   since: string | null
-  /** Days he wore any look. */
+  /** Days she wore any look. */
   days_worn: number
   /** Pieces to rotate out (rotateOut), most passed over first, then those no look wears. */
   rotate: WornPiece[]
-  /** Looks he saved, most passed over first. */
+  /** Looks she saved, most passed over first. */
   saved: Look[]
   /** The rest of the pieces in the wardrobe that a look has worn, most passed over first. */
   pieces: WornPiece[]
@@ -110,7 +110,7 @@ export async function wearOf(pieceId: number, sql: Sql = db()): Promise<PieceWea
   return (await pieceWear(sql, [pieceId])).get(pieceId) ?? NONE
 }
 
-/** The Worn page: his saved looks, his pieces, what no look has worn, and the looks only offered. */
+/** The Worn page: her saved looks, her pieces, what no look has worn, and the looks only offered. */
 export async function readWear(sql: Sql = db(), now: Date = new Date()): Promise<WearPage> {
   const [summary] = await sql<{ since: string | null; days_worn: number }[]>`
     select (select to_char(min(offered_on), 'YYYY-MM-DD') from look_offers) as since,

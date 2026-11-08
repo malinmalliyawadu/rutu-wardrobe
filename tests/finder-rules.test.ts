@@ -7,45 +7,64 @@ import { categoryText, garmentOf, isWomenswear, kitGarmentOf, sizeKey, slotKind,
 import { colourCompatible, cutCompatible, familiesIn, namedCut, productFamilies, slotFamilies } from '../src/lib/finder/colour.ts'
 import { readPhoto } from '../src/lib/finder/photo-colour.ts'
 
-/* Cases taken from the eleven stores' real listings on 2026-11-04. */
+/* Cases in the words NZ womenswear shops use for their listings and sizes. */
 
 test('garment types from real titles and product types', () => {
   const cases: [string, string | null, string | null, string?][] = [
-    ['NIGHT CAMO BOX TEE 220 BLACK', 'HUFFER BY HUFFER', 'tee'],
-    ['HFR TANK 190/BILLED WHITE', 'HUFFER BY HUFFER', 'tank'],
-    ['Merino Singlet', null, 'tank'],
-    ['Australian Cotton Crew Sweat', 'Sweat - Casual', 'sweatshirt'],
-    ['Sweat Short', 'Shorts', 'shorts'],
+    ['Ecology Ring Spun Tee - Washed Black', 'T-Shirts', 'tee'],
+    ['Cap Sleeve Tee', 'Tees', 'tee'],
+    ['Organic Rib Tank', 'Tops', 'tank'],
+    ['Silk Cami - Champagne', 'Tops', 'tank'],
+    ['Silk Blouse', null, 'top'],
+    ['Corset Top', null, 'top'],
+    ['Bodysuit', 'Tops', 'top'],
+    ['Classic Poplin Shirt', 'Shirts', 'shirt'],
     ['Merino Crew', 'Knitwear', 'knitwear'],
-    ['Aubergine Merino Knitted Polo', null, 'polo'],
-    ['Wool Overshirt', 'Shirts', 'overshirt'],
-    ['Classic Oxford Shirt', 'Shirts', 'shirt'],
-    ['Suit Trouser', 'Tailoring', 'trousers'],
-    ['Unstructured Blazer', null, 'tailoring'],
-    ['Loud Larry - Dry Selvage', 'Mens Denim', 'jeans'],
-    ['Denim Jacket', null, 'jacket'],
-    ['Suede Chelsea Boot', 'Footwear', 'boots'],
-    ['Axel Arigato Daze Runner', null, 'sneakers'],
-    ['Leather Penny Loafer', 'Footwear', 'shoes'],
-    ['Waxed Canvas Backpack', null, 'bag'],
-    ['Umbro Panelled Long Sleeve Jersey', null, 'tee'],
-    ['CLASSIC HOOD / BASIS BLACK', 'CLUBHOUSE CLASSICS', 'sweatshirt'],
-    ['Merino Watch Cap', null, 'accessory', 'beanie'],
-    ['Logo Cap', 'Caps', 'accessory', 'cap'],
+    ['Cotton Cardigan', null, 'knitwear'],
+    ['Australian Cotton Crew Sweat', 'Sweat - Casual', 'sweatshirt'],
+    ['Poplin Shirt Dress', 'Dresses', 'dress'],
+    ['Linen Midi Dress', null, 'dress'],
+    ['Drop Waist Dress', null, 'dress'],
+    ['Ring Detail Midi Dress', null, 'dress'],
+    ['Linen Dress With Belt', null, 'dress'],
+    ['T-Shirt Dress', null, 'dress'],
+    ['Linen Jumpsuit', null, 'jumpsuit'],
+    ['Satin Bias Midi Skirt', 'Skirts', 'skirt'],
+    ['Denim Mini Skirt', null, 'skirt'],
+    ['Knit Midi Skirt', null, 'skirt'],
+    ['Tailored Dress Pants', 'Pants', 'trousers'],
+    ['Wide Leg Trouser', 'Pants', 'trousers'],
+    ['Flat Front Trouser', null, 'trousers'],
+    ['Mom Jean - Vintage Blue', 'Denim', 'jeans'],
+    ['Boot Cut Jean', null, 'jeans'],
+    ['Relaxed Linen Short', 'Shorts', 'shorts'],
+    ['Oversized Blazer', 'Jackets', 'tailoring'],
+    ['Leather Biker Jacket', null, 'jacket'],
+    ['Puffer Vest', null, 'jacket'],
+    ['Crop Puffer Jacket', null, 'jacket'],
+    ['Short Wool Coat', 'Coats', 'coat'],
+    ['Cropped Trench', null, 'coat'],
+    ['Strappy Heeled Sandal', 'Footwear', 'heels'],
+    ['Kitten Heel Slingback', null, 'heels'],
+    ['Leather Slide', 'Footwear', 'sandals'],
+    ['Ballet Flat', 'Shoes', 'flats'],
+    ['Leather Loafer', 'Footwear', 'flats'],
+    ['Suede Knee High Boot', 'Footwear', 'boots'],
+    ['Samba OG', 'Sneakers', 'sneakers'],
+    ['Leather Tote', null, 'bag'],
+    ['Mini Shoulder Bag', null, 'bag'],
     ['Leather Belt', null, 'belt'],
-    ["Men's Down Sweater™", 'Medium,Tops', 'jacket'],
-    ["Men's Micro Puff® Hoody", 'Medium,Tops', 'jacket'],
-    ["Men's Better Sweater® 1/4-Zip", 'Fleece', 'sweatshirt'],
-    ["Men's Twill Traveler 5-Pocket Pants - Regular", 'Medium,Bottoms & One Pieces', 'trousers'],
-    ['Short Sleeve Seersucker Cuban Shirt', 'Shirts', 'shirt'],
-    ['Jackson Fitted Short Sleeve Henley Ivory', 'Mens Tees', 'tee'],
-    ["Men's Short-Sleeved Self-Guided Sun Shirt", 'Medium,Tops', 'shirt'],
-    ['Christian Kimber Otway Short-Sleeved Polo - Sky Stripe', null, 'polo'],
-    ['Linen Short', 'Mens Shorts', 'shorts'],
-    ['Cassius Knitted Vest Khaki', 'Mens Jackets', 'knitwear'],
-    ['CABLE KNIT VEST NAVY', null, 'knitwear'],
-    ['Oliver Spencer V Neck Knit Vest', null, 'knitwear'],
-    ['Patagonia Down Sweater Vest', null, 'jacket'],
+    ['Gold Huggie Hoops', 'Jewellery', 'jewellery', 'earrings'],
+    ['Pearl Drop Earrings', null, 'jewellery', 'earrings'],
+    ['Pearl Pendant Necklace', null, 'jewellery', 'necklace'],
+    ['Chain Bracelet', null, 'jewellery', 'bracelet'],
+    ['Signet Ring', 'Jewellery', 'jewellery', 'ring'],
+    ['Wool Scarf', null, 'accessory', 'scarf'],
+    ['Tortoiseshell Claw Clip', null, 'accessory', 'hair'],
+    ['Wool Beret', null, 'accessory', 'hat'],
+    ["Women's Down Sweater™", 'Medium,Tops', 'jacket'],
+    ["Women's Better Sweater® 1/4-Zip", 'Fleece', 'sweatshirt'],
+    ['Short Sleeve Linen Shirt', 'Shirts', 'shirt'],
   ]
   for (const [title, type, garment, kind] of cases) {
     const result = garmentOf(title, type)
@@ -54,19 +73,17 @@ test('garment types from real titles and product types', () => {
   }
 })
 
-test('never a slot: swimwear, socks, jewellery, sunglasses, towels', () => {
+test('never a slot: swimwear, underwear, sleepwear, hosiery, sunglasses, towels', () => {
   for (const [title, type] of [
-    ['Geo Swim Short', 'Short - Casual'],
-    ['Marcoliani Luxury Stripe Socks', 'Footwear'],
-    ['Serge DeNimes Onyx Armour Ring', 'Rings'],
-    ['Port Tanger Ayreen Sunglasses', null],
-    ['Barkers Beach Towel', 'Accessories / General Accessories'],
-    ['Ring Spun Tee', 'Rings'],
-    ["Men's R1® Yulex® Regulator® Front-Zip Spring Suit", 'Wetsuits'],
-    ['R3® Yulex® Regulator® Split Toe Wetsuit Booties', null],
-    ["Men's RØ® Top", 'Tops - L/S,L/S Pullovers / Swimwear'],
-    ['Merino Rib Vest', 'Underwear'],
-    ['Ribbed Vest White', null],
+    ['Ribbed Bikini Top', 'Swim'],
+    ['Lace Bralette', 'Lingerie'],
+    ['Cotton Brief 3 Pack', null],
+    ['Silk Pyjama Set', null],
+    ['Sheer Tights', 'Hosiery'],
+    ['Cat Eye Sunglasses', null],
+    ['Waffle Bath Towel', 'Home'],
+    ['Digital Gift Card', null],
+    ['Linen Robe', null],
   ] as const) {
     assert.equal(garmentOf(title, type).garment_type, null, title)
   }
@@ -74,44 +91,44 @@ test('never a slot: swimwear, socks, jewellery, sunglasses, towels', () => {
 })
 
 test('sport kit is activewear, so it never fills a style slot', () => {
-  assert.equal(garmentOf('Brooks Adrenaline GTS 4', 'Running Shoes').garment_type, 'activewear')
-  assert.equal(garmentOf('Restrained Active Crop Tee - Off White', 'activewear').garment_type, 'activewear')
-  assert.equal(garmentOf('Huffer Golf Polo', 'HUFFER GOLF').garment_type, 'activewear')
-  assert.equal(garmentOf("Men's Insulated Snowfarer Bibs", 'Medium,Bottoms & One Pieces').garment_type, 'activewear')
-  assert.equal(garmentOf("Men's Swiftcurrent Wading Pants", null).garment_type, 'activewear')
-  assert.equal(garmentOf("Men's Capilene® Cool Daily Shirt", 'Tops - S/S').garment_type, 'activewear', 'Capilene is a technical fabric')
-  assert.equal(garmentOf('Bib-Front Lansdowne Dinner Shirt - White', 'Shirts').garment_type, 'shirt', 'a bib front is not cycling bibs')
-  assert.equal(garmentOf('Axel Arigato Daze Runner', null).garment_type, 'sneakers', 'a lifestyle runner is a sneaker')
+  assert.equal(garmentOf('Gel-Nimbus 26', 'Running Shoes').garment_type, 'activewear')
+  assert.equal(garmentOf('Align High-Rise Legging 25"', null).garment_type, 'activewear')
+  assert.equal(garmentOf('Energy Sports Bra', null).garment_type, 'activewear', 'a sports bra is kit, not underwear')
+  assert.equal(garmentOf('Pleated Tennis Skirt', null).garment_type, 'activewear')
+  assert.equal(garmentOf("Women's Capilene® Cool Daily Shirt", 'Tops - S/S').garment_type, 'activewear', 'Capilene is a technical fabric')
+  assert.equal(garmentOf('Samba OG', 'Sneakers').garment_type, 'sneakers', 'a lifestyle sneaker is not kit')
 })
 
-test('as a piece he owns, sport kit is the garment it is', () => {
-  assert.equal(kitGarmentOf('Brooks Adrenaline GTS 4', 'Running Shoes'), 'shoes')
-  assert.equal(kitGarmentOf('Restrained Active Crop Tee - Off White', 'activewear'), 'tee')
+test('as a piece she owns, sport kit is the garment it is', () => {
+  assert.equal(kitGarmentOf('Gel-Nimbus 26', 'Running Shoes'), 'flats', 'a shoe the rules cannot place further')
   assert.equal(kitGarmentOf('Training Singlet', null), 'tank')
-  assert.equal(kitGarmentOf('Compression Leggings', null), null, 'still not womenswear the app dresses')
+  assert.equal(kitGarmentOf('Energy Sports Bra', null), 'tank', 'a sports bra is the top she trains in')
+  assert.equal(kitGarmentOf('Align High-Rise Legging 25"', null), 'trousers')
+  assert.equal(kitGarmentOf('Speed Up Bike Short', null), 'shorts')
 })
 
-test("END.'s empty product type is read from its category tags", () => {
-  const type = categoryText(null, ['cat_high:Apparel', 'cat_low:Sweatshirts', 'cat_med:Tops', 'gender:Mens'])
-  assert.equal(garmentOf('Umbro Diamond Drill Top', type).garment_type, 'sweatshirt')
+test("a store's empty product type is read from its category tags", () => {
+  const type = categoryText(null, ['cat_high:Apparel', 'cat_low:Dresses', 'cat_med:Clothing', 'gender:Womens'])
+  assert.equal(garmentOf('Odette Midi', type).garment_type, 'dress')
 })
 
-test('womenswear: a womenswear store needs only not to say women or kids; a mixed store must say men', () => {
+test('womenswear: a womenswear store needs only not to say men or kids; a mixed store must say women', () => {
   const base = { title: 'Box Tee', productType: 'Tops', tags: [] as string[] }
   assert.ok(isWomenswear({ ...base, catalogue: 'womenswear' }))
-  assert.ok(!isWomenswear({ ...base, title: 'WOMENS FINE RIB TANK', catalogue: 'womenswear' }))
+  assert.ok(!isWomenswear({ ...base, title: 'MENS HEAVY BOX TEE', catalogue: 'womenswear' }))
   assert.ok(!isWomenswear({ ...base, catalogue: 'mixed' }))
-  assert.ok(isWomenswear({ ...base, tags: ['Mens'], catalogue: 'mixed' }))
+  assert.ok(isWomenswear({ ...base, tags: ['Womens'], catalogue: 'mixed' }))
   assert.ok(isWomenswear({ ...base, tags: ['Gender:Unisex'], catalogue: 'mixed' }))
-  assert.ok(!isWomenswear({ ...base, tags: ['Gender:Women'], catalogue: 'mixed' }))
-  assert.ok(isWomenswear({ ...base, tags: ['Woman Man Nov 2026'], catalogue: 'mixed' }), 'says men as well as women')
-  assert.ok(!isWomenswear({ ...base, tags: ['Child Boys', 'Mens'], catalogue: 'mixed' }), 'kids never')
+  assert.ok(!isWomenswear({ ...base, tags: ['Gender:Men'], catalogue: 'mixed' }))
+  assert.ok(isWomenswear({ ...base, tags: ['Woman Man Nov 2026'], catalogue: 'mixed' }), 'says women as well as men')
+  assert.ok(!isWomenswear({ ...base, tags: ['Girls', 'Womens'], catalogue: 'mixed' }), 'kids never')
+  assert.ok(isWomenswear({ ...base, title: 'Girlfriend Jean', catalogue: 'womenswear' }), 'a girlfriend jean is not kids')
   assert.ok(
-    !isWomenswear({ ...base, productType: 'Womens Pants', tags: ['Mens', 'Mens: Pants'], catalogue: 'mixed' }),
-    "a women's product type outweighs a loose men tag",
+    !isWomenswear({ ...base, productType: 'Mens Pants', tags: ['Womens', 'Womens: Pants'], catalogue: 'mixed' }),
+    "a men's product type outweighs a loose women tag",
   )
   assert.ok(
-    isWomenswear({ ...base, productType: 'Womens Denim', tags: ['Gender:Men', 'Gender:Women'], catalogue: 'mixed' }),
+    isWomenswear({ ...base, productType: 'Mens Denim', tags: ['Gender:Men', 'Gender:Women'], catalogue: 'mixed' }),
     'but not a gender tag',
   )
 })
@@ -119,44 +136,56 @@ test('womenswear: a womenswear store needs only not to say women or kids; a mixe
 test('size keys by garment', () => {
   assert.equal(sizeKey('Small', 'tee'), 'S')
   assert.equal(sizeKey('S/M', 'tee'), 'S/M')
-  assert.equal(sizeKey('IT 46', 'jacket'), 'C46')
-  assert.equal(sizeKey('46', 'tailoring'), 'C46')
-  assert.equal(sizeKey('38R', 'tailoring'), 'R38')
-  assert.equal(sizeKey('32', 'trousers'), 'W32')
-  assert.equal(sizeKey('30/32', 'jeans'), 'W30')
-  assert.equal(sizeKey('W31 L32', 'jeans'), 'W31')
-  assert.equal(sizeKey('42', 'sneakers'), 'EU42')
-  assert.equal(sizeKey('UK 8.5', 'boots'), 'UK8.5')
-  assert.equal(sizeKey('US9', 'shoes'), 'US9')
+  assert.equal(sizeKey('8 (S)', 'dress'), 'S', 'a number with its letter reads as the letter')
+  assert.equal(sizeKey('XS / 6', 'top'), 'XS')
+  assert.equal(sizeKey('AU 10', 'dress'), 'AU10')
+  assert.equal(sizeKey('10', 'skirt'), 'AU10')
+  assert.equal(sizeKey('US 4', 'dress'), 'AU8', 'US women is four under AU')
+  assert.equal(sizeKey('EU 38', 'top'), 'AU10')
+  assert.equal(sizeKey('IT 42', 'dress'), 'AU10')
+  assert.equal(sizeKey('US 5', 'dress'), null, 'an odd number is a junior size, never guessed at')
+  assert.equal(sizeKey('26', 'jeans'), 'W26')
+  assert.equal(sizeKey('27/30', 'jeans'), 'W27')
+  assert.equal(sizeKey('W28 L32', 'jeans'), 'W28')
+  assert.equal(sizeKey('27"', 'jeans'), 'W27')
+  assert.equal(sizeKey('2', 'jeans'), null, "a label's own 0 to 3 means something different at every label")
+  assert.equal(sizeKey('38', 'heels'), 'EU38')
+  assert.equal(sizeKey('37.5', 'flats'), 'EU37.5')
+  assert.equal(sizeKey('AU 7', 'sandals'), 'US7', 'AU women is the US number')
+  assert.equal(sizeKey('7', 'heels'), 'US7')
+  assert.equal(sizeKey('UK 5', 'boots'), 'UK5')
   assert.equal(sizeKey('O/S', 'accessory'), 'ONE')
-  assert.equal(sizeKey('Default Title', null), 'ONE')
-  assert.equal(sizeKey('34"', 'jeans'), 'W34')
-  assert.equal(sizeKey('30 inch Waist x 32 inch Leg', 'jeans'), 'W30')
-  assert.equal(sizeKey('32"', 'belt'), 'W32', 'a belt is sized by the waist')
-  assert.equal(sizeKey('2 (S)', 'knitwear'), 'S')
-  assert.equal(sizeKey('XXXX LARGE', 'tee'), null)
+  assert.equal(sizeKey('One Size', 'jewellery'), 'ONE')
   assert.equal(sizeKey('OSA', 'bag'), 'ONE')
-  assert.equal(sizeKey('ALL', 'accessory'), 'ONE', "Patagonia's hats")
-  assert.equal(sizeKey('8', 'sneakers'), null, 'a bare 8 on a shoe could be UK or US')
+  assert.equal(sizeKey('Default Title', null), 'ONE')
+  assert.equal(sizeKey('XXXX LARGE', 'tee'), null)
   assert.equal(sizeKey('Ocean', 'tee'), null)
 })
 
-test('his sizes: the tee size covers neighbouring pairs and chest numbers; unknown sizes are null', () => {
-  const tops = wantedSizeKeys('knitwear', [], { tee: 'S' })
-  assert.deepEqual(tops, ['S', 'S/XS', 'XS/S', 'S/M', 'M/S', 'C46', 'R36', 'R38'])
-  assert.equal(wantedSizeKeys('trousers', [], { tee: 'S' }), null)
-  assert.deepEqual(wantedSizeKeys('trousers', [], { waist_cm: 79 }), ['W31'])
-  assert.deepEqual(wantedSizeKeys('sneakers', [], { shoe_eu: 42, shoe_uk: 8 }), ['EU42', 'UK8'])
-  assert.deepEqual(wantedSizeKeys('tee', ['M'], { tee: 'S' })?.[0], 'M', "a slot's own labels win")
-  assert.equal(wantedSizeKeys('accessory', [], { tee: 'S' }), null)
+test('her sizes: a letter covers neighbouring pairs and its AU numbers, and the other way round; unknown sizes are null', () => {
+  assert.deepEqual(wantedSizeKeys('dress', [], { letter: 'S' }), ['S', 'S/XS', 'XS/S', 'S/M', 'M/S', 'AU8', 'AU10'])
+  assert.deepEqual(wantedSizeKeys('top', [], { dress: 10 }), ['S', 'S/XS', 'XS/S', 'S/M', 'M/S', 'M', 'M/L', 'L/M', 'AU10'])
+  assert.deepEqual(wantedSizeKeys('skirt', [], { letter: 'S', jeans: 26 }), ['S', 'S/XS', 'XS/S', 'S/M', 'M/S', 'AU8', 'AU10', 'W26'])
+  assert.deepEqual(
+    wantedSizeKeys('jeans', [], { dress: 10 }),
+    ['S', 'S/XS', 'XS/S', 'S/M', 'M/S', 'M', 'M/L', 'L/M', 'AU10', 'W27', 'W28'],
+    'with no waist given, the waists her AU size usually means',
+  )
+  assert.deepEqual(wantedSizeKeys('jeans', [], { jeans: 26 }), ['W26'])
+  assert.deepEqual(wantedSizeKeys('trousers', [], { waist_cm: 68 }), ['W27'], 'a waist in centimetres, in inches')
+  assert.equal(wantedSizeKeys('trousers', [], { shoe_eu: 38 }), null)
+  assert.deepEqual(wantedSizeKeys('heels', [], { shoe_eu: 38, shoe_au: 7 }), ['EU38', 'US7', 'UK5'])
+  assert.deepEqual(wantedSizeKeys('skirt', ['10'], { letter: 'M' }), ['AU10'], "a slot's own labels win")
+  assert.equal(wantedSizeKeys('jewellery', [], { letter: 'S' }), null)
 })
 
-test('accessory slots name their kind', () => {
-  assert.equal(slotKind('accessory', 'Espresso fine merino beanie'), 'beanie')
-  assert.equal(slotKind('accessory', 'Ink merino scarf'), 'scarf')
-  assert.equal(slotKind('belt', 'Espresso leather belt with antique brass buckle'), null, 'a belt is its own type')
-  assert.equal(slotKind('accessory', 'Brushed gold cream-dial watch on dark brown leather strap'), 'watch')
-  assert.equal(slotKind('knitwear', 'Pine fine-gauge merino crewneck'), null)
+test('accessory and jewellery slots name their kind', () => {
+  assert.equal(slotKind('jewellery', 'Gold huggie hoops'), 'earrings')
+  assert.equal(slotKind('jewellery', 'Fine gold chain necklace'), 'necklace')
+  assert.equal(slotKind('accessory', 'Camel wool scarf'), 'scarf')
+  assert.equal(slotKind('accessory', 'Tortoiseshell claw clip'), 'hair')
+  assert.equal(slotKind('belt', 'Tan leather belt with a gold buckle'), null, 'a belt is its own type')
+  assert.equal(slotKind('knitwear', 'Pine fine-gauge merino cardigan'), null)
 })
 
 test('colour words, longest phrase first', () => {
@@ -165,12 +194,14 @@ test('colour words, longest phrase first', () => {
   assert.deepEqual(familiesIn('Coat'), [], '"oat" inside a word is not a colour')
   assert.deepEqual(familiesIn('Tank Top'), [], '"tan" inside a word is not a colour')
   assert.deepEqual(familiesIn('Stone Wash Jean'), ['blue'])
+  assert.deepEqual(familiesIn('Satin Slip Dress - Butter'), ['yellow'])
+  assert.deepEqual(familiesIn('Ballet Flat - Black'), ['black'], 'a ballet flat is not ballet pink')
 })
 
 test('the brand is not the colour', () => {
-  assert.deepEqual(productFamilies({ title: 'Stone Island Ghost Overshirt', vendor: 'Stone Island', colours: [], tags: [] }), [])
+  assert.deepEqual(productFamilies({ title: 'Rose Midi Dress', vendor: 'Rose', colours: [], tags: [] }), [])
   assert.deepEqual(productFamilies({ title: 'Tee', vendor: null, colours: ['Pine', 'Black'], tags: [] }).sort(), ['black', 'green'])
-  assert.deepEqual(productFamilies({ title: 'Tee', vendor: null, colours: [], tags: ['Colour:Silver', 'Gender:Men'] }), ['grey'])
+  assert.deepEqual(productFamilies({ title: 'Tee', vendor: null, colours: [], tags: ['Colour:Silver', 'Gender:Women'] }), ['grey'])
 })
 
 test('the colour rule only says no when the words are sure', () => {
@@ -180,14 +211,19 @@ test('the colour rule only says no when the words are sure', () => {
   assert.ok(colourCompatible(ecru, ['black', 'ecru']), 'one of its colours is enough')
   assert.ok(colourCompatible(ecru, []), 'no colour words: Claude decides')
   assert.ok(colourCompatible(null, ['black']), 'a slot with no colour words takes anything')
-  const watch = slotFamilies(['Brushed gold cream-dial watch on dark brown leather strap', 'cream and dark brown'])
-  assert.ok(colourCompatible(watch, ['yellow']), 'gold is in the slot name')
+  const hoops = slotFamilies(['Gold huggie hoops', 'gold'])
+  assert.ok(colourCompatible(hoops, ['yellow']), 'gold is in the slot name')
 })
 
 test('a cut the listing names about itself, against what the slot and guide allow', () => {
   assert.equal(namedCut('Heavy Box Tee 2.0 - Off White'), 'oversized')
   assert.equal(namedCut('Wide Tee Black | Boxy | Oversized'), 'oversized')
-  assert.equal(namedCut('Relaxed Fit Chino'), 'relaxed')
+  assert.equal(namedCut('Relaxed Fit Trouser'), 'relaxed')
+  assert.equal(namedCut('Boyfriend Jean'), 'relaxed')
+  assert.equal(namedCut('Skinny Jean - Black'), 'slim')
+  assert.equal(namedCut('Bodycon Midi Dress'), 'slim')
+  assert.equal(namedCut('Balloon Sleeve Blouse'), null, 'a balloon sleeve says nothing about the body')
+  assert.equal(namedCut('Balloon Leg Jean'), 'oversized')
   assert.equal(namedCut('Ecru Heavyweight Crew Tee'), null)
   assert.ok(!cutCompatible(['slim', 'regular'], 'oversized'))
   assert.ok(cutCompatible(['regular', 'relaxed'], 'relaxed'))

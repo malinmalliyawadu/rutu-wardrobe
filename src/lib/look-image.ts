@@ -22,12 +22,11 @@ import {
 } from './try-on.ts'
 
 /*
- * A picture of a look without him: a womenswear lookbook flat lay, drawn by
- * OpenAI from his own photo of each piece, else the shop's photo, else the
+ * A picture of a look without her: a womenswear lookbook flat lay, drawn by
+ * OpenAI from her own photo of each piece, else the shop's photo, else the
  * piece's description. Made for the outfit of the day's option on show, with
- * no tap (Malin's ask, 2026-11-05; the photo rule in docs/plan.md 1.1 says
- * which photos may go). His own photo is never sent: "See it on me" stays the
- * only way he is in a picture, and only on his tap.
+ * no tap (the photo rule in docs/plan.md 1.1 says which photos may go). Her own photo is never sent: "See it on me" stays the
+ * only way she is in a picture, and only on her tap.
  *
  * One picture per outfit, kept while its pieces and their photos stay the same
  * (pieces_key); a change, such as a photo added to a piece, makes a new one
@@ -93,15 +92,15 @@ export function lookImagePrompt(look: { title: string; styling: string | null; p
     image === 0
       ? null
       : image === 1
-        ? "Image 1 is a photo of one of the pieces: his own, laid flat or on a hanger, or a shop's photo."
-        : `Images 1 to ${image} are photos of the pieces: his own, laid flat or on a hanger, or a shop's photo.`
+        ? "Image 1 is a photo of one of the pieces: her own, laid flat or on a hanger, or a shop's photo."
+        : `Images 1 to ${image} are photos of the pieces: her own, laid flat or on a hanger, or a shop's photo.`
   return [
     photos,
-    `Make a photograph of this whole outfit, "${look.title}", as a womenswear lookbook flat lay, so a man can see how the pieces he owns look together. The pieces, from the outermost layer in:`,
+    `Make a photograph of this whole outfit, "${look.title}", as a womenswear lookbook flat lay, so she can see how the pieces she owns look together. The pieces, from the outermost layer in:`,
     ...lines,
     look.styling ? `Lay it out the way it is worn: ${look.styling}` : null,
-    'Arrange them as they would be worn, seen from directly above: the outer layer open over the top, the top above the trousers, the shoes at the foot, anything carried beside. Every piece whole and in frame, nothing overlapping so much that it is hidden.',
-    'Reproduce each piece exactly as in its photo: the same colour and shade, without shifting its hue, brightness or saturation; the same fabric, texture, weight, pattern, cut, length, collar, buttons, pockets, stitching and hardware. Take only the garment from each photo, nothing of the bed, floor, hanger, model or other clothes around it. Make a piece given only in words plainly, in exactly that colour, with no pattern, logos or details that are not described. Add no logos, text or details anywhere.',
+    'Arrange them as they would be worn, seen from directly above: the outer layer open over the top, the top above the skirt or trousers (a dress laid out at its full length, a knit over its shoulders when it is worn over it), the belt at the waist, the shoes at the foot, the bag beside, jewellery laid small near the neckline at its true scale. Every piece whole and in frame, nothing overlapping so much that it is hidden.',
+    'Reproduce each piece exactly as in its photo: the same colour and shade, without shifting its hue, brightness or saturation; the same fabric, texture, sheen, weight, pattern, cut, length, neckline, straps, collar, buttons, pockets, stitching and hardware. Take only the garment from each photo, nothing of the bed, floor, hanger, model or other clothes around it. Make a piece given only in words plainly, in exactly that colour, with no pattern, logos or details that are not described. Add no logos, text or details anywhere.',
     'No person, no mannequin, no hangers. A plain warm off-white paper background, soft even daylight, a soft natural shadow under each piece, natural creases. Nothing else in the picture: no props, plants, jewellery or accessories that are not listed.',
   ]
     .filter((line): line is string => line !== null)

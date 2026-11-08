@@ -112,7 +112,7 @@ function garment(value: string | null | undefined): GarmentType | null {
   return value && (GARMENT_TYPES as readonly string[]).includes(value) ? (value as GarmentType) : null
 }
 
-/** "Ink Wool Overshirt, Grey tee and Putty chinos" */
+/** "Ink Wool Blazer, Rust satin cami and Putty trousers" */
 export function outfitTitle(names: string[]): string {
   if (names.length === 0) return 'Your choice'
   if (names.length === 1) return names[0]!

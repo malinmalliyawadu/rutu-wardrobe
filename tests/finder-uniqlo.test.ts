@@ -16,8 +16,9 @@ import {
 
 /*
  * Uniqlo's product pages, trimmed to the preloaded state's product, saved
- * from uniqlo.com/au/en on 2026-11-05: a sweater in five colours on sale, a
- * pair of jeans sized by waist, and the page for a product that does not exist.
+ * from uniqlo.com/au/en on 2026-11-05: a men's sweater in five colours on
+ * sale, a unisex pair of jeans sized by waist, and the page for a product
+ * that does not exist.
  */
 const page = (name: string) => readFileSync(new URL(`./fixtures/${name}`, import.meta.url), 'utf8')
 const sweater = readUniqloPage(page('uniqlo-sweater.html'))!
@@ -72,7 +73,8 @@ test('one colour is one product: its photo, its sizes, the sale price beside the
   assert.equal(black.external_id, 'E475296-000-00-09')
   assert.equal(black.handle, 'E475296-000/00/09')
   assert.equal(black.url, 'https://www.uniqlo.com/au/en/products/E475296-000/00?colorDisplayCode=09')
-  assert.deepEqual([black.vendor, black.product_type, black.garment_type, black.womenswear], ['Uniqlo', 'Jumpers & Sweaters', 'knitwear', true])
+  assert.deepEqual([black.vendor, black.product_type, black.garment_type, black.womenswear], ['Uniqlo', 'Jumpers & Sweaters', 'knitwear', false])
+  assert.equal(normaliseUniqlo({ ...sweater, genderName: 'women' }, '09', store).womenswear, true, "Uniqlo's own gender decides")
   assert.equal(black.images[0]!.src, 'https://image.uniqlo.com/UQ/ST3/au/imagesgoods/475296/item/augoods_09_475296_3x4.jpg')
   assert.ok(
     black.images.every((image) => image.src.includes('_09_') || !/goods_\d\d_/.test(image.src)),

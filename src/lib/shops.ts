@@ -10,10 +10,10 @@ import { GARMENT_TYPES, type GarmentType } from './wardrobe-values.ts'
 
 /*
  * Everything the finder read, for the Shops page: every womenswear product
- * still in stock at a store he has on, searchable, with what the finder made
+ * still in stock at a store she has on, searchable, with what the finder made
  * of it. The feed on Today shows only what clears the bar for a slot; this is
- * where he finds what it passed over (too low a match, never shortlisted,
- * waiting to be judged) and saves it himself, for a slot or for none.
+ * where she finds what it passed over (too low a match, never shortlisted,
+ * waiting to be judged) and saves it herself, for a slot or for none.
  *
  * "Closest first" puts what Claude matched to an open slot at the top, best
  * first; then what the rules shortlisted and Claude has yet to judge; then
@@ -21,7 +21,7 @@ import { GARMENT_TYPES, type GarmentType } from './wardrobe-values.ts'
  * first.
  */
 
-/** What the finder made of a product, and what he did with it. */
+/** What the finder made of a product, and what she did with it. */
 export type ShopPiece = {
   product_id: number
   title: string
@@ -32,19 +32,19 @@ export type ShopPiece = {
   try_on: string | null
   garment_type: GarmentType | null
   price: Price
-  /** In stock, in his size when the page is narrowed to it, in the store's order. */
+  /** In stock, in her size when the page is narrowed to it, in the store's order. */
   sizes: string[]
-  /** True when the sizes are his, known for this garment and narrowed to. */
+  /** True when the sizes are hers, known for this garment and narrowed to. */
   size_known: boolean
   /** Every store Shops lists is walked nightly, with stock per size. */
   stock_known: true
   /** Claude's latest judgement, of this or an earlier version of the listing. */
   judged: { score: number; slot_id: number | null; why: string | null } | null
-  /** On the latest run's shortlist: the rules let it through for one of his slots. */
+  /** On the latest run's shortlist: the rules let it through for one of her slots. */
   shortlisted: boolean
   /** Showing on Today right now: it clears the bar and is among its slot's best. */
   on_today: boolean
-  /** His latest action on it; a cleared save or dismissal counts as none. */
+  /** Her latest action on it; a cleared save or dismissal counts as none. */
   action: { kind: 'saved' | 'dismissed' | 'bought'; slot_id: number | null; reason: DismissReason | null } | null
 }
 
@@ -83,7 +83,7 @@ type Row = {
   total: number
 }
 
-/** "navy  overshirt" is two words, each matched anywhere, with % and _ taken literally. */
+/** "navy  cardigan" is two words, each matched anywhere, with % and _ taken literally. */
 export function searchPatterns(q: string): string[] {
   return q
     .split(/\s+/)
@@ -92,7 +92,7 @@ export function searchPatterns(q: string): string[] {
     .map((word) => `%${word.replace(/[\\%_]/g, (char) => `\\${char}`)}%`)
 }
 
-/** His size keys for each garment the profile knows a size for. */
+/** Her size keys for each garment the profile knows a size for. */
 export function sizeKeysByGarment(sizes: Partial<Sizes>): Partial<Record<GarmentType, string[]>> {
   const keys: Partial<Record<GarmentType, string[]>> = {}
   for (const garment of GARMENT_TYPES) {
@@ -228,7 +228,7 @@ function piece(row: Row, rates: Record<string, number>, today: Set<number>): Sho
 }
 
 /**
- * The slot a save goes to unless he picks another: the one Claude matched it
+ * The slot a save goes to unless she picks another: the one Claude matched it
  * to, when that slot is still open, otherwise the first open slot for the same
  * garment, otherwise none.
  */

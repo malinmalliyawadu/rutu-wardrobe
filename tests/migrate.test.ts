@@ -9,7 +9,7 @@ import { connect } from '../src/lib/db.ts'
  * its own, so it gets a real test against a real database. It runs in a
  * scratch database created for the test, never the one DATABASE_URL names:
  * the --reset path drops the whole public schema, and the development
- * database will hold Malin's profile.
+ * database will hold Rutu's profile.
  */
 
 type Line = { event: string; applied?: number; total?: number }

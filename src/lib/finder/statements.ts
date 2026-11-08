@@ -32,19 +32,19 @@ import {
 import type { ProductImage } from './shopify.ts'
 
 /*
- * Stage 4 of the nightly run: statement pieces, asked for by Malin on
- * 2026-11-05. The slots of his blueprint are mostly the right basics; a
- * statement piece is the one in an outfit that carries it, by its colour, its
- * texture or its cut, and it rarely fills a slot.
+ * Stage 4 of the nightly run: statement pieces. The slots of her blueprint
+ * are mostly the right basics; a statement piece is the one in an outfit that
+ * carries it, by its colour, its texture or its cut, and it rarely fills a
+ * slot.
  *
- *   rules  free: a piece he could wear (not tees, shorts, gym kit, caps or
- *          bags), in his size, under the most he would pay for one of its
- *          kind, not dismissed or bought, whose listing names one of his
- *          bold best colours, a texture, or a cut or detail. Patterns are not
- *          what he means, so a pattern alone never picks a piece.
- *   judge  Sonnet, once per version of a listing, against his profile, his
- *          guide and the pieces he owns: how good a statement piece it is
- *          for him, what makes it one, and what of his it wears with.
+ *   rules  free: a piece she could wear (not tees, tanks, shorts, gym kit,
+ *          caps or hair clips), in her size, under the most she would pay for
+ *          one of its kind, not dismissed or bought, whose listing names one
+ *          of her bold best colours, a texture, or a cut or detail. Patterns
+ *          are not what she means, so a pattern alone never picks a piece.
+ *   judge  Sonnet, once per version of a listing, against her profile, her
+ *          guide and the pieces she owns: how good a statement piece it is
+ *          for her, what makes it one, and what of hers it wears with.
  *          Strongest signals first, so the nightly cap cuts the weakest.
  */
 
@@ -63,55 +63,88 @@ export const QUALITY_LABELS: Record<Quality, string> = {
 export const STATEMENT_GARMENTS = [
   'jacket',
   'coat',
-  'overshirt',
+  'dress',
   'tailoring',
   'knitwear',
+  'top',
+  'skirt',
   'shirt',
-  'polo',
-  'sweatshirt',
+  'jumpsuit',
   'trousers',
-  'accessory',
-  'shoes',
+  'bag',
+  'jewellery',
+  'heels',
   'boots',
+  'flats',
+  'sandals',
+  'accessory',
   'jeans',
+  'sweatshirt',
   'sneakers',
 ] as const satisfies readonly GarmentType[]
 
-/** Accessories that can lead an outfit; caps are mostly logos, gloves and watches rarely read as one. */
-export const STATEMENT_ACCESSORIES = ['scarf', 'beanie', 'tie'] as const
+/** Accessories that can lead an outfit; caps are mostly logos, hair clips and gloves rarely read as one. */
+export const STATEMENT_ACCESSORIES = ['scarf'] as const
 
 /** Families that are neutrals however deep: colour alone never makes these a statement. */
 const QUIET: readonly Family[] = ['black', 'grey', 'white', 'ecru', 'beige', 'brown', 'navy']
 
-/** Footwear's materials are its basics (every loafer is leather or suede), so only colour or cut pick it. */
-const FOOTWEAR: readonly GarmentType[] = ['shoes', 'boots', 'sneakers']
+/**
+ * Shoes and bags are leather or suede as a rule, so their materials are their
+ * basics: only a surface that stands out on them (patent, metallic, satin,
+ * raffia) is a texture. Jewellery has no cloth at all, so only its colour or
+ * its shape picks it.
+ */
+const SURFACE_ONLY: readonly GarmentType[] = ['flats', 'heels', 'sandals', 'boots', 'sneakers', 'bag']
+const NO_TEXTURE: readonly GarmentType[] = ['jewellery']
 
 const word = (source: string) => new RegExp(`(^|[^a-z])(${source})(?=$|[^a-z])`, 'i')
 
 /*
  * Read in the title and the store's tags, which often name the material
- * ("_Boucle", ":Leather"). Not "quilted" (every puffer), nor herringbone or
- * seersucker, which are patterns, and patterns are not what he means.
+ * ("_Boucle", ":Satin"). Not "quilted" (every puffer), nor linen, which is
+ * most of a Wellington summer's stock, nor broderie or jacquard, which are
+ * patterns, and patterns are not what she means.
  */
 const TEXTURE = word(
   [
     'corduroy', 'cords?', 'needlecord', 'boucle', 'mohair', 'alpaca', 'suede', 'leather', 'shearling', 'sherpa',
-    'teddy', 'pile', 'velvet', 'velour', 'chenille', 'moleskin', 'tweed', 'donegal', 'cable', 'cable[- ]?knit',
-    'fisherman', 'aran', 'waffle', 'terry', 'towelling', 'toweling', 'crochet', 'textured',
+    'teddy', 'faux fur', 'velvet', 'velour', 'chenille', 'tweed', 'cable', 'cable[- ]?knit', 'fisherman', 'aran',
+    'crochet', 'textured', 'satin', 'silk', 'lace(?![- ]?up)', 'sequins?', 'sequinn?ed', 'beaded', 'embellished', 'organza',
+    'tulle', 'sheer', 'mesh', 'pointelle', 'feathers?', 'fringed?', 'metallic', 'lurex', 'lame', 'patent',
+    'raffia', 'croc', 'pony ?hair', 'calf ?hair',
+  ].join('|'),
+)
+
+/** The textures that stand out on a shoe or a bag, where leather and suede are the basics. */
+const SURFACE = word(
+  [
+    'velvet', 'satin', 'patent', 'metallic', 'raffia', 'woven', 'croc', 'pony ?hair', 'calf ?hair',
+    'sequins?', 'sequinn?ed', 'beaded', 'embellished', 'shearling', 'faux fur', 'feathers?', 'fringed?', 'crochet',
   ].join('|'),
 )
 
 /*
  * Read in the title only: stores tag whole categories "Wide Leg" or
- * "Cropped". Not pleats or a wide leg, which are basics now.
+ * "Cropped". Not pleats, a wide leg, a wrap, tiers, a square neck, a slip or
+ * a cropped length, which are basics now.
  */
 const CUT = word(
   [
-    'camp', 'camp[- ]collar', 'cuban', 'revere', 'resort', 'bowling', 'boxy', 'cropped', 'double[- ]breasted',
-    'shawl', 'funnel', 'funnel[- ]neck', 'barrel', 'balloon', 'western', 'popover', 'band[- ]collar', 'grand?dad',
-    'johnny[- ]collar', 'tab[- ]collar', 'tassel', 'horsebit',
+    'puff(ed)?[- ]sleeves?', 'balloon', 'bishop[- ]sleeves?', 'corset(ed)?', 'bustier', 'bias[- ]cut', 'drop(ped)?[- ]waist',
+    'cut[- ]?out', 'asymmetric(al)?', 'one[- ]shoulder', 'off[- ]the[- ]shoulder', 'ruffled?', 'frill(ed|y)?',
+    'halter(neck)?', 'cowl', 'keyhole', 'peplum', 'bubble', 'ruched', 'sculpt(ed|ural)', 'statement', 'double[- ]breasted',
+    'shawl[- ]collar', 'funnel[- ]neck', 'barrel', 'western', 'cape', 'pussy[- ]bow', 'bow', 'sailor', 'peter[- ]pan',
+    'sweetheart', 'backless', 'open[- ]back', 'mary[- ]janes?', 'knee[- ]high', 'chandelier', 'tassel',
   ].join('|'),
 )
+
+/** Gold and silver are a piece of jewellery's metal, not its colour: a gold hoop is not a mustard statement. */
+const METAL = /\b(rose gold|yellow gold|white gold|gold|silver|sterling|brass|bronze|copper|gunmetal|pewter)\b/gi
+
+function withoutMetals<T extends { title: string; colours: string[] }>(row: T): T {
+  return { ...row, title: row.title.replace(METAL, ' '), colours: row.colours.map((colour) => colour.replace(METAL, ' ')) }
+}
 
 /** "Bouclé" reads "boucle", so one spelling covers both. */
 function plain(text: string): string {
@@ -119,7 +152,7 @@ function plain(text: string): string {
 }
 
 /**
- * The colour families of his best colours that are not neutrals: rust, pine,
+ * The colour families of her best colours that are not neutrals: rust, pine,
  * oxblood, teal for a deep autumn, never tobacco or ink navy. Named colours
  * first; a hex is read only when its name says nothing.
  */
@@ -140,7 +173,7 @@ export type StatementRow = {
   product_type: string | null
   tags: string[]
   garment_type: GarmentType
-  /** Colour options in stock in his size. */
+  /** Colour options in stock in her size. */
   colours: string[]
   image_src: string | null
   image_colour_src: string | null
@@ -156,14 +189,15 @@ export type StatementRow = {
 export function statementSignals(row: Omit<StatementRow, 'sizes' | 'size_known' | 'price_cents' | 'compare_at_cents' | 'first_seen_at'>, bold: Family[]): Quality[] {
   const title = plain(row.title)
   const text = plain([row.title, row.product_type ?? '', ...row.tags].join(' | '))
-  const fromWords = productFamilies(row)
+  const fromWords = productFamilies(NO_TEXTURE.includes(row.garment_type) ? withoutMetals(row) : row)
   const fromPhoto =
     row.image_src && row.image_colour_src === photoKey(row.image_src) ? familiesOfColours(row.image_colours ?? []) : []
-  const families = fromWords.length > 0 ? fromWords : fromPhoto
-  const footwear = FOOTWEAR.includes(row.garment_type)
+  // A photo of jewellery reads its metal, so only a stone or enamel the words name counts.
+  const families = fromWords.length > 0 || NO_TEXTURE.includes(row.garment_type) ? fromWords : fromPhoto
+  const texture = NO_TEXTURE.includes(row.garment_type) ? null : SURFACE_ONLY.includes(row.garment_type) ? SURFACE : TEXTURE
   const signals: Quality[] = []
   if (families.some((family) => bold.includes(family))) signals.push('colour')
-  if (!footwear && TEXTURE.test(text)) signals.push('texture')
+  if (texture?.test(text)) signals.push('texture')
   if (CUT.test(title)) signals.push('cut')
   return signals
 }
@@ -193,8 +227,8 @@ export function rankCandidates<T extends { signals: Quality[]; garment_type: Gar
 }
 
 /**
- * The most he would pay for one of each garment, in NZD cents: his budget on
- * the profile when he gave one for its kind, otherwise the top of the
+ * The most she would pay for one of each garment, in NZD cents: her budget on
+ * the profile when she gave one for its kind, otherwise the top of the
  * blueprint's bands for that garment, otherwise no ceiling.
  */
 export function ceilings(budget: Profile['budget'], slots: Pick<Slot, 'garment_type' | 'budget_max_cents'>[]): Partial<Record<GarmentType, number>> {
@@ -212,7 +246,7 @@ export function ceilings(budget: Profile['budget'], slots: Pick<Slot, 'garment_t
 }
 
 /**
- * The rules: every piece the shops have that could be a statement for him,
+ * The rules: every piece the shops have that could be a statement for her,
  * best first. Free: SQL over what was read, and the words of each listing.
  */
 export async function findStatementCandidates(
@@ -307,42 +341,42 @@ export const StatementSchema = z.object({
     .describe(
       'What makes it stand out, judged from the photo: its colour, its texture, its cut or a detail. Empty when nothing does, which makes it a basic.',
     ),
-  score: z.number().int().min(0).max(100).describe('0 to 100 as a statement piece for him, on the scale in the instructions.'),
+  score: z.number().int().min(0).max(100).describe('0 to 100 as a statement piece for her, on the scale in the instructions.'),
   colour: z
     .string()
     .nullable()
-    .describe('The colour option you judged, copied exactly from the colours offered in his size, or null when there is only one.'),
+    .describe('The colour option you judged, copied exactly from the colours offered in her size, or null when there is only one.'),
   why: z
     .string()
     .describe(
-      'One sentence to him, under 25 words: what makes it a statement and how to wear it, naming one of his pieces when one suits. Plain and specific, no sales talk.',
+      'One sentence to her, under 25 words: what makes it a statement and how to wear it, naming one of her pieces when one suits. Plain and specific, no sales talk.',
     ),
   wears_with: z
     .array(z.number().int())
-    .describe('The ids of up to three of his pieces it wears with best in one outfit, quiet ones that let it lead. Empty when nothing he owns suits it.'),
+    .describe('The ids of up to three of her pieces it wears with best in one outfit, quiet ones that let it lead. Empty when nothing she owns suits it.'),
 })
 
 export type StatementOutput = z.infer<typeof StatementSchema>
 
-export const STATEMENT_SYSTEM_PROMPT = `You are an experienced womenswear stylist working for one client. Every night a private app reads New Zealand womenswear shops and END. (UK, ships to New Zealand). It already looks for the basics his wardrobe blueprint asks for. You look for something else: statement pieces, the one piece in an outfit that carries it, so everything else can stay quiet.
+export const STATEMENT_SYSTEM_PROMPT = `You are an experienced womenswear stylist working for one client. Every night a private app reads womenswear shops in New Zealand and a few overseas that ship here. It already looks for the basics her wardrobe blueprint asks for. You look for something else: statement pieces, the one piece in an outfit that carries it, so everything else can stay quiet.
 
-For him a piece is a statement by one or more of:
-- colour: a deep or saturated colour from his best colours, not a neutral
-- texture: a surface you notice across a room: corduroy, boucle, mohair, suede, shearling, a chunky cable, terry, crochet, velvet, tweed
-- cut or detail: a shape or detail that departs from the standard version: a camp collar, a boxy or cropped body, pleats, a wide leg, a shawl collar, a western yoke
+For her a piece is a statement by one or more of:
+- colour: a deep or saturated colour from her best colours, not a neutral
+- texture: a surface you notice across a room: satin, silk, velvet, lace, crochet, boucle, mohair, suede, shearling, sequins, a chunky cable, tweed; on a shoe or a bag, patent, metallic, raffia or satin
+- cut or detail: a shape or detail that departs from the standard version: a puff or bishop sleeve, a corset or bustier bodice, a bias cut, a drop waist, a cut-out, an asymmetric or one-shoulder line, a ruffle, a halter or cowl neck, a sculptural earring, a knee-high or Mary Jane shoe
 
-Patterns (checks, stripes, prints), graphics, slogans and logos are not what he means: a piece whose interest is mostly a pattern or a logo scores below 40.
+Patterns (florals, checks, stripes, animal prints), graphics, slogans and logos are not what she means: a piece whose interest is mostly a pattern or a logo scores below 40.
 
-Score each product 0 to 100 as a statement piece for him:
-- 90 to 100: a piece to build several outfits around. It clearly stands out, its colour is one of his best colours (or a neutral carried by its texture or cut), the cut follows his rules, the make earns it, and it wears with things he owns.
-- 75 to 89: a strong statement for him, with one small compromise you name.
-- 60 to 74: it stands out, but only partly suits him: the colour is near his palette rather than in it, the make is ordinary, or it is hard to wear with what he owns.
-- 40 to 59: it barely stands out, or stands out in a way that works against him.
-- Below 40: a basic, mostly a pattern or a logo, a colour from his avoid list near the face, or not for him.
+Score each product 0 to 100 as a statement piece for her:
+- 90 to 100: a piece to build several outfits around. It clearly stands out, its colour is one of her best colours (or a neutral carried by its texture or cut), the cut follows her rules, the make earns it, and it wears with things she owns.
+- 75 to 89: a strong statement for her, with one small compromise you name.
+- 60 to 74: it stands out, but only partly suits her: the colour is near her palette rather than in it, the make is ordinary, or it is hard to wear with what she owns.
+- 40 to 59: it barely stands out, or stands out in a way that works against her.
+- Below 40: a basic, mostly a pattern or a logo, a colour from her avoid list near the face, jewellery in the wrong metal, or not for her.
 
-The rules that picked it out read only the listing's words and may be wrong: a "cord" can be a drawcord, "cropped" a trouser length, "camp" a brand name. Judge from the photo as well as the listing. Compare colours against his palette hexes, as a studio photo flatters; when several colours are offered in his size, judge the best of them for him and name it. Judge the cut against the guide's rules for his height and build. Respect his no-gos absolutely. Products he dismissed lately, with his reason, tell you what he does not want.
+The rules that picked it out read only the listing's words and may be wrong: a "cord" can be a drawcord, "bow" a tie at the back, "lace" a lace-up, "statement" the shop's own sales word. Judge from the photo as well as the listing. Compare colours against her palette hexes, as a studio photo flatters; when several colours are offered in her size, judge the best of them for her and name it. Judge the cut against the guide's rules for her height, build and waist, and the metal against her metal. Respect her no-gos absolutely. Products she dismissed lately, with her reason, tell you what she does not want.
 
-For wears_with, name only ids from his pieces. Price is not your concern: the app has already checked his budget. Do not invent facts the listing does not give. Write to him in the second person, in plain English, and use a plain hyphen rather than a dash.`
+For wears_with, name only ids from her pieces. Price is not your concern: the app has already checked her budget. Do not invent facts the listing does not give. Write to her in the second person, in plain English, and use a plain hyphen rather than a dash.`
 
 export type StatementContext = {
   profile: Profile
@@ -367,8 +401,8 @@ export function statementContextBlock(context: StatementContext): string {
     fit: piece.fit,
   }))
   const parts = [
-    `His profile:\n\n${JSON.stringify(profileBrief(context.profile))}`,
-    `His style guide:\n\n${JSON.stringify({
+    `Her profile:\n\n${JSON.stringify(profileBrief(context.profile))}`,
+    `Her style guide:\n\n${JSON.stringify({
       palette: context.guide.palette,
       silhouette: context.guide.silhouette,
       shoes: context.guide.shoes,
@@ -376,11 +410,11 @@ export function statementContextBlock(context: StatementContext): string {
       fit_vocabulary: context.guide.fit_vocabulary,
     })}`,
     pieces.length > 0
-      ? `The pieces he owns:\n\n${JSON.stringify(pieces)}`
-      : 'He has not added the pieces he owns yet, so leave wears_with empty and judge against his guide alone.',
+      ? `The pieces she owns:\n\n${JSON.stringify(pieces)}`
+      : 'She has not added the pieces she owns yet, so leave wears_with empty and judge against her guide alone.',
   ]
   if (context.dismissals.length > 0) {
-    parts.push(`Products he dismissed lately, most recent first:\n\n${JSON.stringify(context.dismissals)}`)
+    parts.push(`Products she dismissed lately, most recent first:\n\n${JSON.stringify(context.dismissals)}`)
   }
   return parts.join('\n\n')
 }
@@ -408,7 +442,7 @@ export function buildStatementRequest(context: string, product: ProductForStatem
     product_type: product.product_type,
     tags: product.tags.slice(0, 24),
     description: plainText(product.body_html).slice(0, 1500) || null,
-    colours_in_his_size: product.colours,
+    colours_in_her_size: product.colours,
     sizes_in_stock: product.sizes,
   }
   const content: Anthropic.Beta.BetaContentBlockParam[] = []
@@ -441,7 +475,7 @@ export function buildStatementRequest(context: string, product: ProductForStatem
 }
 
 /**
- * Holds Claude to what it was given: colours on sale, pieces he owns (three at
+ * Holds Claude to what it was given: colours on sale, pieces she owns (three at
  * most), each quality once. Nothing that stands out is not a statement, so it
  * stays under the bar whatever the number said.
  */

@@ -18,7 +18,7 @@ import {
 
 /*
  * The weather for the outfit of the day: dates in New Zealand, the season,
- * Open-Meteo's answer read into the hours he is out, and the phrases the card
+ * Open-Meteo's answer read into the hours she is out, and the phrases the card
  * shows. The network is never touched; the fetcher is a fake.
  */
 
@@ -74,14 +74,14 @@ describe('dates and seasons in New Zealand', () => {
 })
 
 describe("Open-Meteo's answer", () => {
-  test('the day is the hours he is out, 7am to 10pm, not midnight to midnight', () => {
+  test('the day is the hours she is out, 7am to 10pm, not midnight to midnight', () => {
     const forecast = readForecast(
       '2026-11-06',
       day('2026-11-06', { 3: { temp: 5, feels: 1 }, 7: { temp: 9, feels: 6 }, 14: { temp: 18, feels: 17 }, 23: { temp: 4 } }),
     )
     assert.ok(forecast)
     assert.equal(forecast.hours.length, 16)
-    assert.equal(forecast.low, 9, 'the 3am and 11pm lows are not his')
+    assert.equal(forecast.low, 9, 'the 3am and 11pm lows are not hers')
     assert.equal(forecast.high, 18)
     assert.equal(forecast.feels_low, 6)
     assert.equal(forecast.sky, 'showers', 'from the daily code')
@@ -109,7 +109,7 @@ describe('the phrases on the card', () => {
       day('2026-11-06', Object.fromEntries(Array.from({ length: to - from + 1 }, (_, i) => [from + i, { rain: 70, mm: 0.6, code }]))),
     )!
 
-  test('when the rain is likely, in his hours', () => {
+  test('when the rain is likely, in her hours', () => {
     assert.equal(rainPhrase(wet(15, 22)), 'Showers likely from 3pm')
     assert.equal(rainPhrase(wet(7, 10, 61)), 'Rain likely until 11am')
     assert.equal(rainPhrase(wet(11, 13, 53)), 'Drizzle likely from 11am to 2pm')

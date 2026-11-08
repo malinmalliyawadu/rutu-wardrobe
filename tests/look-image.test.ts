@@ -47,17 +47,20 @@ describe('the pure parts', () => {
       styling: 'Sleeves pushed up.',
       pieces: [
         piece({ piece_id: 1, shown: { kind: 'photo', photo_id: 9 } }),
-        piece({ piece_id: 2, name: 'Putty chinos', garment_type: 'trousers', colour_name: 'putty', colour_hex: null, shown: { kind: 'words' } }),
-        piece({ piece_id: 3, name: 'Brown derbies', garment_type: 'shoes', colour_name: null, colour_hex: null, shown: { kind: 'product', src: 'https://x/y.jpg' } }),
+        piece({ piece_id: 2, name: 'Putty midi skirt', garment_type: 'skirt', colour_name: 'putty', colour_hex: null, shown: { kind: 'words' } }),
+        piece({ piece_id: 3, name: 'Brown loafers', garment_type: 'flats', colour_name: null, colour_hex: null, shown: { kind: 'product', src: 'https://x/y.jpg' } }),
+        piece({ piece_id: 4, name: 'Gold hoops', garment_type: 'jewellery', colour_name: 'gold', colour_hex: null, fit: null, fabric: null, shown: { kind: 'words' } }),
       ],
     })
     assert.match(prompt, /^Images 1 to 2 are photos of the pieces/)
     assert.match(prompt, /- Image 1: "Pine merino crewneck", the top, pine \(#2f4a3a\)\./)
-    assert.match(prompt, /- No photo: "Putty chinos", the trousers, in putty, regular fit, merino\./)
-    assert.match(prompt, /- Image 2: "Brown derbies", the pair of shoes\./)
+    assert.match(prompt, /- No photo: "Putty midi skirt", the skirt, in putty, regular fit, merino\./)
+    assert.match(prompt, /- Image 2: "Brown loafers", the pair of shoes\./)
+    assert.match(prompt, /- No photo: "Gold hoops", the piece of jewellery, in gold\./)
+    assert.match(prompt, /a womenswear lookbook flat lay, so she can see/)
     assert.match(prompt, /Lay it out the way it is worn: Sleeves pushed up\./)
     assert.match(prompt, /No person, no mannequin/)
-    assert.doesNotMatch(prompt, /man in image|photo of a man/, 'never a picture of him')
+    assert.doesNotMatch(prompt, /woman in image|photo of a woman/, 'never a picture of her')
   })
 
   test('with no photos at all, the prompt says nothing of images', () => {
@@ -101,17 +104,17 @@ describe('a picture made and filed', () => {
     `
     const [product] = await sql<{ id: number }[]>`
       insert into products (retailer_id, external_id, title, url, images, content_hash, garment_type)
-      values (${retailer!.id}, '1', 'Brown Derby', 'https://shop.test/p/1',
-              ${sql.json([{ src: '//cdn.shopify.com/s/files/1/derby.jpg' }])}, 'h1', 'shoes')
+      values (${retailer!.id}, '1', 'Brown Loafer', 'https://shop.test/p/1',
+              ${sql.json([{ src: '//cdn.shopify.com/s/files/1/loafer.jpg' }])}, 'h1', 'flats')
       returning id::int as id
     `
     const blank = { colour_hex: null, colour_name: null, fabric: null, fit: null, warmth: null, worn_for: 'everyday' as const, brand: null, size: null, notes: null, slot_id: null }
     const typed = { source: 'typed' as const, photo_id: null, product_id: null }
     const ids = [
       await createPiece({ ...blank, name: 'Pine crew', garment_type: 'knitwear', colour_hex: '#2f4a3a', colour_name: 'pine' }, typed),
-      await createPiece({ ...blank, name: 'Putty chinos', garment_type: 'trousers' }, typed),
+      await createPiece({ ...blank, name: 'Putty midi skirt', garment_type: 'skirt' }, typed),
     ]
-    productPieceId = await createPiece({ ...blank, name: 'Brown derbies', garment_type: 'shoes' }, { source: 'link', photo_id: null, product_id: product!.id })
+    productPieceId = await createPiece({ ...blank, name: 'Brown loafers', garment_type: 'flats' }, { source: 'link', photo_id: null, product_id: product!.id })
     ids.push(productPieceId)
     const meta = { model: 'claude-opus-5-5', served_by: 'claude-opus-5-5', input_tokens: 1, output_tokens: 1, generated_at: '' }
     await saveSet(
@@ -176,7 +179,7 @@ describe('a picture made and filed', () => {
     const openai = calls.find((call) => call.url.startsWith('https://api.openai.com/'))
     assert.equal(openai?.url, 'https://api.openai.com/v1/images/edits')
     assert.equal(openai?.body?.size, '1152x1536')
-    assert.equal((openai?.body?.images as unknown[]).length, 1, 'only the shoes have a photo; nothing of him')
+    assert.equal((openai?.body?.images as unknown[]).length, 1, 'only the shoes have a photo; nothing of hers')
 
     const images = await latestLookImages([lookId], sql)
     assert.deepEqual(

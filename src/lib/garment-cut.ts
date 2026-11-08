@@ -12,26 +12,27 @@ import { finalText, plainDashes } from './structured.ts'
 
 /*
  * A find's cut, in words an image editor can follow. Told only to let a
- * garment "fit the way that cut would", the try-on editor fits it to his
- * body: Bronze Snake's Phillip overshirt, shot a size up on a slim model and
- * plainly oversized, came back a regular fit (2026-11-07). Neither its title
- * nor its listing says "oversized"; the photo does, against the model's
- * frame. So before a try-on with a find is made, Sonnet reads the shop's
+ * garment "fit the way that cut would", the try-on editor fits it to the
+ * body: an overshirt shot a size up on a slim model and plainly oversized
+ * came back a regular fit, and a bias-cut midi came back a bodycon. Often
+ * neither the title nor the listing says so; the photo does, against the
+ * model's frame. So before a try-on with a find is made, Sonnet reads the shop's
  * photo and listing once and says where the seams sit, how much room there
  * is and where it ends, and the try-on prompt carries that.
  *
  * Kept per product and photo (product_cuts), so a find is read once whatever
  * asks for its picture. Only a shop's photo is read, by URL as the nightly
- * scorer reads it: his own photo of a find goes nowhere but the try-on editor
+ * scorer reads it: her own photo of a find goes nowhere but the try-on editor
  * (docs/plan.md 1.1), so a find shown by it keeps the prompt's general line.
- * Shoes, belts, bags and accessories have no cut to speak of and are not read.
+ * Shoes, belts, bags, jewellery and accessories have no cut to speak of and
+ * are not read.
  */
 
 const IMAGE_WIDTH = 1024
 const CALL_TIMEOUT_MS = 60_000
 
 /** The garment types whose cut is not read. */
-const UNCUT = new Set(['shoes', 'boots', 'sneakers', 'belt', 'bag', 'accessory'])
+const UNCUT = new Set(['flats', 'heels', 'sandals', 'boots', 'sneakers', 'belt', 'bag', 'jewellery', 'accessory'])
 
 export type Cut = { fit: Fit | null; silhouette: string }
 
@@ -73,13 +74,13 @@ export const CutSchema = z.object({
   silhouette: z
     .string()
     .describe(
-      'One or two sentences, under 50 words, of positions an image editor can draw, measured against the wearer. For a top or layer: where the shoulder seams sit against the shoulder point, the room in the body and sleeves, where the sleeves end, where the hem falls, how it hangs. For trousers: the rise, the room in the seat and thigh, the taper, the length and break. No colour, no style words, no praise.',
+      'One or two sentences, under 50 words, of positions an image editor can draw, measured against the wearer. For a top or layer: the neckline, where the shoulder seams sit against the shoulder point, the room in the body and sleeves, where the sleeves end, where the hem falls, how it hangs. For a dress or jumpsuit: the neckline, where the waist sits and how closely it fits there, the room through the hips, where the hem falls against the knee or calf, how it hangs. For a skirt: where the waistband sits, the room through the hips, the flare, where the hem falls. For trousers: the rise, the room in the hip and thigh, the leg shape, where the hem falls against the ankle. No colour, no style words, no praise.',
     ),
 })
 
-export const CUT_SYSTEM_PROMPT = `You are a womenswear fit technician. A private app is about to ask an image editor to put this garment on one man from a photo of him. Told only the garment's name, the editor fits every garment close to his body, so an oversized shirt comes back a regular one. Describe the garment's cut so the editor can draw it on a different man exactly as it is cut.
+export const CUT_SYSTEM_PROMPT = `You are a womenswear fit technician. A private app is about to ask an image editor to put this garment on one woman from a photo of her. Told only the garment's name, the editor fits every garment close to her body, so an oversized shirt comes back a regular one and a bias-cut slip comes back skin tight. Describe the garment's cut so the editor can draw it on a different woman exactly as it is cut.
 
-Judge from the photo, against the model's body: where the shoulder seams sit against the shoulder point, the room in the body and sleeves, where the sleeves and hem end, how the cloth hangs. Use the listing to confirm what the photo shows: a fit word, or the size pictured against the model's height and chest (many shops shoot a size up on a slim model, and that is the look the editor will reproduce). Describe the cut as photographed, plainly and in positions, never in words that sell.`
+Judge from the photo, against the model's body: the neckline, where the shoulder seams sit against the shoulder point, where the waist sits and how closely it fits there, the room in the body, hips and sleeves, where the sleeves and hem end against the wrist, knee, calf or ankle, how the cloth hangs or drapes. Use the listing to confirm what the photo shows: a fit word, a length, or the size pictured against the model's height (many shops shoot a size up on a slim model, and that is the look the editor will reproduce). Describe the cut as photographed, plainly and in positions, never in words that sell.`
 
 export function buildCutRequest(listing: CutListing) {
   const words = {

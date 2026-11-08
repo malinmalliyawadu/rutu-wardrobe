@@ -40,8 +40,8 @@ before(async () => {
   await getProfile()
   await saveSizes(
     null,
-    { tee: 'M', chest_cm: null, waist_cm: null, hips_cm: null, inseam_cm: null, sleeve_cm: null, neck_cm: null, shoe_eu: null, shoe_uk: null, shoe_us: null },
-    { tops: null, knits: null, trousers: null, outerwear: null },
+    { letter: 'M', dress: null, jeans: null, bust_cm: null, waist_cm: null, hips_cm: null, inseam_cm: null, shoe_eu: null, shoe_au: null },
+    { tops: null, knits: null, dresses: null, bottoms: null, outerwear: null },
   )
   await saveGuide(guideFixture, { model: 'fixture', served_by: 'fixture', input_tokens: 0, output_tokens: 0, generated_at: new Date().toISOString() })
   const [row] = await sql<{ id: number }[]>`
@@ -98,23 +98,23 @@ function product(title: string, sizes: Sizes) {
   }
 }
 
-const wool = product('Navy Wool Overshirt', { S: { price: 250 }, M: { price: 250 }, L: { price: 250 } })
-const cord = product('Navy Cord Overshirt', { M: { price: 280 } })
-const olive = product('Olive Overshirt', { M: { price: 200 } })
-const dear = product('Navy Overshirt Deluxe', { M: { price: 400 } })
-const small = product('Navy Twill Overshirt', { S: { price: 220 }, M: { price: 220, available: false } })
+const wool = product('Navy Satin Midi Skirt', { S: { price: 250 }, M: { price: 250 }, L: { price: 250 } })
+const cord = product('Navy Cord Midi Skirt', { M: { price: 280 } })
+const olive = product('Olive Midi Skirt', { M: { price: 200 } })
+const dear = product('Navy Midi Skirt Deluxe', { M: { price: 400 } })
+const small = product('Navy Twill Midi Skirt', { S: { price: 220 }, M: { price: 220, available: false } })
 const tee = product('Navy Pocket Tee', { M: { price: 60 } })
 
 const read: RequestRead = {
   understood: true,
-  garment_type: 'overshirt',
-  words: ['overshirt', 'wool'],
+  garment_type: 'skirt',
+  words: ['midi', 'satin'],
   colours: ['navy'],
   min_nzd: null,
   max_nzd: 300,
   fit: null,
   fabrics: [],
-  summary: 'A navy overshirt under $300',
+  summary: 'A navy satin midi skirt under $300',
   problem: null,
 }
 
@@ -123,7 +123,7 @@ const fakeRead = (answer: RequestRead | null, usd = 0.004) => async () => ({ rea
 /** Every score costs US$0.02 (10,000 fresh input tokens at Sonnet's $2 a million). */
 const usage: Usage = { input: 10_000, output: 0, cacheWrite: 0, cacheRead: 0 }
 async function fakeScore(_context: string, item: ProductForScoring) {
-  const score = item.title.includes('Wool') ? 88 : 72
+  const score = item.title.includes('Satin') ? 88 : 72
   const output: ScoreOutput = {
     slot_id: 0,
     score,
@@ -137,7 +137,7 @@ async function fakeScore(_context: string, item: ProductForScoring) {
   return { output, usage, servedBy: 'claude-sonnet-5-5' }
 }
 
-/** The shop on the re-check: the wool overshirt is now $230 in M; the cord one is gone. */
+/** The shop on the re-check: the satin skirt is now $230 in M; the cord one is gone. */
 function fakeShop(): PoliteClient {
   return new PoliteClient({
     sleep: async () => {},
@@ -154,11 +154,11 @@ function fakeShop(): PoliteClient {
 
 const noop = () => {}
 
-test('a search reads the request, filters in his size, judges the closest, and re-checks what it shows', async () => {
+test('a search reads the request, filters in her size, judges the closest, and re-checks what it shows', async () => {
   const local = { base_url: 'https://shop.test', catalogue: 'womenswear' as const }
   await writePage(sql, shopId, [wool, cord, olive, dear, small, tee].map((item) => normaliseProduct(item.feed, local)))
 
-  const started = await startSearch('  a navy   overshirt under $300 ', sql)
+  const started = await startSearch('  a navy   satin midi skirt under $300 ', sql)
   assert.ok(started.ok)
   const busy = await startSearch('a brown belt', sql)
   assert.deepEqual(busy, { ok: false, message: 'Another search is still running. One at a time.' })
@@ -172,23 +172,23 @@ test('a search reads the request, filters in his size, judges the closest, and r
   `
   assert.deepEqual(
     offered.map((row) => row.title),
-    ['Navy Wool Overshirt', 'Navy Cord Overshirt'],
-    'olive is the wrong colour, the deluxe over $300, the twill not in M, the tee not an overshirt; wool is closer to his words',
+    ['Navy Satin Midi Skirt', 'Navy Cord Midi Skirt'],
+    'olive is the wrong colour, the deluxe over $300, the twill not in M, the tee not a skirt; satin is closer to her words',
   )
-  assert.equal(offered[1]!.in_stock, false, 'the cord overshirt has gone from the shop')
+  assert.equal(offered[1]!.in_stock, false, 'the cord skirt has gone from the shop')
 
   const view = await getSearch(started.id, sql)
   assert.ok(view)
   assert.equal(view.status, 'done')
-  assert.equal(view.request, 'a navy overshirt under $300', 'kept as typed, spaces tidied')
-  assert.equal(view.summary, 'A navy overshirt under $300')
+  assert.equal(view.request, 'a navy satin midi skirt under $300', 'kept as typed, spaces tidied')
+  assert.equal(view.summary, 'A navy satin midi skirt under $300')
   assert.equal(view.scored, 2)
   assert.equal(view.closest, false)
   assert.equal(view.results.length, 1)
   const [find] = view.results
   assert.equal(find!.slot_id, null, 'a search result fills no slot')
   assert.equal(find!.price.nzdCents, 23000, 'the price the re-check found, not last night’s')
-  assert.deepEqual(find!.sizes, ['M'], 'his size, still in stock')
+  assert.deepEqual(find!.sizes, ['M'], 'her size, still in stock')
   assert.equal(find!.size_known, true)
   assert.ok(Math.abs(view.usd - 0.044) < 1e-9, 'the read and two scores')
   assert.equal(view.stats.candidates, 2)
@@ -208,15 +208,15 @@ test('a search reads the request, filters in his size, judges the closest, and r
   assert.equal(listed!.finds, 1)
 })
 
-test('a search stops at its limit, closest to his words first', async () => {
+test('a search stops at its limit, closest to her words first', async () => {
   const retailers = await listRetailers(sql)
   await saveFinderSettings(
     { max_usd_per_run: 1, max_usd_per_month: null, max_usd_per_search: 0.03, max_usd_statements: 0.5, stores: retailers.map((store) => store.slug) },
     sql,
   )
   // A new product that matches, so there are two to judge again.
-  await writePage(sql, shopId, [normaliseProduct(product('Navy Linen Overshirt', { M: { price: 190 } }).feed, { base_url: 'https://shop.test', catalogue: 'womenswear' })])
-  const started = await startSearch('a navy wool overshirt', sql)
+  await writePage(sql, shopId, [normaliseProduct(product('Navy Linen Midi Skirt', { M: { price: 190 } }).feed, { base_url: 'https://shop.test', catalogue: 'womenswear' })])
+  const started = await startSearch('a navy satin midi skirt', sql)
   assert.ok(started.ok)
   await runSearch(started.id, { sql, log: noop, read: fakeRead(read, 0.01), scoreOne: fakeScore, client: fakeShop() })
   const view = (await getSearch(started.id, sql))!
@@ -228,8 +228,8 @@ test('a search stops at its limit, closest to his words first', async () => {
     select p.title from search_results r join products p on p.id = r.product_id
     where r.search_id = ${started.id} and r.scored_at is not null
   `
-  assert.equal(view.offered, 2, 'the saved wool overshirt is not judged again')
-  assert.equal(judged!.title, 'Navy Linen Overshirt', 'level on his words with the cord one, and newer')
+  assert.equal(view.offered, 2, 'the saved satin skirt is not judged again')
+  assert.equal(judged!.title, 'Navy Linen Midi Skirt', 'level on her words with the cord one, and newer')
 })
 
 test('a request that is not clothing fails with the read’s own words, and costs only the read', async () => {
@@ -255,6 +255,6 @@ test('searching is refused when its limit is nothing', async () => {
     { max_usd_per_run: 1, max_usd_per_month: null, max_usd_per_search: 0, max_usd_statements: 0.5, stores: retailers.map((store) => store.slug) },
     sql,
   )
-  const refused = await startSearch('a navy overshirt', sql)
+  const refused = await startSearch('a navy midi skirt', sql)
   assert.equal(refused.ok, false)
 })

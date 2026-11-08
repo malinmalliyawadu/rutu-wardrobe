@@ -21,36 +21,36 @@ import {
 /*
  * The blueprint: 30 to 40 named slots, each a specific archetype item with a
  * why, a priority, a budget band and a status. Claude drafts it from the
- * profile and the style guide; Malin edits, reorders and adds to it; the
+ * profile and the style guide; Rutu edits, reorders and adds to it; the
  * finder (M3) matches products against the wanted slots.
  */
 
 export const SlotDraftSchema = z.object({
   name: z
     .string()
-    .describe('The archetype as he would say it in a shop: "navy unstructured wool overshirt". Colour, fabric and garment; no brands.'),
+    .describe('The archetype as she would say it in a shop: "navy fine-gauge merino cardigan". Colour, fabric and garment; no brands.'),
   why: z
     .string()
-    .describe('One sentence to him, under 30 words, naming the reason in his palette, proportions or week.'),
+    .describe('One sentence to her, under 30 words, naming the reason in her palette, proportions or week.'),
   priority: z.number().int().min(1).max(3).describe('1 buy first, 2 next, 3 in time'),
   garment_type: z.enum(GARMENT_TYPES),
   colour_family: z.string().describe('The colour in plain words: "dark brown", "navy", "ecru"'),
   colours: z
     .array(z.string())
     .describe('One to three hex values, each copied exactly from the guide palette (best colours or neutrals).'),
-  fabrics: z.array(z.string()).describe('One to three fabrics in preference order: "merino", "brushed cotton"'),
-  fit: z.enum(FITS).nullable().describe('Retailer fit label from the guide fit vocabulary, or null for shoes and accessories'),
+  fabrics: z.array(z.string()).describe('One to three fabrics in preference order: "merino", "silk crepe"'),
+  fit: z.enum(FITS).nullable().describe('Retailer fit label from the guide fit vocabulary, or null for shoes, bags, jewellery and accessories'),
   sizes: z.object({
     labels: z
       .array(z.string())
-      .describe('Size labels to look for on a retailer page: "S", "EU 42", "30". Empty if his size is unknown.'),
+      .describe('Size labels to look for on a retailer page: "S", "10", "AU 10", "27", "EU 38". Empty if her size is unknown.'),
     note: z.string().nullable().describe('A short sizing note, or null.'),
   }),
   budget_nzd: z.object({
     min: z.number().int().min(0),
     max: z.number().int().min(0),
   }),
-  status: z.enum(['wanted', 'owned']).describe('"owned" only for staples he already owns and listed under taste'),
+  status: z.enum(['wanted', 'owned']).describe('"owned" only for staples she already owns and listed under taste'),
 })
 
 export const BlueprintSchema = z.object({
@@ -85,27 +85,27 @@ export type Slot = {
 
 export class BlueprintError extends Error {}
 
-export const BLUEPRINT_SYSTEM_PROMPT = `You are an experienced womenswear stylist drafting a wardrobe blueprint for one client: the list of specific items he should own, in the order he should buy them. You have his confirmed profile and the style guide written for him. A private app shows him the list and, every night, searches Wellington and online womenswear shops for real products that fill each wanted slot, so every slot must be specific enough to match a product page against.
+export const BLUEPRINT_SYSTEM_PROMPT = `You are an experienced womenswear stylist drafting a wardrobe blueprint for one client: the list of specific items she should own, in the order she should buy them. You have her confirmed profile and the style guide written for her. A private app shows her the list and, every night, searches Wellington and online womenswear shops for real products that fill each wanted slot, so every slot must be specific enough to match a product page against.
 
-A slot is an archetype, not a product: garment, colour, fabric and cut, the way he would describe it to a good shop assistant ("dark brown suede chukka boot", "ecru heavyweight cotton crew tee"). No brands. Each slot earns its place in the whole: together they should dress his actual week in Wellington (mild, windy, often wet, layers year round) with pieces that combine with each other. Prefer fewer, better, versatile pieces over novelty; do not repeat near-identical slots unless the repetition is real (a tee he wears four days a week can be two slots in two colours).
+A slot is an archetype, not a product: garment, colour, fabric and cut, the way she would describe it to a good shop assistant ("dark brown suede knee-high boot with a block heel", "ecru midweight cotton crew-neck tee", "olive bias-cut satin midi skirt"). No brands. Each slot earns its place in the whole: together they should dress her actual week in Wellington (mild, windy, often wet, hilly, layers year round) with pieces that combine with each other: tops and knits that go with more than one skirt or pair of trousers, a dress or two that layer under a knit or a jacket, shoes she can walk in, a bag and jewellery in her metal. Prefer fewer, better, versatile pieces over novelty; do not repeat near-identical slots unless the repetition is real (a tee she wears four days a week can be two slots in two colours).
 
-Priority. 1 is the foundation he would buy first: worn most often, filling the biggest gaps, unlocking the most outfits; around a third of the list. 2 rounds it out. 3 is occasional pieces and upgrades. Within each priority, order is buying order. Return the slots in that order.
+Priority. 1 is the foundation she would buy first: worn most often, filling the biggest gaps, unlocking the most outfits; around a third of the list. 2 rounds it out. 3 is occasional pieces and upgrades. Within each priority, order is buying order. Return the slots in that order.
 
-Colour. Every hex in a slot's colours must be copied exactly from the guide palette (best colours or neutrals); put the more expensive, longer-lived pieces in the neutrals or in colours that also work for his runner-up season when his season confidence is below 70. colour_family names the colour in plain words.
+Colour. Every hex in a slot's colours must be copied exactly from the guide palette (best colours or neutrals); put the more expensive, longer-lived pieces in the neutrals or in colours that also work for her runner-up season when her season confidence is below 70. colour_family names the colour in plain words.
 
-Fit and size. Use the guide's fit vocabulary for the garment type and his stated fit preferences. Size labels come from his sizes; leave them empty when the profile does not give that size, and use the note to say what to measure.
+Fit and size. Use the guide's fit vocabulary for the garment type and her stated fit preferences. Size labels come from her sizes; leave them empty when the profile does not give that size, and use the note to say what to measure.
 
-Budget. Give each slot a realistic band in whole New Zealand dollars for that quality at New Zealand womenswear prices. When he has set a ceiling for the category, the band's maximum must not exceed it. When he has set a monthly figure, make the priority 1 list affordable over a few months of it.
+Budget. Give each slot a realistic band in whole New Zealand dollars for that quality at New Zealand womenswear prices. When she has set a ceiling for the category, the band's maximum must not exceed it. When she has set a monthly figure, make the priority 1 list affordable over a few months of it.
 
-Owned. Every staple he lists as already owned and happy with becomes a slot with status "owned", with its own why, instead of a new want for the same thing. Build the rest around those pieces.
+Owned. Every staple she lists as already owned and happy with becomes a slot with status "owned", with its own why, instead of a new want for the same thing. Build the rest around those pieces.
 
-Respect his no-gos absolutely. Where a profile group is missing, he has not filled it in yet: do not invent hobbies, sports or a job he has not told you about; dress a man in Wellington with office days, weekends and evenings out, and keep the list general where the profile is silent.
+Respect her no-gos absolutely. Where a profile group is missing, she has not filled it in yet: do not invent hobbies, sports or a job she has not told you about; dress a woman in Wellington with office days, weekends and evenings out, and keep the list general where the profile is silent.
 
-The why is one sentence to him in the second person, under 30 words, naming the specific reason: a palette fact, a proportion rule from the guide, or a part of his week. Not generic praise.`
+The why is one sentence to her in the second person, under 30 words, naming the specific reason: a palette fact, a proportion rule from the guide, or a part of her week. Not generic praise.`
 
 const REFILL_SYSTEM_PROMPT = `${BLUEPRINT_SYSTEM_PROMPT}
 
-You are now refilling one slot. He has retired it: he no longer wants that item in the blueprint. Propose one new slot that takes its place in the whole, at the same priority unless the rest of the blueprint makes another priority clearly right. Do not duplicate any slot he already has, and do not bring back the retired item in another colour unless his note asks for it.`
+You are now refilling one slot. She has retired it: she no longer wants that item in the blueprint. Propose one new slot that takes its place in the whole, at the same priority unless the rest of the blueprint makes another priority clearly right. Do not duplicate any slot she already has, and do not bring back the retired item in another colour unless her note asks for it.`
 
 /** A slot as Claude sees it, without database ids and timestamps. */
 function slotForPrompt(slot: Slot): Record<string, unknown> {
@@ -140,16 +140,16 @@ export function buildDraftMessages(
   note: string | null,
 ): Anthropic.Beta.BetaMessageParam[] {
   const parts = [
-    `His profile:\n\n${JSON.stringify(profileBrief(profile), null, 2)}`,
-    `His style guide:\n\n${JSON.stringify(guideForPrompt(guide), null, 2)}`,
+    `Her profile:\n\n${JSON.stringify(profileBrief(profile), null, 2)}`,
+    `Her style guide:\n\n${JSON.stringify(guideForPrompt(guide), null, 2)}`,
   ]
   if (kept.length > 0) {
     parts.push(
-      `These ${kept.length} slots stay in the blueprint as they are (he wrote them, edited them, owns them or has a candidate for them). Do not return them again and do not duplicate them; draft the rest around them so the whole comes to 30 to 40 slots:\n\n${JSON.stringify(kept.map(slotForPrompt), null, 2)}`,
+      `These ${kept.length} slots stay in the blueprint as they are (she wrote them, edited them, owns them or has a candidate for them). Do not return them again and do not duplicate them; draft the rest around them so the whole comes to 30 to 40 slots:\n\n${JSON.stringify(kept.map(slotForPrompt), null, 2)}`,
     )
   }
-  if (note) parts.push(`His note on what should change since the last draft: ${note}`)
-  parts.push(kept.length > 0 ? 'Draft the remaining slots.' : 'Draft his blueprint.')
+  if (note) parts.push(`Her note on what should change since the last draft: ${note}`)
+  parts.push(kept.length > 0 ? 'Draft the remaining slots.' : 'Draft her blueprint.')
   return [{ role: 'user', content: parts.join('\n\n') }]
 }
 
@@ -161,12 +161,12 @@ export function buildRefillMessages(
   note: string | null,
 ): Anthropic.Beta.BetaMessageParam[] {
   const parts = [
-    `His profile:\n\n${JSON.stringify(profileBrief(profile), null, 2)}`,
-    `His style guide:\n\n${JSON.stringify(guideForPrompt(guide), null, 2)}`,
-    `The rest of his blueprint:\n\n${JSON.stringify(others.map(slotForPrompt), null, 2)}`,
-    `The slot he retired:\n\n${JSON.stringify(slotForPrompt(retired), null, 2)}`,
+    `Her profile:\n\n${JSON.stringify(profileBrief(profile), null, 2)}`,
+    `Her style guide:\n\n${JSON.stringify(guideForPrompt(guide), null, 2)}`,
+    `The rest of her blueprint:\n\n${JSON.stringify(others.map(slotForPrompt), null, 2)}`,
+    `The slot she retired:\n\n${JSON.stringify(slotForPrompt(retired), null, 2)}`,
   ]
-  if (note) parts.push(`His note: ${note}`)
+  if (note) parts.push(`Her note: ${note}`)
   parts.push('Propose the slot that takes its place.')
   return [{ role: 'user', content: parts.join('\n\n') }]
 }
@@ -255,7 +255,7 @@ export function sortDrafts(slots: SlotDraft[]): SlotDraft[] {
 }
 
 /**
- * On a redraft, which slots survive: anything Malin wrote or edited, and
+ * On a redraft, which slots survive: anything Rutu wrote or edited, and
  * anything owned or with a candidate. The rest (Claude's untouched wanted and
  * retired slots) is replaced.
  */
@@ -331,7 +331,7 @@ export async function replaceDraft(drafts: SlotDraft[]): Promise<void> {
       const row = insertRow(draft, max + index + 1, 'claude')
       await sql`insert into blueprint_slots ${sql(row)}`
     }
-    // A staple he listed as owned is drafted owned, so it is a piece too.
+    // A staple she listed as owned is drafted owned, so it is a piece too.
     await syncSlotPieces(sql)
   })
 }
@@ -382,7 +382,7 @@ function valuesRow(values: SlotValues) {
   }
 }
 
-/** A slot Malin added himself goes to the end of its priority. */
+/** A slot Rutu added herself goes to the end of its priority. */
 export async function createSlot(values: SlotValues): Promise<number> {
   return db().begin(async (sql) => {
     const [{ max } = { max: 0 }] = await sql<{ max: number }[]>`
@@ -397,7 +397,7 @@ export async function createSlot(values: SlotValues): Promise<number> {
   })
 }
 
-/** An edit marks the slot as Malin's, so a redraft keeps it. Changing priority moves it to the end of the new group. */
+/** An edit marks the slot as Rutu's, so a redraft keeps it. Changing priority moves it to the end of the new group. */
 export async function updateSlot(id: number, values: SlotValues): Promise<void> {
   await db().begin(async (sql) => {
     const [current] = await sql<{ priority: number }[]>`select priority::int as priority from blueprint_slots where id = ${id}`

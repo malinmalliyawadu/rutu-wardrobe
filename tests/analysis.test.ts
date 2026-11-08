@@ -10,15 +10,16 @@ const fixture = {
     undertone: read('warm'),
     skin_depth: read('medium'),
     hair_colour: read('dark brown'),
-    hair_texture: read('thick, straight'),
+    hair_texture: read('thick, wavy, past the shoulders'),
     eye_colour: read('dark brown'),
     contrast_level: read('high'),
     season: read('deep autumn'),
     runner_up_season: 'deep winter',
   },
   proportions: {
-    build: read('athletic'),
-    shoulder_hip: read('shoulders_wider'),
+    build: read('curvy'),
+    waist_definition: read('defined'),
+    shoulder_hip: read('balanced'),
     torso_leg: read('balanced'),
     neck_length: read('average'),
   },
@@ -26,11 +27,17 @@ const fixture = {
   summary: 'A deep autumn with high contrast.',
 }
 
-test('the schema accepts a complete read and rejects an unknown season', () => {
+test('the schema accepts a complete read and rejects an unknown season or a read without the waist', () => {
   assert.ok(AnalysisSchema.safeParse(fixture).success)
   const bad = structuredClone(fixture)
   bad.colouring.season.value = 'monsoon'
   assert.ok(!AnalysisSchema.safeParse(bad).success)
+  const broad = structuredClone(fixture)
+  broad.proportions.build.value = 'broad'
+  assert.ok(!AnalysisSchema.safeParse(broad).success, 'broad is a menswear build')
+  const noWaist: Record<string, unknown> = { ...fixture.proportions }
+  delete noWaist.waist_definition
+  assert.ok(!AnalysisSchema.safeParse({ ...fixture, proportions: noWaist }).success)
 })
 
 test('stored analyses round-trip, and anything else reads as null', () => {
@@ -47,7 +54,7 @@ test('messages carry every photo as a labelled image and end with the height', (
       { kind: 'face', base64: 'AAAA' },
       { kind: 'full_body', base64: 'BBBB' },
     ],
-    183,
+    168,
   )
   assert.equal(messages.length, 1)
   const content = messages[0]?.content
@@ -55,6 +62,6 @@ test('messages carry every photo as a labelled image and end with the height', (
   const images = content.filter((block) => block.type === 'image')
   assert.equal(images.length, 2)
   const last = content.at(-1)
-  assert.ok(last && last.type === 'text' && /183 cm/.test(last.text))
+  assert.ok(last && last.type === 'text' && /168 cm/.test(last.text))
   assert.ok(content[0]?.type === 'text' && /Face photo/.test(content[0].text))
 })

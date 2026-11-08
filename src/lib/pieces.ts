@@ -24,8 +24,8 @@ import {
 } from './wardrobe-values.ts'
 
 /*
- * The wardrobe: the pieces Malin owns (migration 0006). The blueprint says
- * what he should own; this is what he has. The two meet in one rule, kept
+ * The wardrobe: the pieces Rutu owns (migration 0006). The blueprint says
+ * what she should own; this is what she has. The two meet in one rule, kept
  * here: a slot is owned exactly when a piece still in the wardrobe fills it.
  *
  * From the slot side, syncSlotPieces runs after anything that changes slot
@@ -109,7 +109,7 @@ export function shelfOrder(): GarmentType[] {
 
 /**
  * The pieces still in the wardrobe, shelved by group, empty groups left out.
- * What he wears only to the gym is its own shelf, last; a piece worn for both
+ * What she wears only to the gym is its own shelf, last; a piece worn for both
  * stays with its kind.
  */
 export function shelve<T extends Pick<Piece, 'garment_type' | 'worn_for'>>(pieces: T[]): { title: string; pieces: T[] }[] {
@@ -313,7 +313,7 @@ export async function createPiece(values: PieceValues, origin: Origin, sql: Sql 
   })
 }
 
-/** An edit makes the piece his: a slot it was made for no longer takes it away. */
+/** An edit makes the piece hers: a slot it was made for no longer takes it away. */
 export async function updatePiece(id: number, values: PieceValues, sql: Sql = db()): Promise<void> {
   await sql.begin(async (tx) => {
     const [current] = await tx<{ slot_id: number | null; set_aside_at: Date | null }[]>`
@@ -333,7 +333,7 @@ export async function updatePiece(id: number, values: PieceValues, sql: Sql = db
 
 /**
  * Worn out or given away. The piece stays, so a look that used it can say so.
- * A slot it filled goes back on the list, or is retired when he no longer
+ * A slot it filled goes back on the list, or is retired when she no longer
  * wants one.
  */
 export async function setAside(id: number, slotTo: 'wanted' | 'retired', sql: Sql = db()): Promise<void> {
@@ -387,7 +387,7 @@ export async function deletePiece(id: number, sql: Sql = db()): Promise<{ photoP
 /**
  * Holds the rule after slot statuses change. A piece that only stood in for
  * its slot (made from it, never edited, no photo) goes with the slot's
- * ownership; one he has edited or photographed stays, unlinked. Every owned
+ * ownership; one she has edited or photographed stays, unlinked. Every owned
  * slot with no piece gets one made from the slot.
  */
 export async function syncSlotPieces(tx: Tx): Promise<{ made: number; released: number }> {
@@ -423,7 +423,7 @@ export async function syncSlotPieces(tx: Tx): Promise<{ made: number; released: 
 /**
  * "Bought it" on a find: the product becomes a piece, with the shop's photo,
  * title and brand, the slot's colour and cloth, and the size that was in
- * stock. It takes the slot unless another piece he has kept fills it; a
+ * stock. It takes the slot unless another piece she has kept fills it; a
  * placeholder made only from the slot gives way to the real thing. Runs
  * inside recordAction's transaction, before the slot is marked owned.
  */
@@ -450,7 +450,7 @@ export async function pieceFromPurchase(
       `
     : []
   const kit = asPiece(product.title, product.garment_type ?? slot?.garment_type ?? null)
-  // Nothing says what kind of piece it is; he can add it by link instead.
+  // Nothing says what kind of piece it is; she can add it by link instead.
   if (!kit.garment_type) return null
 
   let slotId: number | null = null
@@ -500,7 +500,7 @@ export type PieceDraft = {
 }
 
 /**
- * A product he pasted a link to, as the form's starting values: the shop's
+ * A product she pasted a link to, as the form's starting values: the shop's
  * title, brand and garment, and its colour from the main photo (read before
  * by the filter, or read now on our own server), snapped to the guide.
  */
@@ -538,9 +538,9 @@ export async function draftFromProduct(
 }
 
 /**
- * A shop's garment as a piece he owns. Sport kit the finder filed as
+ * A shop's garment as a piece she owns. Sport kit the finder filed as
  * activewear is named for what it is (a training tank is a tank) and worn for
- * the gym; one whose title names no garment stays activewear, for him to say.
+ * the gym; one whose title names no garment stays activewear, for her to say.
  */
 export function asPiece(title: string, garment: GarmentType | null): { garment_type: GarmentType | null; worn_for: WornFor } {
   if (garment !== 'activewear') return { garment_type: garment, worn_for: 'everyday' }

@@ -14,12 +14,12 @@ import { files } from './storage.ts'
 import { PIECE_GARMENT_TYPES, WARMTHS } from './wardrobe-values.ts'
 
 /*
- * Photos of his clothes. Stored like his own photos (src/lib/photos.ts): a
+ * Photos of her clothes. Stored like her own photos (src/lib/photos.ts): a
  * metadata-free master and thumb in the file store, under wardrobe/, served
- * only through /photos/wardrobe/:id. Agreed with Malin on 2026-11-04: a photo
- * of a piece goes to Claude (Sonnet) once, when he adds it, to fill in the
- * form he then checks, and the looks are made from the pieces' words, not
- * their photos. It goes to OpenAI only for a try-on of a look he taps for
+ * only through /photos/wardrobe/:id. The agreed photo rule: a photo
+ * of a piece goes to Claude (Sonnet) once, when she adds it, to fill in the
+ * form she then checks, and the looks are made from the pieces' words, not
+ * their photos. It goes to OpenAI only for a try-on of a look she taps for
  * (src/lib/try-on.ts). The colour is also read on our own server, which sends
  * nothing anywhere.
  */
@@ -51,7 +51,7 @@ export async function storePiecePhoto(input: { bytes: Buffer; mime: string }, sq
   return { id: row.id, path: relative, width: master.info.width, height: master.info.height, colourHex: read.hex }
 }
 
-/** Photos read for a piece he never saved. */
+/** Photos read for a piece she never saved. */
 export async function clearOrphans(sql: Sql = db()): Promise<number> {
   const rows = await sql<{ path: string }[]>`
     delete from wardrobe_photos ph
@@ -69,7 +69,7 @@ export async function piecePhotoFile(id: number, variant: 'master' | 'thumb', sq
   return files().get(variant === 'thumb' ? thumbName(row.path) : row.path)
 }
 
-/** A new photo for a piece he already has. The old one goes. */
+/** A new photo for a piece she already has. The old one goes. */
 export async function attachPhoto(pieceId: number, photoId: number, sql: Sql = db()): Promise<void> {
   const old = await sql.begin(async (tx) => {
     const [piece] = await tx<{ photo_id: number | null }[]>`
@@ -92,44 +92,44 @@ export async function attachPhoto(pieceId: number, photoId: number, sql: Sql = d
 export const PieceReadSchema = z.object({
   is_garment: z
     .boolean()
-    .describe('False when the photo does not show one piece of womenswear clearly enough to describe.'),
+    .describe('False when the photo does not show one piece of clothing, footwear, jewellery or an accessory clearly enough to describe.'),
   name: z
     .string()
-    .describe('What he would call it, colour first, under 6 words, no brand: "Ink navy merino crewneck".'),
+    .describe('What she would call it, colour first, under 6 words, no brand: "Ink navy merino cardigan", "Rust satin slip skirt".'),
   garment_type: z
     .enum(PIECE_GARMENT_TYPES)
-    .describe('What it is as a garment, sport kit included: a gym tank is a tank, running shorts are shorts, training shoes are sneakers.'),
+    .describe('What it is as a garment, sport kit included: a gym tank or a sports bra is a tank, bike shorts are shorts, leggings are trousers, training shoes are sneakers. A shoe with any heel is heels; a flat sandal or slide is sandals.'),
   gym_kit: z
     .boolean()
-    .describe('True when it is made to train in: technical or sweat-wicking cloth, a sport cut, a training shoe. False for everyday clothes.'),
-  colour_words: z.string().describe('The colour in plain words, as a tailor would name it: "ink navy", "washed black".'),
+    .describe('True when it is made to train in: technical or sweat-wicking cloth, a sport cut, a sports bra, leggings, a training shoe. False for everyday clothes.'),
+  colour_words: z.string().describe('The colour in plain words, as a designer would name it: "ink navy", "washed black", "butter yellow". For jewellery, the metal: "gold", "silver".'),
   palette_hex: z
     .string()
     .nullable()
     .describe('The hex of the palette colour this piece is, copied exactly from the list, when it is that colour or very close; null when it is none of them.'),
-  fabric: z.string().nullable().describe('The cloth as it looks: "merino", "selvedge denim", "brushed cotton". Null when you cannot tell.'),
-  fit: z.enum(FITS).nullable().describe('The cut, when the photo shows it; null for shoes, accessories and when you cannot tell.'),
+  fabric: z.string().nullable().describe('The cloth or material as it looks: "merino", "silk satin", "rigid denim", "suede". Null when you cannot tell.'),
+  fit: z.enum(FITS).nullable().describe('The cut, when the photo shows it; null for shoes, bags, jewellery, accessories and when you cannot tell.'),
   warmth: z
     .enum(WARMTHS)
     .describe(
-      'light: comfortable on a warm day (a cotton or linen tee, shirt or shorts, a thin shell); mid: for a mild or cool day (a cotton knit or sweatshirt, an overshirt, denim, a light jacket); warm: for a cold day (wool or cashmere knits, fleece, flannel, a lined or wool coat).',
+      'light: comfortable on a warm day (a cotton or linen tee, top or shorts, a slip or sundress, a silk skirt, a thin shell); mid: for a mild or cool day (a cotton knit or sweatshirt, a denim or ponte dress, jeans, a light jacket); warm: for a cold day (wool or cashmere knits, a wool or knit dress, fleece, a lined or wool coat). For shoes, bags and jewellery, give mid.',
     ),
   brand: z.string().nullable().describe('Only when a label or logo is legible in the photo; otherwise null.'),
   notes: z
     .string()
     .nullable()
-    .describe('One detail that matters for putting outfits together, a few words: "button-down collar", "contrast stitching". Null if none.'),
+    .describe('One detail that matters for putting outfits together, a few words: "square neck", "midi length", "block heel 5 cm", "small hoops". Null if none.'),
 })
 
 export type PieceRead = z.infer<typeof PieceReadSchema>
 
 export class PieceReadError extends Error {}
 
-export const PIECE_READ_SYSTEM_PROMPT = `You are an experienced womenswear stylist cataloguing one client's wardrobe. He has photographed one piece he owns, laid flat, on a hanger or on him, often on a bed or a floor in indoor light. Fill in its record for him to check: what it is, its colour, cloth, cut and how warm it is. A private app keeps the record and later puts outfits together from his pieces, so be accurate and plain rather than flattering.
+export const PIECE_READ_SYSTEM_PROMPT = `You are an experienced womenswear stylist cataloguing one client's wardrobe. She has photographed one piece she owns, laid flat, on a hanger or on her, often on a bed or a floor in indoor light. Fill in its record for her to check: what it is, its colour, cloth, cut and how warm it is. For a dress or a skirt, the notes are the best place for its length and neckline; for shoes, the heel. A private app keeps the record and later puts outfits together from her pieces, so be accurate and plain rather than flattering.
 
-Colour matters most. Judge the garment's own colour, allowing for the light in the photo (warm lamps make navy look brown and white look cream). When the colour is one of his palette colours, or close enough that he would call it that, give that hex exactly as listed; when it is none of them, give null and name the colour in words.
+Colour matters most. Judge the garment's own colour, allowing for the light in the photo (warm lamps make navy look brown and white look cream). When the colour is one of her palette colours, or close enough that she would call it that, give that hex exactly as listed; when it is none of them, give null and name the colour in words.
 
-When the photo is not of a single piece of womenswear (a room, a person with nothing in particular, several garments in a pile), set is_garment to false and fill the rest as best you can.`
+When the photo is not of a single piece (a room, a person with nothing in particular, several garments in a pile), set is_garment to false and fill the rest as best you can.`
 
 export function buildReadRequest(base64: string, guide: Pick<Guide, 'palette'> | null) {
   const palette = guide ? guideColours(guide).map((colour) => ({ hex: colour.hex, name: colour.name })) : []
@@ -138,8 +138,8 @@ export function buildReadRequest(base64: string, guide: Pick<Guide, 'palette'> |
     {
       type: 'text',
       text: palette.length
-        ? `His palette (best colours and neutrals):\n${JSON.stringify(palette)}\n\nRead the piece in the photo.`
-        : 'He has no palette yet, so palette_hex is null. Read the piece in the photo.',
+        ? `Her palette (best colours and neutrals):\n${JSON.stringify(palette)}\n\nRead the piece in the photo.`
+        : 'She has no palette yet, so palette_hex is null. Read the piece in the photo.',
     },
   ]
   // Without `parse`, the SDK passes the schema through and leaves the text alone.

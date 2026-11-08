@@ -19,7 +19,7 @@ export const WALKED_PLATFORMS = ['shopify'] as const satisfies readonly Platform
 /**
  * The platforms whose pages say which sizes are in stock. Uniqlo's page does
  * not (every size it makes counts as available), and a find added by hand
- * has only the size he typed.
+ * has only the size she typed.
  */
 export const STOCK_PLATFORMS = ['shopify'] as const satisfies readonly Platform[]
 
@@ -100,7 +100,7 @@ export function walkedNightly(retailer: Pick<Retailer, 'platform'>): boolean {
   return (WALKED_PLATFORMS as readonly Platform[]).includes(retailer.platform)
 }
 
-/** Whether a product can be read from the store's site at all, or is only ever typed in by him. */
+/** Whether a product can be read from the store's site at all, or is only ever typed in by her. */
 export function readable(retailer: Pick<Retailer, 'platform'>): boolean {
   return retailer.platform !== 'manual'
 }
@@ -144,7 +144,7 @@ export async function seedRetailers(sql: Sql, seeds: RetailerSeed[]): Promise<{ 
         catalogue = excluded.catalogue,
         notes = excluded.notes,
         -- enabled is set once, when a store is added: after that it is
-        -- Malin's switch on /you/finder, and the file must not undo it.
+        -- Rutu's switch on /you/finder, and the file must not undo it.
         wellington_store = excluded.wellington_store
       returning (xmax = 0) as inserted
     `

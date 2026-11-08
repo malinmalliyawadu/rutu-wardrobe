@@ -17,7 +17,7 @@ import {
 } from './uniqlo.ts'
 
 /*
- * A product Malin pastes a link to, rather than one the finder found. Any
+ * A product Rutu pastes a link to, rather than one the finder found. Any
  * product page on one of the stores, read through the same polite client as
  * the nightly walk and stored like any other product, so the nightly run
  * keeps its price and stock current. A Shopify store's product is read from
@@ -53,7 +53,7 @@ export function parseLink(input: string): URL {
 
 const NOT_A_PRODUCT = 'That is not a product page. Open the product itself and copy its address.'
 
-/** "https://www.countryroad.co.nz/en-nz/collections/man/products/longline-short-60322146?variant=1" -> its host and handle. */
+/** "https://www.countryroad.co.nz/en-nz/collections/woman/products/linen-midi-dress-60322146?variant=1" -> its host and handle. */
 export function parseProductLink(input: string): { host: string; handle: string } {
   const url = parseLink(input)
   const match = /\/products\/([a-z0-9][a-z0-9-]*)(?:\.(?:js|json))?\/?$/i.exec(url.pathname)
@@ -244,10 +244,10 @@ export function storedCatalogue(retailer: Pick<Retailer, 'feed_collections' | 'c
 
 /**
  * Saved products the night's walk did not see (a linked product outside the
- * men's collection, or one the store has delisted) are read one by one, so
+ * women's collection, or one the store has delisted) are read one by one, so
  * their price and stock stay current; one the store no longer has is marked
- * removed. Stores switched off too: a link he pasted from one is still
- * something he is watching, and it is a handful of requests.
+ * removed. Stores switched off too: a link she pasted from one is still
+ * something she is watching, and it is a handful of requests.
  */
 export async function refreshSaved(
   sql: Sql,
@@ -268,7 +268,7 @@ export async function refreshSaved(
   const stats = { checked: 0, removed: 0, failed: 0 }
   for (const row of stale) {
     const retailer = byId.get(row.retailer_id)
-    // A find added by hand has no page to read: its price is what he typed.
+    // A find added by hand has no page to read: its price is what she typed.
     if (!retailer || !readable(retailer) || !row.handle) continue
     try {
       const product = await fetchProduct(client, retailer, row.handle)

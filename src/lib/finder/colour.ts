@@ -46,6 +46,7 @@ const WORDS: [string, Family][] = (
     ['ecru', 'ecru'], ['cream', 'ecru'], ['ivory', 'ecru'], ['natural', 'ecru'], ['oat', 'ecru'], ['oatmeal', 'ecru'],
     ['bone', 'ecru'], ['vanilla', 'ecru'], ['milk', 'ecru'], ['undyed', 'ecru'], ['eggshell', 'ecru'], ['chalk', 'ecru'],
     ['calico', 'ecru'], ['parchment', 'ecru'], ['sail', 'ecru'], ['alabaster', 'ecru'], ['coconut', 'ecru'],
+    ['pearl', 'ecru'], ['champagne', 'ecru'], ['nude', 'beige'], ['oyster', 'beige'],
     ['beige', 'beige'], ['barley', 'beige'], ['putty', 'beige'], ['stone', 'beige'], ['sand', 'beige'], ['khaki', 'beige'], ['camel', 'beige'],
     ['taupe', 'beige'], ['mushroom', 'beige'], ['fawn', 'beige'], ['biscuit', 'beige'], ['wheat', 'beige'],
     ['desert', 'beige'], ['dune', 'beige'], ['flax', 'beige'], ['latte', 'beige'], ['tan', 'beige'],
@@ -56,20 +57,25 @@ const WORDS: [string, Family][] = (
     ['navy', 'navy'], ['ink', 'navy'], ['midnight', 'navy'], ['indigo', 'navy'], ['marine', 'navy'], ['nautical', 'navy'],
     ['blue', 'blue'], ['cobalt', 'blue'], ['royal', 'blue'], ['sky', 'blue'], ['powder', 'blue'], ['azure', 'blue'],
     ['cornflower', 'blue'], ['chambray', 'blue'], ['denim', 'blue'], ['cerulean', 'blue'], ['ocean', 'blue'], ['lapis', 'blue'],
+    ['sapphire', 'blue'], ['periwinkle', 'blue'],
     ['teal', 'teal'], ['petrol', 'teal'], ['peacock', 'teal'], ['aqua', 'teal'], ['aquamarine', 'teal'], ['turquoise', 'teal'],
     ['green', 'green'], ['pine', 'green'], ['forest', 'green'], ['bottle', 'green'], ['emerald', 'green'],
     ['hunter', 'green'], ['sage', 'green'], ['mint', 'green'], ['spearmint', 'green'], ['eucalyptus', 'green'], ['kelly', 'green'], ['fern', 'green'],
     ['jade', 'green'], ['spruce', 'green'], ['evergreen', 'green'], ['ivy', 'green'], ['racing green', 'green'],
+    ['pistachio', 'green'], ['lime', 'green'], ['chartreuse', 'green'],
     ['olive', 'olive'], ['army', 'olive'], ['military', 'olive'], ['moss', 'olive'], ['fatigue', 'olive'],
     ['loden', 'olive'], ['khaki olive', 'olive'], ['lichen', 'olive'],
     ['red', 'red'], ['burgundy', 'red'], ['oxblood', 'red'], ['maroon', 'red'], ['wine', 'red'], ['claret', 'red'],
     ['bordeaux', 'red'], ['garnet', 'red'], ['merlot', 'red'], ['cherry', 'red'], ['crimson', 'red'], ['scarlet', 'red'], ['cranberry', 'red'],
+    ['ruby', 'red'], ['tomato', 'red'], ['poppy', 'red'],
     ['brick', 'rust'], ['rust', 'rust'], ['orange', 'rust'], ['terracotta', 'rust'], ['copper', 'rust'],
     ['ginger', 'rust'], ['amber', 'rust'], ['pumpkin', 'rust'], ['paprika', 'rust'], ['cinnamon', 'rust'], ['sienna', 'rust'],
     ['yellow', 'yellow'], ['mustard', 'yellow'], ['ochre', 'yellow'], ['lemon', 'yellow'], ['butter', 'yellow'], ['gold', 'yellow'],
     ['pink', 'pink'], ['rose', 'pink'], ['blush', 'pink'], ['flamingo', 'pink'], ['salmon', 'pink'], ['fuchsia', 'pink'], ['coral', 'pink'],
+    ['peach', 'pink'], ['apricot', 'pink'], ['raspberry', 'pink'], ['magenta', 'pink'], ['cerise', 'pink'], ['ballet pink', 'pink'],
     ['purple', 'purple'], ['aubergine', 'purple'], ['plum', 'purple'], ['lilac', 'purple'], ['lavender', 'purple'], ['orchid', 'purple'],
     ['violet', 'purple'], ['mauve', 'purple'], ['grape', 'purple'], ['eggplant', 'purple'], ['damson', 'purple'],
+    ['mulberry', 'purple'], ['berry', 'purple'], ['amethyst', 'purple'], ['wisteria', 'purple'],
   ] as [string, Family][]
 ).sort((a, b) => b[0].length - a[0].length)
 
@@ -169,13 +175,24 @@ export function colourCompatible(slot: Family[] | null, product: Family[]): bool
 // Cut: the same kind of rule for the fit a listing names about itself.
 // ---------------------------------------------------------------------------
 
-const NAMED_CUTS: { pattern: RegExp; fit: 'oversized' | 'relaxed' }[] = [
-  { pattern: /\b(over ?sized?|over-sized|boxy|box (fit|tee|t-shirt|shirt)|heavy box|baggy|extra relaxed|super relaxed|balloon)\b/i, fit: 'oversized' },
-  { pattern: /\b(relaxed|loose|drop shoulder|dropped shoulder)\b/i, fit: 'relaxed' },
+type NamedCut = 'oversized' | 'relaxed' | 'slim'
+
+/*
+ * A balloon sleeve says nothing about the body, so only a balloon leg is
+ * oversized. "Slim" alone is too loose a word ("Slim Strap Sandal"); a
+ * skinny jean, a bodycon dress or a slim fit say it outright.
+ */
+const NAMED_CUTS: { pattern: RegExp; fit: NamedCut }[] = [
+  {
+    pattern: /\b(over ?sized?|over-sized|boxy|box (fit|tee|t-shirt|shirt)|heavy box|baggy|extra relaxed|super relaxed|balloon (leg|jeans?|pants?|trousers?))\b/i,
+    fit: 'oversized',
+  },
+  { pattern: /\b(relaxed|loose|slouchy|boyfriend|drop shoulder|dropped shoulder)\b/i, fit: 'relaxed' },
+  { pattern: /\b(skinny|bodycon|body-con|slim[- ]fit|second skin)\b/i, fit: 'slim' },
 ]
 
-/** The cut a listing says it is, when it says: "Heavy Box Tee" is oversized. */
-export function namedCut(text: string): 'oversized' | 'relaxed' | null {
+/** The cut a listing says it is, when it says: "Heavy Box Tee" is oversized, "Skinny Jean" slim. */
+export function namedCut(text: string): NamedCut | null {
   for (const cut of NAMED_CUTS) if (cut.pattern.test(text)) return cut.fit
   return null
 }

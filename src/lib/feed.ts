@@ -70,32 +70,32 @@ export type FindCard = {
   size_known: boolean
   /** False for a store whose page gives no stock (Uniqlo): the sizes are what it makes, not what it has. */
   stock_known: boolean
-  /** The latest "See it on me" image of this find, if he asked for one. */
+  /** The latest "See it on me" image of this find, if she asked for one. */
   on_me: OnMe | null
 }
 
 export type FeedGroup = { slot: Slot; cards: FindCard[] }
 
-/** A saved find: from the feed, or a link he pasted, which need not be for a slot. */
+/** A saved find: from the feed, or a link she pasted, which need not be for a slot. */
 export type SavedFind = FindCard & {
   /** The colour as the store names it, so two colours of one product tell apart. */
   colour: string | null
-  /** His size for this garment, when it is known and the store has sold out of it. */
+  /** Her size for this garment, when it is known and the store has sold out of it. */
   yourSizeOut: string | null
   saved_at: Date
   /** The price it was saved at, converted at today's rate. */
   savedNzdCents: number | null
-  /** False when the latest run found it out of stock in his size, or gone from the store. */
+  /** False when the latest run found it out of stock in her size, or gone from the store. */
   inStock: boolean
-  /** True when his size for it is known, so "back in stock" means back in his size. */
+  /** True when her size for it is known, so "back in stock" means back in her size. */
   sizeTracked: boolean
-  /** What changed since he saved it, newest first, in NZD at today's rate. */
+  /** What changed since she saved it, newest first, in NZD at today's rate. */
   events: SavedEvent[]
   /** The newest change, when the latest run found it and it is good news. */
   news: SavedEvent | null
-  /** Typed in by him from a store that cannot be read, so its price is never checked. */
+  /** Typed in by her from a store that cannot be read, so its price is never checked. */
   byHand: boolean
-  /** The photos it can show: the shop's, and his own when he chose one (src/lib/product-photos.ts). */
+  /** The photos it can show: the shop's, and her own when she chose one (src/lib/product-photos.ts). */
   photos: ProductImage[]
 }
 
@@ -134,9 +134,9 @@ type Row = FindRow
 
 /**
  * A saved product that was not on the shortlist (a pasted link) is checked
- * against his size here, the way the filter would: when his size for the
+ * against her size here, the way the filter would: when her size for the
  * garment is known and in stock, the card says "your S"; when it is known and
- * sold out, it says so rather than listing sizes he cannot wear.
+ * sold out, it says so rather than listing sizes she cannot wear.
  */
 function withYourSize<T extends Pick<Row, 'size_known' | 'sizes'>>(
   row: T,
@@ -270,7 +270,7 @@ export async function shownOnToday(sql: Sql, runId: number): Promise<Set<number>
   return new Set(rows.map((row) => row.product_id))
 }
 
-/** The wishlist: what he saved, with its news, and the open slots a new link can be saved for. */
+/** The wishlist: what she saved, with its news, and the open slots a new link can be saved for. */
 export type Wishlist = Pick<Feed, 'run' | 'saved' | 'slotNames' | 'openSlots'>
 
 export async function getWishlist(): Promise<Wishlist> {
@@ -362,9 +362,9 @@ async function attachTryOns(sql: Sql, finds: FindCard[]): Promise<void> {
 }
 
 /**
- * What he saved, newest first. Price and sizes come from the latest run's
+ * What she saved, newest first. Price and sizes come from the latest run's
  * shortlist when the find was on it (so "your size" holds), otherwise from the
- * product's own variants: a link he pasted, or a find whose size sold out.
+ * product's own variants: a link she pasted, or a find whose size sold out.
  */
 async function getSaved(sql: Sql, run: Run | null, rates: Rates): Promise<SavedFind[]> {
   const runId = run?.id ?? null
@@ -406,7 +406,7 @@ async function getSaved(sql: Sql, run: Run | null, rates: Rates): Promise<SavedF
            )) as colour,
            p.garment_type, bs.garment_type as slot_garment, bs.sizes -> 'labels' as slot_labels,
            (
-             -- Every size in stock with its key, in the store's order, to check his against.
+             -- Every size in stock with its key, in the store's order, to check hers against.
              select json_agg(json_build_object('label', option_size, 'key', size_key) order by first_id) from (
                select option_size, size_key, min(id) as first_id from product_variants
                where product_id = a.product_id and available and option_size is not null
@@ -522,7 +522,7 @@ export async function recordAction(input: FeedAction, sql: Sql = db()): Promise<
         `
       : []
     // Not on the shortlist: a search result or a statement piece is saved at
-    // the price and size found in his size; a pasted link at the lowest price
+    // the price and size found in her size; a pasted link at the lowest price
     // in stock.
     const [searched] = candidate
       ? []
@@ -556,7 +556,7 @@ export async function recordAction(input: FeedAction, sql: Sql = db()): Promise<
     `
 
     if (action.action === 'bought') {
-      // The product he bought is a piece in the wardrobe now, with or without a slot.
+      // The product she bought is a piece in the wardrobe now, with or without a slot.
       await pieceFromPurchase(tx, {
         product_id: action.product_id,
         slot_id: action.slot_id,

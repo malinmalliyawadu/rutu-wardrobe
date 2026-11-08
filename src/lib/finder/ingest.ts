@@ -69,7 +69,7 @@ export async function ingestRetailer(
     `
     if (!allowed) throw new DisallowedError(`robots.txt on ${new URL(feedOrigin).host} disallows ${firstFeed}`)
 
-    // A store with a men's collection is read through it, and everything in it
+    // A store with a women's collection is read through it, and everything in it
     // counts as womenswear; otherwise the whole catalogue, read per product.
     const feeds = retailer.feed_collections.length > 0
       ? retailer.feed_collections.map((handle) => `/collections/${handle}/products.json`)

@@ -10,20 +10,32 @@ function form(fields: Record<string, string>): FormData {
 }
 
 test('sizes: blanks become null, numbers are lenient about commas and spaces', () => {
-  const result = parseSizesForm(form({ height_cm: ' 183 ', chest_cm: '102,5', waist_cm: '', tee: 'L', tops: 'regular' }))
+  const result = parseSizesForm(
+    form({ height_cm: ' 168 ', bust_cm: '88,5', waist_cm: '', letter: 'S', dress: '10', jeans: '27', shoe_eu: '38', shoe_au: '7.5', tops: 'regular', dresses: 'relaxed' }),
+  )
   assert.ok(result.ok)
-  assert.equal(result.data.height_cm, 183)
-  assert.equal(result.data.sizes.chest_cm, 102.5)
+  assert.equal(result.data.height_cm, 168)
+  assert.equal(result.data.sizes.bust_cm, 88.5)
   assert.equal(result.data.sizes.waist_cm, null)
-  assert.equal(result.data.sizes.tee, 'L')
+  assert.equal(result.data.sizes.letter, 'S')
+  assert.equal(result.data.sizes.dress, 10)
+  assert.equal(result.data.sizes.jeans, 27)
+  assert.equal(result.data.sizes.shoe_au, 7.5)
   assert.equal(result.data.fits.tops, 'regular')
+  assert.equal(result.data.fits.dresses, 'relaxed')
   assert.equal(result.data.fits.knits, null)
 })
 
 test('sizes: a word where a number should be is an error on that field only', () => {
-  const result = parseSizesForm(form({ chest_cm: 'big', waist_cm: '86' }))
+  const result = parseSizesForm(form({ bust_cm: 'big', waist_cm: '70' }))
   assert.ok(!result.ok)
-  assert.deepEqual(Object.keys(result.errors), ['chest_cm'])
+  assert.deepEqual(Object.keys(result.errors), ['bust_cm'])
+})
+
+test('sizes: a dress size is an even AU number', () => {
+  const result = parseSizesForm(form({ dress: '9' }))
+  assert.ok(!result.ok)
+  assert.equal(result.errors.dress, 'An even AU size')
 })
 
 test('sizes: height outside the human range is refused', () => {

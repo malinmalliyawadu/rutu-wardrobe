@@ -1,6 +1,8 @@
 /*
  * Draws the app's icons: the palette strip from the top of every page, five
- * of Malin's own deep autumn colours as flat chips, on the pine ground. Run
+ * palette colours as flat chips, on the pine ground. The five are deep
+ * autumn ones carried over from the app this one started from; once her own
+ * guide is written, put five of her best colours here and draw them again. Run
  * once after a change, and commit the PNGs; the build never draws them,
  * since it runs with the network off and has no business doing image work.
  *
@@ -17,7 +19,7 @@ import path from 'node:path'
 import sharp from 'sharp'
 
 const GROUND = '#141b18'
-/** Five of his best colours, chosen for how they read side by side at icon size. */
+/** Five best colours, chosen for how they read side by side at icon size. */
 export const ICON_SWATCHES = ['#4a5a44', '#5a2a2e', '#2f4a4e', '#2a3d52', '#6e3a24']
 
 /**

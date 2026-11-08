@@ -7,7 +7,7 @@ import { PRODUCT_TOKEN } from './finder/http.ts'
  * Open-Meteo's forecast API: free, no key, and the request carries nothing
  * but the city's coordinates. Its data is CC BY 4.0, so the card credits it.
  *
- * What a day is dressed for is the hours he is out, 7am to 10pm, not the
+ * What a day is dressed for is the hours she is out, 7am to 10pm, not the
  * daily figures, which run midnight to midnight and would put the 3am low on
  * a lunchtime walk. The forecast is kept on the day's row as read, so the
  * card always shows the weather the outfit was chosen for.
@@ -41,7 +41,7 @@ export function nextDate(date: string): string {
   return next.toISOString().slice(0, 10)
 }
 
-/** From six in the evening he is dressing for tomorrow: what to lay out tonight. */
+/** From six in the evening she is dressing for tomorrow: what to lay out tonight. */
 export const EVENING_HOUR = 18
 
 /** The day an outfit opened now is for: today, or tomorrow from six in the evening. */

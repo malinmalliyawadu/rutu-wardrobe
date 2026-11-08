@@ -91,7 +91,7 @@ test('one find per page and colour; the query string is not part of it', () => {
   assert.equal(manualExternalId(new URL('https://lululemon.co.nz/a/b/'), null), 'lululemon.co.nz/a/b')
 })
 
-test('a find added by hand is a product with his photo, price, colour and size, and updates when added again', async () => {
+test('a find added by hand is a product with her photo, price, colour and size, and updates when added again', async () => {
   const url = new URL(LINK)
   const find = { name: 'License to Train Jogger', garment_type: 'trousers' as const, price: 149, colour: 'Black', size: 'M' }
   await assert.rejects(addManualFind(sql, lululemon, url, { ...find, photo_id: null }), ManualFindError, 'the first add needs a photo')
@@ -153,7 +153,7 @@ test('a find added by hand is a product with his photo, price, colour and size, 
   assert.notEqual(navy, id)
 })
 
-test('on Saved it is marked as added by hand, keeps his size, is never read at night, and can be bought', async () => {
+test('on Saved it is marked as added by hand, keeps her size, is never read at night, and can be bought', async () => {
   const shirt = await addManualFind(sql, lululemon, new URL('https://www.lululemon.co.nz/en-nz/p/metal-vent-tech/_/prod1.html'), {
     name: 'Metal Vent Tech Short-Sleeve Shirt',
     garment_type: 'tee',
@@ -166,7 +166,7 @@ test('on Saved it is marked as added by hand, keeps his size, is never read at n
   const [action] = await sql<{ price_cents: number; size: string }[]>`
     select price_cents, size from feed_actions where product_id = ${shirt} order by id desc limit 1
   `
-  assert.deepEqual(action, { price_cents: 8900, size: 'L' }, 'saved at his price, in his size')
+  assert.deepEqual(action, { price_cents: 8900, size: 'L' }, 'saved at her price, in her size')
 
   const saved = (await getFeed()).saved.find((find) => find.product_id === shirt)
   assert.ok(saved)
@@ -206,7 +206,7 @@ test('its photo is read from our own volume for a try-on, and a photo no find us
   assert.equal((await sharp(jpeg).metadata()).format, 'jpeg')
 
   const unused = await photo('#c0c0c0')
-  assert.equal(await clearFindOrphans(sql), 0, 'a photo just chosen is kept while he fills in the form')
+  assert.equal(await clearFindOrphans(sql), 0, 'a photo just chosen is kept while she fills in the form')
   await sql`update find_photos set created_at = now() - interval '2 days' where id in ${sql([used.id, unused.id])}`
   assert.equal(await clearFindOrphans(sql), 1)
   const ids = (await sql<{ id: number }[]>`select id::int as id from find_photos`).map((row) => row.id)

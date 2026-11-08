@@ -59,7 +59,7 @@ test('drafts sort by priority and keep Claude\'s order within one', () => {
   )
 })
 
-test('a redraft keeps what Malin wrote, edited, owns or has a candidate for', () => {
+test('a redraft keeps what Rutu wrote, edited, owns or has a candidate for', () => {
   const base = { source: 'claude' as const, edited_at: null, status: 'wanted' as const }
   assert.equal(isKeptOnRedraft(base), false)
   assert.equal(isKeptOnRedraft({ ...base, status: 'retired' }), false)
@@ -78,18 +78,18 @@ test('redraft messages list the kept slots and carry the note', () => {
   assert.match(content, /Fewer knits\./)
   assert.match(content, /Draft the remaining slots\./)
   const [first] = buildDraftMessages(profileFixture, guideFixture, [], null)
-  assert.match(String(first?.content), /Draft his blueprint\./)
+  assert.match(String(first?.content), /Draft her blueprint\./)
 })
 
 test('slot form: lists split on commas, colours normalised and de-duplicated', () => {
   const result = parseSlotForm(
     form({
-      name: ' Pine overshirt ',
+      name: ' Pine satin midi skirt ',
       why: 'Layers.',
       priority: '1',
-      garment_type: 'overshirt',
+      garment_type: 'skirt',
       colours: ['#2F4A3A', '2f4a3a', 'junk'],
-      fabrics: 'wool, , cotton',
+      fabrics: 'satin, , crepe',
       size_labels: 'S, M',
       budget_min: '200',
       budget_max: '350',
@@ -97,9 +97,9 @@ test('slot form: lists split on commas, colours normalised and de-duplicated', (
     }),
   )
   assert.ok(result.ok)
-  assert.equal(result.data.name, 'Pine overshirt')
+  assert.equal(result.data.name, 'Pine satin midi skirt')
   assert.deepEqual(result.data.colours, ['#2f4a3a'])
-  assert.deepEqual(result.data.fabrics, ['wool', 'cotton'])
+  assert.deepEqual(result.data.fabrics, ['satin', 'crepe'])
   assert.deepEqual(result.data.size_labels, ['S', 'M'])
   assert.equal(result.data.status, null, 'no status field means leave it alone')
 })
@@ -109,7 +109,7 @@ test('slot form: required fields, enums and the band order are checked', () => {
   assert.ok(!empty.ok)
   assert.equal(empty.errors.name, 'Fill this in')
 
-  const bad = parseSlotForm(form({ name: 'x', why: 'y', priority: '5', garment_type: 'cape' }))
+  const bad = parseSlotForm(form({ name: 'x', why: 'y', priority: '5', garment_type: 'overshirt' }))
   assert.ok(!bad.ok)
   assert.ok(bad.errors.priority)
   assert.equal(bad.errors.garment_type, 'Pick one of the options')
@@ -141,7 +141,7 @@ test('generated copy uses plain dashes', () => {
   })
 })
 
-test('bands read as Malin would say them', () => {
+test('bands read as Rutu would say them', () => {
   assert.equal(band(15000, 26000), '$150 to $260')
   assert.equal(band(120000, 120000), '$1,200')
   assert.equal(band(null, 30000), 'Up to $300')

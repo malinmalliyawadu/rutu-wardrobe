@@ -6,9 +6,9 @@ import Anthropic from '@anthropic-ai/sdk'
  *
  * Model split, decided in docs/plan.md: the profile analysis, blueprint
  * drafting, looks, the outfit of the day and remaking a look run rarely (the
- * outfit once a day at most, a remake on his tap) and quality matters, so
+ * outfit once a day at most, a remake on her tap) and quality matters, so
  * they get Opus; scoring
- * runs over hundreds of products a night, and a photo of one of his clothes or
+ * runs over hundreds of products a night, and a photo of one of her clothes or
  * a find's cut before its try-on is a quick read, so those get Sonnet.
  */
 const OPUS = 'claude-opus-5-5'

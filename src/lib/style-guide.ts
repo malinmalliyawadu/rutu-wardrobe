@@ -11,42 +11,42 @@ import { generate, type GenerationMeta } from './structured.ts'
 import { GARMENT_TYPES, METALS, normaliseHex } from './wardrobe-values.ts'
 
 /*
- * The style guide: what suits Malin, as structured data the blueprint and the
+ * The style guide: what suits Rutu, as structured data the blueprint and the
  * finder read. Generated once from the confirmed profile, then editable section
  * by section. Each section is one jsonb column on the style_guide row.
  */
 
 const hex = z.string().describe('Six-digit hex, "#rrggbb"')
-const colourName = z.string().describe('Short, as a tailor would name it: "pine", "tobacco", "oxblood"')
+const colourName = z.string().describe('Short, as a designer would name it: "pine", "tobacco", "oxblood"')
 
 const ColourSchema = z.object({
   hex,
   name: colourName,
-  use: z.string().describe('Where it works best for him, a few words: "knitwear and overshirts"'),
+  use: z.string().describe('Where it works best for her, a few words: "knitwear and dresses near the face"'),
 })
 
 const AvoidSchema = z.object({
   hex,
   name: colourName,
-  why: z.string().describe('A few words on what it does to him: "washes out the warmth in your skin"'),
+  why: z.string().describe('A few words on what it does to her: "washes out the warmth in your skin"'),
 })
 
 export const PaletteSchema = z.object({
-  summary: z.string().describe('One or two sentences to him on how his palette works.'),
+  summary: z.string().describe('One or two sentences to her on how her palette works.'),
   best: z
     .array(ColourSchema)
-    .describe('8 to 12 best colours, strongest and most wearable first. The first five are shown on his home screen.'),
+    .describe('8 to 12 best colours, strongest and most wearable first. The first five are shown on her home screen.'),
   neutrals: z
     .array(ColourSchema)
-    .describe('4 to 6 best neutrals, for trousers, outerwear, shoes and the base of an outfit.'),
+    .describe('4 to 6 best neutrals, for trousers, skirts, outerwear, shoes, bags and the base of an outfit.'),
   avoid: z.array(AvoidSchema).describe('3 to 6 colours to avoid near the face.'),
-  metal: z.enum(METALS).describe('Metal tone for hardware, watches, buckles and frames'),
+  metal: z.enum(METALS).describe('Metal tone for jewellery, watches, buckles, bag hardware and frames'),
   metal_why: z.string().describe('One sentence on why that metal.'),
 })
 
 const RuleSchema = z.object({
-  topic: z.string().describe('Two or three words: "trouser rise", "hem break"'),
-  rule: z.string().describe('One or two sentences to him, specific to his height and build.'),
+  topic: z.string().describe('Two or three words: "waist placement", "skirt length"'),
+  rule: z.string().describe('One or two sentences to her, specific to her height and build.'),
 })
 
 export const SectionSchema = z.object({
@@ -56,22 +56,22 @@ export const SectionSchema = z.object({
 
 export const FitSchema = z.object({
   garment: z.enum(GARMENT_TYPES),
-  fits: z.array(z.enum(FITS)).describe('The retailer fit labels that work for him on this garment.'),
+  fits: z.array(z.enum(FITS)).describe('The retailer fit labels that work for her on this garment.'),
   note: z.string().describe('A few words on what to look for in the cut.'),
 })
 
 export const GuideSchema = z.object({
   palette: PaletteSchema,
   silhouette: SectionSchema.describe(
-    'Silhouette and proportion rules: trouser rise, hem break, jacket and outerwear length, where to put visual weight, pattern scale, fabric weight. Five to eight rules.',
+    'Silhouette and proportion rules: waist placement, necklines, skirt and dress lengths, trouser rise and leg, jacket and outerwear length, where to put visual weight, pattern scale, fabric weight and drape. Five to eight rules.',
   ),
-  shoes: SectionSchema.describe('Shoe shapes, toe, sole and heel height that work with the trouser rules. Three to five rules.'),
+  shoes: SectionSchema.describe('Shoe shapes, toe, vamp, strap and heel height that work with her hem lengths and trouser legs, and with Wellington footpaths and hills. Three to five rules.'),
   accessories: SectionSchema.describe(
-    'Watch size, bag scale, glasses frames, scarves and hats for Wellington wind. Four to six rules.',
+    'Jewellery scale and metal, earrings for her neck and face, bag scale and shape, belts, glasses frames, scarves and hats for Wellington wind. Four to six rules.',
   ),
   fit_vocabulary: z
     .array(FitSchema)
-    .describe('One entry per clothing garment type he would wear; skip accessories and bags.'),
+    .describe('One entry per clothing garment type she would wear; skip accessories and bags.'),
 })
 
 export type Palette = z.infer<typeof PaletteSchema>
@@ -100,7 +100,7 @@ export function profileBrief(profile: Profile): Record<string, unknown> {
   const season = profile.season
 
   const seasons: Record<string, unknown> = {}
-  if (season) seasons[season] = { ...SEASON_INFO[season], role: 'his confirmed season' }
+  if (season) seasons[season] = { ...SEASON_INFO[season], role: 'her confirmed season' }
   if (runnerUp && runnerUp !== season) seasons[runnerUp] = { ...SEASON_INFO[runnerUp], role: 'runner-up' }
 
   return compact({
@@ -117,6 +117,7 @@ export function profileBrief(profile: Profile): Record<string, unknown> {
     proportions: {
       height_cm: profile.height_cm,
       build: profile.build,
+      waist_definition: profile.waist_definition,
       shoulder_hip: profile.shoulder_hip,
       torso_leg: profile.torso_leg,
       neck_length: profile.neck_length,
@@ -145,27 +146,27 @@ function compact(value: Record<string, unknown>): Record<string, unknown> {
   return out
 }
 
-export const GUIDE_SYSTEM_PROMPT = `You are an experienced womenswear stylist writing a personal style guide for one client. His profile comes from a colour and proportion read he has confirmed, plus what he typed in. The guide feeds a private app that drafts his wardrobe and finds clothes for him in Wellington, New Zealand, so it must be concrete enough to filter real products against.
+export const GUIDE_SYSTEM_PROMPT = `You are an experienced womenswear stylist writing a personal style guide for one client. Her profile comes from a colour and proportion read she has confirmed, plus what she typed in. The guide feeds a private app that drafts her wardrobe and finds clothes for her in Wellington, New Zealand, so it must be concrete enough to filter real products against.
 
-Wellington: mild and changeable, rarely hot, rarely freezing, wind most days and rain often. People dress in layers year round, and outerwear does a lot of work.
+Wellington: mild and changeable, rarely hot, rarely freezing, wind most days and rain often, and hilly. People dress in layers year round, outerwear does a lot of work, and a full skirt or a fine heel has to cope with the wind and the footpaths.
 
-Palette. Start from his season and the season table, then make it his: adjust for his undertone, depth and contrast as confirmed. Name colours the way a tailor or a mill would, and give real hex values you would match fabric against. The best colours are colours he can actually buy in womenswear (knitwear, shirts, outerwear, trousers), not paint chips. Neutrals are the base of most outfits. Colours to avoid are the ones that work against him near the face. The metal follows his undertone.
+Palette. Start from her season and the season table, then make it her: adjust for her undertone, depth and contrast as confirmed. Name colours the way a designer or a dye house would, and give real hex values you would match fabric against. The best colours are colours she can actually buy in womenswear (knitwear, tops, dresses, outerwear, skirts and trousers), not paint chips. Neutrals are the base of most outfits. Colours to avoid are the ones that work against her near the face. The metal follows her undertone and is the metal of her jewellery.
 
-When his season confidence is below 70, the runner-up is still in play. Lean the neutrals and the most expensive pieces toward colours that work in both seasons, and say so in the palette summary.
+When her season confidence is below 70, the runner-up is still in play. Lean the neutrals and the most expensive pieces toward colours that work in both seasons, and say so in the palette summary.
 
-Silhouette and proportion. Write rules for his height and build, with numbers where a stylist would give them (rise, break, jacket length relative to the seat, collar and lapel scale). Say where to put visual weight given his shoulder to hip relationship, which pattern scale suits his frame, and what fabric weight works for Wellington.
+Silhouette and proportion. Write rules for her height and build, with numbers where a stylist would give them (where a waist sits, skirt and dress lengths relative to the knee and calf, trouser rise and leg shape, jacket length relative to the hip). Say where her waist is best marked given her waist definition (a belt, a wrap, a seam or a tuck, or a straight line that skims it), which necklines suit her neck length and frame, where to put visual weight given her shoulder to hip relationship, which pattern scale suits her frame, and what fabric weight and drape work for Wellington.
 
-Shoes follow the trouser rules. Accessories cover watch case size for his wrist and frame, bag scale, glasses frames for his colouring, and scarves and hats that survive the wind.
+Shoes follow the hem and trouser rules: toe shape, vamp, straps and a heel height she can walk Wellington's hills in. Accessories cover jewellery scale and metal for her frame and colouring, earring length for her neck, bag scale and shape for her height, belts, glasses frames for her colouring, and scarves and hats that survive the wind.
 
-Fit vocabulary. For each clothing garment type he would wear, list the retailer fit labels (slim, regular, relaxed, oversized) that work on him, respecting his stated fit preferences, with a few words on what to look for in the cut.
+Fit vocabulary. For each clothing garment type she would wear, list the retailer fit labels (slim, regular, relaxed, oversized) that work on her, respecting her stated fit preferences, with a few words on what to look for in the cut.
 
-Where a profile group is missing, he has not filled it in yet. Do not invent facts about him; give advice that holds without them. Write every rule to him in the second person, in plain English, short enough to read on a phone. No brand names.`
+Where a profile group is missing, she has not filled it in yet. Do not invent facts about her; give advice that holds without them. Write every rule to her in the second person, in plain English, short enough to read on a phone. No brand names.`
 
 export function buildGuideMessages(profile: Profile): Anthropic.Beta.BetaMessageParam[] {
   return [
     {
       role: 'user',
-      content: `His profile:\n\n${JSON.stringify(profileBrief(profile), null, 2)}\n\nWrite his style guide.`,
+      content: `Her profile:\n\n${JSON.stringify(profileBrief(profile), null, 2)}\n\nWrite her style guide.`,
     },
   ]
 }

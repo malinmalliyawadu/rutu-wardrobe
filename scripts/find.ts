@@ -12,7 +12,7 @@
  *
  * Four stages, each recorded in one finder_runs row:
  *   1. ingest   every enabled store's Shopify feed, politely (free)
- *   2. filter   womenswear, the slot's garment, in his size, in the slot's band, not
+ *   2. filter   womenswear, the slot's garment, in her size, in the slot's band, not
  *               dismissed, not plainly the wrong colour (free; reads a photo once
  *               when the listing names no colour)
  *   3. score    new or changed candidates, with Sonnet (costs tokens)
@@ -148,7 +148,7 @@ try {
       observations: sum(results, 'observations'),
       retailers: results,
     }
-    // Saved products the walk did not cover (a pasted link outside the men's
+    // Saved products the walk did not cover (a pasted link outside the women's
     // collection) are read one by one, so their price and stock stay current.
     stats.saved_refreshed = await refreshSaved(sql, client, allRetailers, runStartedAt)
     log({ event: 'ingest.saved', ...(stats.saved_refreshed as object) })
@@ -301,7 +301,7 @@ async function savedPriceDrops(): Promise<number> {
   return row?.count ?? 0
 }
 
-/** The last 40 dismissals, so the scorer learns his taste. */
+/** The last 40 dismissals, so the scorer learns her taste. */
 async function recentDismissals() {
   return sql<{ title: string; reason: string | null; note: string | null }[]>`
     select p.title, a.reason, a.note from feed_actions a join products p on p.id = a.product_id
@@ -327,7 +327,7 @@ async function statementsShown(runId: number): Promise<number> {
 
 /**
  * What the feed will show from this run: candidates whose current score clears
- * the threshold for an open slot they were offered, and that he has not saved,
+ * the threshold for an open slot they were offered, and that she has not saved,
  * dismissed or bought.
  */
 async function shownCount(runId: number): Promise<number> {

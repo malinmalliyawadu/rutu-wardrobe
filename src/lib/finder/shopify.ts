@@ -9,7 +9,7 @@ import { FetchError, type PoliteClient } from './http.ts'
  * The generic Shopify adapter. Every storefront serves its catalogue at
  * /products.json?limit=250&page=N without a key; the adapter walks the pages
  * until one comes back empty and turns each product into the normalised shape
- * the tables hold. It never decides what Malin sees: that is the filter's job.
+ * the tables hold. It never decides what Rutu sees: that is the filter's job.
  */
 
 export const PAGE_SIZE = 250

@@ -23,7 +23,7 @@ import { dressDate } from '../src/lib/weather.ts'
 import { guideFixture, profileFixture } from './fixtures.ts'
 
 /*
- * Remaking a look: what he may ask, what the remake is held to, the prompt,
+ * Remaking a look: what she may ask, what the remake is held to, the prompt,
  * then a look remade in its place against a real Postgres in a scratch
  * database (never the one DATABASE_URL names). Opus is never called; its
  * answer is a fixture.
@@ -54,7 +54,7 @@ const shelf: Shelf[] = [
 ]
 const of = (ids: number[]) => ids.map((id) => shelf.find((p) => p.id === id)!)
 
-/** Coat, crew, oxford, chinos, boots and a scarf. */
+/** Coat, crew, poplin shirt, trousers, boots and a scarf. */
 const lookPieces = of([1, 2, 3, 4, 6, 8])
 const theLook = { status: 'saved' as const, piece_count: lookPieces.length, pieces: lookPieces }
 
@@ -78,7 +78,7 @@ describe('the pure parts', () => {
     assert.equal(wholeWithout(lookPieces, new Set([6])), false, 'the shoes')
   })
 
-  test('what he asks is checked before Opus is called, and answered in words', () => {
+  test('what she asks is checked before Opus is called, and answered in words', () => {
     assert.equal(remakeProblem(theLook, { swap: [6], remove: [1] }), null)
     assert.equal(remakeProblem(theLook, { swap: [], remove: [] }), 'Mark a piece to swap or remove first.')
     assert.match(remakeProblem(theLook, { swap: [5], remove: [] }) ?? '', /changed/, 'not a piece of the look')
@@ -94,7 +94,7 @@ describe('the pure parts', () => {
   const original = { occasion: 'office' as const, piece_ids: [1, 2, 3, 4, 6, 8] }
   const none = { dismissed: [] }
 
-  test('the remake keeps every piece he kept, in layer order, with one new piece for the one he swapped', () => {
+  test('the remake keeps every piece she kept, in layer order, with one new piece for the one she swapped', () => {
     const tidy = tidyRemake(draft([7, 4, 3, 2, 1]), original, { swap: [6], remove: [8] }, shelf, none)
     assert.deepEqual(tidy, {
       title: 'Crew and white sneakers',
@@ -107,7 +107,7 @@ describe('the pure parts', () => {
     })
   })
 
-  test('a remake that drops a kept piece, brings back a marked one, or adds more than he swapped is not kept', () => {
+  test('a remake that drops a kept piece, brings back a marked one, or adds more than she swapped is not kept', () => {
     const ask = { swap: [6], remove: [1] }
     assert.equal(tidyRemake(draft([2, 4, 7, 8]), original, ask, shelf, none), null, 'the oxford is gone')
     assert.equal(tidyRemake(draft([1, 2, 3, 4, 7, 8]), original, ask, shelf, none), null, 'the coat came back')
@@ -116,7 +116,7 @@ describe('the pure parts', () => {
     assert.notEqual(tidyRemake(draft([2, 3, 4, 7, 8]), original, ask, shelf, none), null)
   })
 
-  test('a removal adds nothing, and a remake is still a whole look and not one he dismissed', () => {
+  test('a removal adds nothing, and a remake is still a whole look and not one she dismissed', () => {
     assert.notEqual(tidyRemake(draft([2, 3, 4, 6]), original, { swap: [], remove: [1, 8] }, shelf, none), null)
     assert.equal(tidyRemake(draft([2, 3, 4, 6, 9]), original, { swap: [], remove: [1, 8] }, shelf, none), null, 'a tee added')
     assert.equal(tidyRemake(draft([2, 3, 4, 5, 6, 8]), original, { swap: [1], remove: [] }, shelf, none), null, 'two pairs of trousers')
@@ -151,8 +151,8 @@ describe('a look remade in its place', () => {
     for (const [key, name, garment_type] of [
       ['coat', 'Camel coat', 'coat'],
       ['crew', 'Pine crew', 'knitwear'],
-      ['oxford', 'Ecru oxford', 'shirt'],
-      ['chinos', 'Putty chinos', 'trousers'],
+      ['oxford', 'Ecru poplin shirt', 'shirt'],
+      ['trousers', 'Putty trousers', 'trousers'],
       ['boots', 'Brown Chelseas', 'boots'],
       ['sneakers', 'White sneakers', 'sneakers'],
       ['tee', 'Navy tee', 'tee'],
@@ -190,7 +190,7 @@ describe('a look remade in its place', () => {
   let lookId = 0
   let dayId = 0
 
-  test('a saved look he wore today, and the day’s outfit that shows it', async () => {
+  test('a saved look she wore today, and the day’s outfit that shows it', async () => {
     await saveGuide(guideFixture, meta)
     await saveSet(
       {
@@ -199,7 +199,7 @@ describe('a look remade in its place', () => {
             title: 'Camel over pine',
             occasion: 'office',
             weather: 'cool',
-            piece_ids: [ids.coat!, ids.crew!, ids.oxford!, ids.chinos!, ids.boots!],
+            piece_ids: [ids.coat!, ids.crew!, ids.oxford!, ids.trousers!, ids.boots!],
             why: 'Why.',
             styling: null,
             better_with: null,
@@ -227,7 +227,7 @@ describe('a look remade in its place', () => {
             title: 'Renamed',
             occasion: 'office',
             weather: 'cool',
-            piece_ids: [ids.coat!, ids.crew!, ids.oxford!, ids.chinos!, ids.boots!],
+            piece_ids: [ids.coat!, ids.crew!, ids.oxford!, ids.trousers!, ids.boots!],
             why: 'Why.',
             styling: null,
             today: 'A cold morning: the coat.',
@@ -244,7 +244,7 @@ describe('a look remade in its place', () => {
     assert.equal((await readDay(dressDate(), sql))?.options[0]?.look.id, lookId, 'the saved look is the day’s option')
   })
 
-  test('the prompt marks each piece and offers only the rest of his wardrobe, with the day', async () => {
+  test('the prompt marks each piece and offers only the rest of her wardrobe, with the day', async () => {
     const [look] = await getLooks([lookId], sql)
     const input: RemakeInput = {
       profile: profileFixture,
@@ -262,8 +262,8 @@ describe('a look remade in its place', () => {
       [
         ['Camel coat', 'remove'],
         ['Pine crew', 'keep'],
-        ['Ecru oxford', 'keep'],
-        ['Putty chinos', 'keep'],
+        ['Ecru poplin shirt', 'keep'],
+        ['Putty trousers', 'keep'],
         ['Brown Chelseas', 'swap'],
       ],
     )
@@ -271,7 +271,7 @@ describe('a look remade in its place', () => {
     assert.equal(body.look.today, 'A cold morning: the coat.')
     assert.equal(body.day.weekday, 'Friday')
     assert.equal(body.usual_weather, undefined)
-    assert.match(content, /Remake the look: 1 piece to swap, 1 to remove\. He says: "lighter shoes"\.$/)
+    assert.match(content, /Remake the look: 1 piece to swap, 1 to remove\. She says: "lighter shoes"\.$/)
   })
 
   test('one remake of a look at a time, shown on the look while it is made', async () => {
@@ -290,7 +290,7 @@ describe('a look remade in its place', () => {
       runRemake(
         started.ok ? started.id : 0,
         sql,
-        answer(draft([ids.sneakers!, ids.chinos!, ids.oxford!, ids.crew!], { today: 'Dry and mild by noon: the crew alone.' })),
+        answer(draft([ids.sneakers!, ids.trousers!, ids.oxford!, ids.crew!], { today: 'Dry and mild by noon: the crew alone.' })),
       ),
     )
     assert.equal(done.ok, true)
@@ -304,13 +304,13 @@ describe('a look remade in its place', () => {
     assert.notEqual(remade?.id, lookId)
     assert.equal(remade?.title, 'Crew and white sneakers')
     assert.equal(remade?.status, 'saved')
-    assert.deepEqual(remade?.pieces.map((p) => p.name), ['Pine crew', 'Ecru oxford', 'Putty chinos', 'White sneakers'])
+    assert.deepEqual(remade?.pieces.map((p) => p.name), ['Pine crew', 'Ecru poplin shirt', 'Putty trousers', 'White sneakers'])
     assert.equal(remade?.worn.length, 1, 'today’s wear moved to it')
     assert.equal(remade?.remaking, null)
 
     const [old] = await getLooks([lookId], sql)
     assert.equal(old?.status, 'replaced')
-    assert.deepEqual(old?.worn, [], 'he is wearing the remade one today')
+    assert.deepEqual(old?.worn, [], 'she is wearing the remade one today')
     assert.ok(!(await readHistory(sql)).saved.some((look) => look.title === 'Camel over pine'), 'the next set does not see it as saved')
 
     const day = await readDay(dressDate(), sql)
@@ -329,7 +329,7 @@ describe('a look remade in its place', () => {
   test('a remake that does not hold together fails in words and leaves the look as it was', async () => {
     const started = await startRemake({ look_id: lookId, swap: [ids.crew!], remove: [], note: null }, sql)
     assert.ok(started.ok)
-    const done = await quietly(() => runRemake(started.id, sql, answer(draft([ids.crew!, ids.oxford!, ids.chinos!, ids.sneakers!]))))
+    const done = await quietly(() => runRemake(started.id, sql, answer(draft([ids.crew!, ids.oxford!, ids.trousers!, ids.sneakers!]))))
     assert.deepEqual(done, { ok: false, message: 'The remade look did not hold together. Try again.' })
     const [look] = await getLooks([lookId], sql)
     assert.equal(look?.status, 'saved')
@@ -340,7 +340,7 @@ describe('a look remade in its place', () => {
   test('a remake into an outfit already made is that look, not a copy', async () => {
     await saveSet(
       {
-        looks: [{ title: 'Navy tee day', occasion: 'weekend', weather: 'mild', piece_ids: [ids.tee!, ids.chinos!, ids.sneakers!], why: 'Why.', styling: null, better_with: null }],
+        looks: [{ title: 'Navy tee day', occasion: 'weekend', weather: 'mild', piece_ids: [ids.tee!, ids.trousers!, ids.sneakers!], why: 'Why.', styling: null, better_with: null }],
         proposed: 1,
         meta,
         usd: 0.2,
@@ -354,7 +354,7 @@ describe('a look remade in its place', () => {
 
     const started = await startRemake({ look_id: lookId, swap: [ids.crew!], remove: [ids.oxford!], note: null }, sql)
     assert.ok(started.ok)
-    const done = await quietly(() => runRemake(started.id, sql, answer(draft([ids.sneakers!, ids.tee!, ids.chinos!]))))
+    const done = await quietly(() => runRemake(started.id, sql, answer(draft([ids.sneakers!, ids.tee!, ids.trousers!]))))
     assert.equal(done.ok, true)
     assert.equal(await count(), before, 'no new look')
     const [reused] = await getLooks([made.id], sql)

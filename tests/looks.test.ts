@@ -40,19 +40,24 @@ const shelf: Shelf[] = [
   everyday(1, 'coat'),
   everyday(2, 'knitwear'),
   everyday(3, 'shirt'),
-  everyday(4, 'trousers'),
+  everyday(4, 'skirt'),
   everyday(5, 'jeans'),
   everyday(6, 'boots'),
   everyday(7, 'sneakers'),
   everyday(8, 'accessory'),
   everyday(9, 'tee', new Date()),
   everyday(10, 'jacket'),
+  everyday(11, 'dress'),
+  everyday(12, 'jewellery'),
+  everyday(13, 'bag'),
+  everyday(14, 'belt'),
+  everyday(15, 'jewellery'),
 ]
 
-/** Gym kit: a tank and shorts for the gym only, a hoodie and trainers worn for both, and a piece still filed as activewear. */
+/** Gym kit: a sports bra and leggings for the gym only, a hoodie and sneakers worn for both, and a piece still filed as activewear. */
 const kit: Shelf[] = [
   { id: 21, garment_type: 'tank', set_aside_at: null, worn_for: 'gym' },
-  { id: 22, garment_type: 'shorts', set_aside_at: null, worn_for: 'gym' },
+  { id: 22, garment_type: 'trousers', set_aside_at: null, worn_for: 'gym' },
   { id: 23, garment_type: 'sweatshirt', set_aside_at: null, worn_for: 'both' },
   { id: 24, garment_type: 'sneakers', set_aside_at: null, worn_for: 'both' },
   { id: 25, garment_type: 'activewear', set_aside_at: null, worn_for: 'gym' },
@@ -72,32 +77,38 @@ const look = (piece_ids: number[], extra: Partial<LookDraft> = {}): LookDraft =>
 const noHistory = { saved: [], dismissed: [] }
 
 describe('the pure parts', () => {
-  test('a look is put in layer order: outermost first, then down to the shoes, then what is carried', () => {
+  test('a look is put in layer order: outermost first, then down to the shoes, then what is worn and carried', () => {
     const [tidied] = tidyLooks([look([6, 8, 4, 3, 2, 1])], shelf, [], noHistory)
     assert.deepEqual(tidied?.piece_ids, [1, 2, 3, 4, 6, 8])
     assert.equal(tidied?.title, 'Navy and oxblood')
+    const [dress] = tidyLooks([look([13, 12, 6, 14, 11, 2])], shelf, [], noHistory)
+    assert.deepEqual(dress?.piece_ids, [2, 11, 14, 6, 12, 13], 'a knit over the dress, the belt, the boots, the earrings, the bag')
   })
 
   test('a look that is not a whole outfit is dropped, not shown half right', () => {
     const kept = tidyLooks(
       [
         look([3, 4]), // no shoes
-        look([3, 6]), // no trousers
+        look([3, 6]), // no skirt or trousers
         look([4, 6, 8]), // no top
-        look([3, 4, 5, 6]), // two pairs of trousers
+        look([3, 4, 5, 6]), // a skirt and jeans
         look([3, 4, 6, 7]), // two pairs of shoes
         look([1, 10, 3, 4, 6]), // a coat and a jacket
         look([9, 4, 6]), // its only top is set aside
+        look([11, 4, 6]), // a dress over a skirt
+        look([3, 4, 6, 8, 12, 13, 14, 15]), // five things worn or carried
         look([3, 4, 6, 99]), // an unknown piece is dropped, the rest stands
+        look([11, 6]), // a dress and shoes is whole
+        look([2, 11, 7, 12, 13]), // a knit over a dress, earrings and a bag
       ],
       shelf,
       [],
       noHistory,
     )
-    assert.deepEqual(kept.map((l) => l.piece_ids), [[3, 4, 6]])
+    assert.deepEqual(kept.map((l) => l.piece_ids), [[3, 4, 6], [11, 6], [2, 11, 7, 12, 13]])
   })
 
-  test('a look is not repeated within the set or from his history, whatever the order', () => {
+  test('a look is not repeated within the set or from her history, whatever the order', () => {
     const kept = tidyLooks([look([3, 4, 6]), look([6, 4, 3]), look([2, 5, 7])], shelf, [], {
       saved: [],
       dismissed: [{ title: 'x', piece_ids: [7, 5, 2], reason: 'colours' }],
@@ -105,7 +116,7 @@ describe('the pure parts', () => {
     assert.deepEqual(kept.map((l) => l.piece_ids), [[3, 4, 6]])
   })
 
-  test('better_with survives only for a slot he still wants', () => {
+  test('better_with survives only for a slot she still wants', () => {
     const [kept, dropped] = tidyLooks(
       [look([3, 4, 6], { better_with: { slot_id: 20, why: 'a scarf' } }), look([2, 5, 7], { better_with: { slot_id: 21, why: 'x' } })],
       shelf,
@@ -116,23 +127,25 @@ describe('the pure parts', () => {
     assert.equal(dropped?.better_with, null)
   })
 
-  test('readiness asks for two tops, trousers and shoes, and says what is missing in words', () => {
-    assert.deepEqual(readiness([]), { ready: false, missing: ['two tops', 'a pair of trousers or jeans', 'a pair of shoes'] })
-    assert.deepEqual(readiness(shelf.filter((piece) => [3, 4, 6, 9].includes(piece.id))), { ready: false, missing: ['one more top'] })
+  test('readiness asks for a dress or two tops and a skirt or trousers, and shoes, and says what is missing in words', () => {
+    assert.deepEqual(readiness([]), { ready: false, missing: ['a dress, or two tops with a skirt or trousers', 'a pair of shoes'] })
+    assert.deepEqual(readiness(shelf.filter((piece) => [3, 4, 6, 9].includes(piece.id))), { ready: false, missing: ['one more top, or a dress'] })
+    assert.deepEqual(readiness(shelf.filter((piece) => [2, 3, 6].includes(piece.id))).missing, ['a skirt, trousers or jeans, or a dress'])
+    assert.equal(readiness(shelf.filter((piece) => [11, 6].includes(piece.id))).ready, true, 'a dress and shoes dress her')
     assert.equal(readiness(shelf).ready, true)
   })
 
   test('gym kit does not make an everyday wardrobe ready; a piece worn for both counts in either', () => {
     const tank = kit.find((piece) => piece.id === 21)!
     const hoodie = kit.find((piece) => piece.id === 23)!
-    assert.deepEqual(readiness([...shelf.filter((piece) => [3, 4, 6].includes(piece.id)), tank]).missing, ['one more top'])
+    assert.deepEqual(readiness([...shelf.filter((piece) => [3, 4, 6].includes(piece.id)), tank]).missing, ['one more top, or a dress'])
     assert.equal(readiness([...shelf.filter((piece) => [3, 4, 6].includes(piece.id)), hoodie]).ready, true)
   })
 
-  test('gym readiness asks for a top, shorts or joggers and trainers among the gym kit, activewear not counted', () => {
-    assert.deepEqual(gymReadiness(shelf), { ready: false, missing: ['a top', 'shorts or joggers', 'trainers'] })
-    assert.deepEqual(gymReadiness([...shelf, kit[4]!]).missing, ['a top', 'shorts or joggers', 'trainers'])
-    assert.deepEqual(gymReadiness([...shelf, ...kit.filter((piece) => piece.id !== 22)]).missing, ['shorts or joggers'])
+  test('gym readiness asks for a top, shorts or leggings and sneakers among the gym kit, activewear not counted', () => {
+    assert.deepEqual(gymReadiness(shelf), { ready: false, missing: ['a top', 'shorts or leggings', 'sneakers'] })
+    assert.deepEqual(gymReadiness([...shelf, kit[4]!]).missing, ['a top', 'shorts or leggings', 'sneakers'])
+    assert.deepEqual(gymReadiness([...shelf, ...kit.filter((piece) => piece.id !== 22)]).missing, ['shorts or leggings'])
     assert.equal(gymReadiness(kit).ready, true)
   })
 
@@ -140,11 +153,11 @@ describe('the pure parts', () => {
     const pieces = [...shelf, ...kit]
     const kept = tidyLooks(
       [
-        look([23, 21, 22, 24], { occasion: 'gym' }), // hoodie, tank, shorts, trainers: whole
+        look([23, 21, 22, 24], { occasion: 'gym' }), // hoodie, sports bra, leggings, sneakers: whole
         look([21, 22, 6], { occasion: 'gym' }), // everyday boots are dropped: no shoes left
-        look([21, 4, 24], { occasion: 'gym' }), // everyday trousers are dropped: no bottom left
+        look([21, 4, 24], { occasion: 'gym' }), // an everyday skirt is dropped: no bottom left
         look([25, 22, 24], { occasion: 'gym' }), // activewear says nothing of what it is: no top left
-        look([21, 3, 4, 6]), // the gym tank is dropped from an office look; the rest stands
+        look([21, 3, 4, 6]), // the sports bra is dropped from an office look; the rest stands
         look([23, 4, 24]), // a piece worn for both goes in an everyday look
       ],
       pieces,
@@ -174,7 +187,7 @@ describe('the pure parts', () => {
       { id: 1, name: 'Ink coat', garment_type: 'coat', colour_hex: '#2f4a3a', colour_name: null, fabric: 'wool', fit: null, warmth: 'warm', worn_for: 'everyday', notes: null, set_aside_at: null },
       { id: 2, name: 'Old tee', garment_type: 'tee', colour_hex: null, colour_name: 'grey', fabric: null, fit: null, warmth: null, worn_for: 'everyday', notes: null, set_aside_at: new Date() },
       { id: 3, name: 'Gym shorts', garment_type: 'activewear', colour_hex: null, colour_name: null, fabric: null, fit: null, warmth: null, worn_for: 'gym', notes: null, set_aside_at: null },
-      { id: 4, name: 'Pine training tank', garment_type: 'tank', colour_hex: null, colour_name: 'pine', fabric: null, fit: null, warmth: 'light', worn_for: 'gym', notes: null, set_aside_at: null },
+      { id: 4, name: 'Pine sports bra', garment_type: 'tank', colour_hex: null, colour_name: 'pine', fabric: null, fit: null, warmth: 'light', worn_for: 'gym', notes: null, set_aside_at: null },
     ] as Piece[]
     const [message] = buildLooksMessages({
       profile: profileFixture,
@@ -190,14 +203,14 @@ describe('the pure parts', () => {
     assert.match(content, /"name": "pine"/, 'the guide name for the hex')
     assert.match(content, /"worn_lately": 2/)
     assert.doesNotMatch(content, /Old tee|Gym shorts/)
-    assert.match(content, /"name": "Pine training tank",\s+"garment": "tank",\s+"worn_for": "gym"/)
+    assert.match(content, /"name": "Pine sports bra",\s+"garment": "tank",\s+"worn_for": "gym"/)
     assert.match(content, /"kit_ready": false/)
-    assert.match(content, /He asked for this set: "a wedding"/)
-    assert.doesNotMatch(content, /[–—]/)
-    assert.equal(plainDashes('tuck it — then cuff'), 'tuck it - then cuff')
+    assert.match(content, /She asked for this set: "a wedding"/)
+    assert.doesNotMatch(content, /[\u2013\u2014]/)
+    assert.equal(plainDashes('tuck it \u2014 then cuff'), 'tuck it - then cuff')
   })
 
-  test('a set of gym fits asks for gym fits only, with his gym days', () => {
+  test('a set of gym fits asks for gym fits only, with her gym days', () => {
     const [message] = buildLooksMessages({
       profile: { ...profileFixture, life: { gym: 4, gym_days: ['monday', 'tuesday', 'thursday', 'saturday'] } },
       guide: guideFixture,
@@ -209,12 +222,12 @@ describe('the pure parts', () => {
     })
     const content = message!.content as string
     assert.match(content, /"days_a_week": 4/)
-    assert.match(content, /Make up to 6 gym fits from his gym kit/)
+    assert.match(content, /Make up to 6 gym fits from her gym kit/)
   })
 })
 
 describe('looks around a piece', () => {
-  test('the ask names the piece, wants three ways to wear it, and carries his note', () => {
+  test('the ask names the piece, wants three ways to wear it, and carries her note', () => {
     const [message] = buildLooksMessages({
       profile: profileFixture,
       guide: guideFixture,
@@ -222,14 +235,14 @@ describe('looks around a piece', () => {
       wanted: [],
       history: { saved: [], dismissed: [], worn: new Map() },
       note: 'the office',
-      around: { id: 12, name: 'Rust overshirt', worn_for: 'everyday' },
+      around: { id: 12, name: 'Rust satin skirt', worn_for: 'everyday' },
     })
     const content = message!.content as string
-    assert.match(content, /"Rust overshirt" \(id 12\)/)
+    assert.match(content, /"Rust satin skirt" \(id 12\)/)
     assert.match(content, /Make 3 looks that each wear it/)
-    assert.match(content, /He added: "the office"/)
+    assert.match(content, /She added: "the office"/)
     assert.doesNotMatch(content, /gym fit/)
-    assert.doesNotMatch(content, /He asked for this set/)
+    assert.doesNotMatch(content, /She asked for this set/)
   })
 
   test('gym kit is built on as gym fits', () => {
@@ -240,7 +253,7 @@ describe('looks around a piece', () => {
       wanted: [],
       history: { saved: [], dismissed: [], worn: new Map() },
       note: null,
-      around: { id: 21, name: 'Pine tank', worn_for: 'gym' },
+      around: { id: 21, name: 'Pine sports bra', worn_for: 'gym' },
     })
     assert.match(message!.content as string, /It is gym kit, so they are gym fits/)
   })
@@ -261,11 +274,11 @@ describe('looks around a piece', () => {
   test('a piece is ready to build on when a whole outfit of what it is worn for can be made', () => {
     assert.deepEqual(readinessAround({ worn_for: 'everyday' }, shelf), { ready: true, missing: [], gym: false })
     assert.deepEqual(readinessAround({ worn_for: 'gym' }, kit), { ready: true, missing: [], gym: true })
-    assert.deepEqual(readinessAround({ worn_for: 'gym' }, shelf), { ready: false, missing: ['a top', 'shorts or joggers', 'trainers'], gym: true })
+    assert.deepEqual(readinessAround({ worn_for: 'gym' }, shelf), { ready: false, missing: ['a top', 'shorts or leggings', 'sneakers'], gym: true })
     // Worn for both: everyday looks when only those can be made, gym fits too when the kit is ready.
     assert.equal(readinessAround({ worn_for: 'both' }, shelf).ready, true)
     assert.equal(readinessAround({ worn_for: 'both' }, kit).gym, true)
-    assert.deepEqual(readinessAround({ worn_for: 'both' }, []).missing, ['two tops', 'a pair of trousers or jeans', 'a pair of shoes'])
+    assert.deepEqual(readinessAround({ worn_for: 'both' }, []).missing, ['a dress, or two tops with a skirt or trousers', 'a pair of shoes'])
   })
 })
 
@@ -286,9 +299,9 @@ describe('a set saved, read and acted on', () => {
     sql = connect({ max: 2 })
     const typed = { source: 'typed' as const, photo_id: null, product_id: null }
     for (const [name, garment_type] of [
-      ['Ecru oxford', 'shirt'],
+      ['Ecru poplin shirt', 'shirt'],
       ['Pine crew', 'knitwear'],
-      ['Putty chinos', 'trousers'],
+      ['Putty trousers', 'trousers'],
       ['Brown Chelseas', 'boots'],
     ] as const) {
       ids.push(
@@ -314,12 +327,12 @@ describe('a set saved, read and acted on', () => {
     usd: 0.14,
   })
 
-  test('the newest set shows less what he dismissed; saved and worn looks stay put, and teach the next set', async () => {
-    const [shirt, crew, chinos, boots] = ids as [number, number, number, number]
-    await saveSet(draft([[shirt, chinos, boots], [crew, shirt, chinos, boots], [crew, chinos, boots]]), { note: null, pieces: 4, date: '2026-11-04', weather: 'mild' })
+  test('the newest set shows less what she dismissed; saved and worn looks stay put, and teach the next set', async () => {
+    const [shirt, crew, trousers, boots] = ids as [number, number, number, number]
+    await saveSet(draft([[shirt, trousers, boots], [crew, shirt, trousers, boots], [crew, trousers, boots]]), { note: null, pieces: 4, date: '2026-11-04', weather: 'mild' })
     let page = await readLooks()
     assert.deepEqual(page.fresh.map((l) => l.title), ['Look 1', 'Look 2', 'Look 3'])
-    assert.deepEqual(page.fresh[0]?.pieces.map((p) => p.name), ['Ecru oxford', 'Putty chinos', 'Brown Chelseas'])
+    assert.deepEqual(page.fresh[0]?.pieces.map((p) => p.name), ['Ecru poplin shirt', 'Putty trousers', 'Brown Chelseas'])
     assert.deepEqual(page.total, { sets: 1, usd: 0.14 })
 
     const [first, second, third] = page.fresh.map((l) => ({ id: l.id })) as [{ id: number }, { id: number }, { id: number }]
@@ -352,14 +365,14 @@ describe('a set saved, read and acted on', () => {
     assert.equal((await readLooks()).saved.find((l) => l.title === 'Look 3')?.worn.length, 0)
   })
 
-  test('a set offers the look already made with the same pieces, not a copy; never one he dismissed', async () => {
-    const [shirt, crew, chinos, boots] = ids as [number, number, number, number]
+  test('a set offers the look already made with the same pieces, not a copy; never one she dismissed', async () => {
+    const [shirt, crew, trousers, boots] = ids as [number, number, number, number]
     const [cold] = await sql<{ id: number }[]>`
       select l.id::int as id from looks l join look_sets s on s.id = l.set_id where s.note = 'cold'
     `
     const count = async () => (await sql<{ count: number }[]>`select count(*)::int as count from looks`)[0]!.count
     const before = await count()
-    await saveSet(draft([[boots, crew, shirt], [crew, shirt, chinos, boots], [shirt, chinos]]), { note: 'again', pieces: 4, date: '2026-11-06', weather: 'mild' })
+    await saveSet(draft([[boots, crew, shirt], [crew, shirt, trousers, boots], [shirt, trousers]]), { note: 'again', pieces: 4, date: '2026-11-06', weather: 'mild' })
     const page = await readLooks()
     assert.equal(page.latest?.note, 'again')
     assert.equal(page.fresh.length, 3, 'all three in the newest set, in order')
@@ -369,12 +382,12 @@ describe('a set saved, read and acted on', () => {
   })
 
   test('looks around a piece are its own: the piece page shows the newest, the Looks tab does not', async () => {
-    const [shirt, crew, chinos, boots] = ids as [number, number, number, number]
+    const [shirt, crew, trousers, boots] = ids as [number, number, number, number]
     const latest = (await readLooks()).latest
     assert.deepEqual(await readPieceLooks(crew), { latest: null, looks: [] })
 
-    await saveSet(draft([[crew, chinos, boots], [crew, shirt, chinos, boots]]), { note: 'office', pieces: 4, date: '2026-11-06', weather: 'mild', pieceId: crew })
-    await saveSet(draft([[crew, shirt, boots], [shirt, crew, chinos, boots]]), { note: null, pieces: 4, date: '2026-11-06', weather: 'mild', pieceId: crew })
+    await saveSet(draft([[crew, trousers, boots], [crew, shirt, trousers, boots]]), { note: 'office', pieces: 4, date: '2026-11-06', weather: 'mild', pieceId: crew })
+    await saveSet(draft([[crew, shirt, boots], [shirt, crew, trousers, boots]]), { note: null, pieces: 4, date: '2026-11-06', weather: 'mild', pieceId: crew })
     let around = await readPieceLooks(crew)
     assert.equal(around.latest?.note, null, 'the newest set around it')
     assert.equal(around.looks.length, 2)
@@ -387,18 +400,18 @@ describe('a set saved, read and acted on', () => {
     await actOnLook({ action: 'dismiss', look_id: around.looks[0]!.id, reason: 'colours' })
     await actOnLook({ action: 'save', look_id: around.looks[1]!.id })
     around = await readPieceLooks(crew)
-    assert.deepEqual(around.looks.map((l) => l.status), ['saved'], 'what he dismissed goes, what he saved stays')
+    assert.deepEqual(around.looks.map((l) => l.status), ['saved'], 'what she dismissed goes, what she saved stays')
     // The same outfit is in the Looks tab's newest set too, so it is saved there, where it was.
     const looksTab = await readLooks()
     assert.equal(looksTab.fresh.find((l) => l.id === around.looks[0]!.id)?.status, 'saved', 'one outfit, saved everywhere')
   })
 
   test('a look says so when one of its pieces is set aside or deleted', async () => {
-    const [, crew, chinos] = ids as [number, number, number, number]
+    const [, crew, trousers] = ids as [number, number, number, number]
     await setAside(crew, 'wanted')
     let saved = (await readLooks()).saved.find((l) => l.title === 'Look 3')
     assert.ok(saved?.pieces.some((piece) => piece.set_aside_at))
-    await deletePiece(chinos)
+    await deletePiece(trousers)
     saved = (await readLooks()).saved.find((l) => l.title === 'Look 3')
     assert.equal(saved?.piece_count, 3)
     assert.equal(saved?.pieces.length, 2)

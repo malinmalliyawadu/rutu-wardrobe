@@ -201,7 +201,7 @@ export type StoreCount = {
 
 /**
  * Each store with what it brings and what it costs, the costliest first: the
- * numbers he needs to decide which to keep reading.
+ * numbers she needs to decide which to keep reading.
  */
 export async function storeCounts(sql: Sql = db()): Promise<StoreCount[]> {
   return sql<StoreCount[]>`

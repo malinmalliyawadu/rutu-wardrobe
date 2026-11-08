@@ -67,9 +67,10 @@ test('the brief leaves out empty groups and carries the season table', () => {
   assert.ok(!('life_days_per_week' in brief), 'empty life is left out')
   assert.ok(!('budget_ceilings_nzd' in brief), 'empty budget is left out')
   const sizes = brief.sizes as Record<string, unknown>
-  assert.deepEqual(sizes, { tee: 'S' })
+  assert.deepEqual(sizes, { letter: 'S' })
+  assert.equal((brief.proportions as Record<string, unknown>).waist_definition, 'defined', 'the read of her waist goes to Claude')
   const table = brief.season_table as Record<string, { role: string }>
-  assert.equal(table['deep autumn']?.role, 'his confirmed season')
+  assert.equal(table['deep autumn']?.role, 'her confirmed season')
   const messages = buildGuideMessages(profileFixture)
   assert.equal(messages.length, 1)
   assert.match(String(messages[0]?.content), /deep autumn/)

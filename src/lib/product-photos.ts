@@ -4,20 +4,20 @@ import type { ProductImage } from './finder/shopify.ts'
 
 /*
  * The photo a product shows (migration 0020). A shop's first photo is not
- * always the one to judge it by or to try it on from, so when he pastes a
- * link he can pick another of the shop's photos or add his own. The choice is
+ * always the one to judge it by or to try it on from, so when she pastes a
+ * link she can pick another of the shop's photos or add her own. The choice is
  * products.chosen_image, which the nightly walk never touches; main_image is
  * what every page and try-on reads. Choosing the shop's first photo clears
  * the choice, so the product follows the shop again.
  *
- * His own photo is a find photo (src/lib/find-photos.ts): stored in the
+ * Her own photo is a find photo (src/lib/find-photos.ts): stored in the
  * photo store, served at /photos/finds/:id, and kept from the orphan sweep
  * while a product shows it.
  */
 
 export class ProductPhotoError extends Error {}
 
-/** The photos he can choose from: the shop's, then his own when it is the one shown. */
+/** The photos she can choose from: the shop's, then her own when it is the one shown. */
 export function photoChoices(images: ProductImage[], shown: ProductImage | null): ProductImage[] {
   if (!shown || images.some((image) => image.src === shown.src)) return images
   return [...images, shown]
@@ -45,7 +45,7 @@ export async function productPhotos(productId: number, sql: Sql = db()): Promise
 }
 
 /**
- * Makes one photo the one a product shows: one of the shop's, or one of his
+ * Makes one photo the one a product shows: one of the shop's, or one of her
  * own find photos. Returns the photo it now shows.
  */
 export async function chooseProductPhoto(productId: number, src: string, sql: Sql = db()): Promise<ProductImage> {
@@ -73,7 +73,7 @@ export async function chooseProductPhoto(productId: number, src: string, sql: Sq
   return row!.main_image
 }
 
-/** Stores a photo of his and makes it the one the product shows. */
+/** Stores a photo of her and makes it the one the product shows. */
 export async function addOwnProductPhoto(
   productId: number,
   input: { bytes: Buffer; mime: string },

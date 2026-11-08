@@ -10,7 +10,7 @@ import type { GarmentType } from './wardrobe-values.ts'
 /*
  * The Statements page and its shelf on Finds: the statement pieces from the
  * latest run's shortlist that cleared the bar, best first, each with what
- * makes it one and the pieces of his it wears with. What he saved, dismissed
+ * makes it one and the pieces of her it wears with. What she saved, dismissed
  * or bought leaves the shelf, as it leaves the feed. The run is found the way
  * the feed finds its own: the newest that recorded a shortlist, a run still
  * going included, so pieces appear as they are judged.
@@ -19,13 +19,13 @@ import type { GarmentType } from './wardrobe-values.ts'
 export type StatementFind = FindCard & {
   garment_type: GarmentType
   qualities: Quality[]
-  /** His pieces it wears with, those still in the wardrobe, in Claude's order. */
+  /** Her pieces it wears with, those still in the wardrobe, in Claude's order. */
   wears_with: WornWith[]
-  /** The kept picture of him in it with those pieces, if one was made. */
+  /** The kept picture of her in it with those pieces, if one was made. */
   outfit_on_me: OnMe | null
 }
 
-/** A piece it wears with, as the card draws it: his photo, else the shop's, else its colour. */
+/** A piece it wears with, as the card draws it: her photo, else the shop's, else its colour. */
 export type WornWith = {
   id: number
   name: string
@@ -135,7 +135,7 @@ export async function getStatements(
   return { run, finds, total: rows.length, byQuality, waiting: counts?.waiting ?? 0 }
 }
 
-/** The outfit its card puts on him: the find and the pieces it wears with. */
+/** The outfit its card puts on her: the find and the pieces it wears with. */
 export function statementOutfitKey(find: Pick<StatementFind, 'product_id' | 'wears_with'>): string {
   return outfitKey([{ piece_id: null, product_id: find.product_id }, ...find.wears_with.map((piece) => ({ piece_id: piece.id }))])
 }

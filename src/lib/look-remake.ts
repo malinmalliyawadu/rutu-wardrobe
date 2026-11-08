@@ -4,7 +4,7 @@ import { z } from 'zod'
 
 import { MODELS, callUsd } from './claude.ts'
 import { db, type Sql } from './db.ts'
-import { REMAKE_NOTE_MAX, wholeWithout } from './look-rules.ts'
+import { REMAKE_NOTE_MAX, WHOLE_OUTFIT, wholeWithout } from './look-rules.ts'
 import {
   dressable,
   getLooks,
@@ -30,17 +30,17 @@ import { limitForPrompt, WARMTH_RULES } from './warmth.ts'
 import { dressDate, forecastLine, nzSeason, weekday, type Forecast } from './weather.ts'
 
 /*
- * Remaking a look (migration 0015). On a look Claude put together he marks
- * pieces to swap for another of his and pieces to remove; Opus remakes the
- * look around the pieces he kept and writes its words again. Code holds the
- * answer to what he asked (every kept piece in, every marked piece out, at
+ * Remaking a look (migration 0015). On a look Claude put together she marks
+ * pieces to swap for another of hers and pieces to remove; Opus remakes the
+ * look around the pieces she kept and writes its words again. Code holds the
+ * answer to what she asked (every kept piece in, every marked piece out, at
  * most one new piece for each swapped one) and to what a look must be
  * (tidyLooks), or the remake fails in words and the look stays as it was.
  *
  * The remake is a new look in the old one's place (the same set and
  * position, saved if the old one was, and in every current day's outfit that
- * showed it); the old one is kept as replaced, with the days he wore it. A
- * look worn today hands that day to its remake: he is wearing the new one.
+ * showed it); the old one is kept as replaced, with the days she wore it. A
+ * look worn today hands that day to its remake: she is wearing the new one.
  */
 
 /** A making row older than this died with its process; the next start closes it. */
@@ -59,18 +59,18 @@ export const RemakeSchema = LookDraftSchema.pick({ title: true, weather: true, p
 
 export type RemakeDraft = z.infer<typeof RemakeSchema>
 
-export const REMAKE_SYSTEM_PROMPT = `You are an experienced womenswear stylist. You put together a look for one client from clothes he already owns, and he has marked some of its pieces to change. You have the look, each of its pieces marked keep, swap or remove, the rest of his pieces you may choose from, his confirmed profile and the style guide written for him.
+export const REMAKE_SYSTEM_PROMPT = `You are an experienced womenswear stylist. You put together a look for one client from clothes she already owns, and she has marked some of its pieces to change. You have the look, each of its pieces marked keep, swap or remove, the rest of her pieces you may choose from, her confirmed profile and the style guide written for her.
 
-A piece marked swap comes out, and one other piece from pieces_to_choose_from goes in its place: the one that does its job in this look best for him. It may be a different garment (sneakers for boots, an overshirt for a knit) as long as the look stays one whole outfit. He swapped it for a reason, so choose something that changes what it did (its colour, weight or formality) rather than its near twin, unless his note says otherwise. A piece marked remove comes out with nothing in its place. Every piece marked keep stays. Add nothing else.
+A piece marked swap comes out, and one other piece from pieces_to_choose_from goes in its place: the one that does its job in this look best for her. It may be a different garment (flats for boots, a shirt for a knit, trousers for a skirt) as long as the look stays one whole outfit. She swapped it for a reason, so choose something that changes what it did (its colour, weight or formality) rather than its near twin, unless her note says otherwise. A piece marked remove comes out with nothing in its place. Every piece marked keep stays. Add nothing else.
 
-The remade look is still one complete outfit: at least one top, exactly one pair of trousers, jeans or shorts, exactly one pair of shoes, each piece once. Use only ids from the look and from pieces_to_choose_from. ${GYM_FIT_RULES} Dress it for the same occasion and the same day as before. When a day is given, what you bring in keeps the look within its warmth_limit where the kept pieces allow: no more layers than most_layers, no more warm pieces than most_warm_pieces, none of garments_ruled_out; null means no limit. ${WARMTH_RULES} When he wrote a note, it decides between the candidates.
+The remade look is still one complete outfit: ${WHOLE_OUTFIT}; each piece once. Use only ids from the look and from pieces_to_choose_from. ${GYM_FIT_RULES} Dress it for the same occasion and the same day as before. When a day is given, what you bring in keeps the look within its warmth_limit where the kept pieces allow: no more layers than most_layers, no more warm pieces than most_warm_pieces, none of garments_ruled_out; null means no limit. ${WARMTH_RULES} When she wrote a note, it decides between the candidates.
 
-Then write the look's words again for what it is now, as if it had always been this look: never mention what came out or why. title: two to five words, plain, a new one when the change shows in it. weather: the kind of day it is dressed for, in a few words. why: exactly two short sentences to him, the colour story in his palette and then the one proportion or fit move from his guide that the look uses; describe only what the pieces' words say, never a detail they do not. styling: one short instruction for wearing it, or null. today: when a day is given, one sentence for that day naming the weather or the plan it answers; otherwise null. piece_ids: the outermost layer first, down to the shoes, then any accessories.
+Then write the look's words again for what it is now, as if it had always been this look: never mention what came out or why. title: two to five words, plain, a new one when the change shows in it. weather: the kind of day it is dressed for, in a few words. why: exactly two short sentences to her, the colour story in her palette and then the one proportion or fit move from her guide that the look uses; describe only what the pieces' words say, never a detail they do not. styling: one short instruction for wearing it, or null. today: when a day is given, one sentence for that day naming the weather or the plan it answers; otherwise null. piece_ids: the outermost layer first, down to the shoes, then any jewellery, accessories and bag.
 
-Respect his no-gos absolutely. Write to him in the second person, plainly, without praise or sales talk. Plain hyphens only.`
+Respect her no-gos absolutely. Write to her in the second person, plainly, without praise or sales talk. Plain hyphens only.`
 
 // ---------------------------------------------------------------------------
-// What he asked for
+// What she asked for
 // ---------------------------------------------------------------------------
 
 export type RemakeAsk = { look_id: number; swap: number[]; remove: number[]; note: string | null }
@@ -86,9 +86,9 @@ export const RemakeAskSchema = z.object({
 })
 
 /**
- * Why this ask cannot be remade, in words for him, or null when it can: the
- * look must be his to change and whole, at least one of its pieces marked,
- * every piece he keeps still in his wardrobe, and what is left once the
+ * Why this ask cannot be remade, in words for her, or null when it can: the
+ * look must be her to change and whole, at least one of its pieces marked,
+ * every piece she keeps still in her wardrobe, and what is left once the
  * removed pieces are out still an outfit.
  */
 export function remakeProblem(
@@ -169,7 +169,7 @@ export function buildRemakeMessages(input: RemakeInput): Anthropic.Beta.BetaMess
     pieces_to_choose_from: dressable(input.pieces)
       .filter((piece) => !inLook.has(piece.id) && wornFor(piece))
       .map((piece) => pieceForPrompt(piece, input.guide, input.history.worn)),
-    looks_he_dismissed: input.history.dismissed,
+    looks_she_dismissed: input.history.dismissed,
   }
   const counts = [
     swap.size > 0 ? `${swap.size} ${swap.size === 1 ? 'piece' : 'pieces'} to swap` : null,
@@ -177,7 +177,7 @@ export function buildRemakeMessages(input: RemakeInput): Anthropic.Beta.BetaMess
   ]
     .filter(Boolean)
     .join(', ')
-  const said = ask.note ? ` He says: "${ask.note}".` : ''
+  const said = ask.note ? ` She says: "${ask.note}".` : ''
   return [{ role: 'user', content: `${JSON.stringify(body, null, 2)}\n\nRemake the look: ${counts}.${said}` }]
 }
 
@@ -196,10 +196,10 @@ export async function draftRemake(input: RemakeInput): Promise<RemakeResult> {
 }
 
 /**
- * Holds the remake to what he asked: every piece he kept is in it, none he
- * marked is, and at most one new piece came in for each he swapped (at least
- * one when he swapped any); then to what a look must be (tidyLooks), of the
- * look's own occasion, and not a look he dismissed. Null when it fails.
+ * Holds the remake to what she asked: every piece she kept is in it, none she
+ * marked is, and at most one new piece came in for each she swapped (at least
+ * one when she swapped any); then to what a look must be (tidyLooks), of the
+ * look's own occasion, and not a look she dismissed. Null when it fails.
  */
 export function tidyRemake(
   draft: RemakeDraft,
@@ -283,7 +283,7 @@ export type RemakeDeps = { draft: (input: RemakeInput) => Promise<RemakeResult> 
 /**
  * Makes a recorded remake and puts it in the old look's place. Never throws
  * for what Claude did: a failure is recorded on the row and returned in words
- * for him. `onShow` says the new look is the day's option on show, so the
+ * for her. `onShow` says the new look is the day's option on show, so the
  * caller draws its picture.
  */
 export async function runRemake(id: number, sql: Sql = db(), deps: Partial<RemakeDeps> = {}): Promise<RemakeDone> {

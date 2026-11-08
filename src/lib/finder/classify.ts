@@ -34,7 +34,7 @@ type Rule = { pattern: RegExp; garment: GarmentType | null; kind?: string }
  * skirts are very much in.
  */
 const NOT_CLOTHING =
-  /\b(towels?|candles?|mugs?|posters?|stickers?|fragrances?|perfumes?|colognes?|eau de|parfum|skin ?care|make ?up|lipsticks?|soaps?|shampoo|conditioner|deodorant|gift ?cards?|vouchers?|cushions?|blankets?|vases?|toys?|dolls?|playing cards|keyrings?|key rings?|lanyards?|lighters?|umbrellas?|socks?|underwear|knickers|briefs|thongs?|g-strings?|bras?|bralettes?|lingerie|shapewear|swim\w*|bikinis?|one-pieces?|pyjamas?|pajamas?|robes?|loungewear|sleepwear|nightdress(es)?|nighties?|wallets?|card ?holders?|purses?|sunglasses|eyewear|glasses|tights|stockings|hosiery|laces|shoe care|insoles|wetsuits?|rash ?guards?|booties|gaiters?)\b/i
+  /\b(towels?|candles?|mugs?|posters?|stickers?|fragrances?|perfumes?|colognes?|eau de|parfum|skin ?care|make ?up|lipsticks?|soaps?|shampoo|conditioner|deodorant|gift ?cards?|vouchers?|cushions?|blankets?|vases?|toys?|dolls?|playing cards|keyrings?|key rings?|lanyards?|lighters?|umbrellas?|socks?|underwear|knickers|briefs|thongs?|g-strings?|bras?|bralettes?|lingerie|shapewear|swim\w*|bikinis?|one-pieces?|pyjamas?|pajamas?|robes?|loungewear|sleepwear|nightdress(es)?|nighties?|wallets?|card ?holders?|purses?|sunglasses|eyewear|glasses|tights|stockings|hosiery|laces|shoe care|insoles|wetsuits?|rash ?guards?|gaiters?|dressing gowns?)\b/i
 
 /** Words that only exclude when they are the product type, because they turn up in titles ("Book Club Shirt"). */
 const NOT_CLOTHING_TYPE = /\b(books?|cards?|home|homewares?|art|prints?|magazines?|beauty|gift)\b/i
@@ -45,50 +45,63 @@ const NOT_CLOTHING_TYPE = /\b(books?|cards?|home|homewares?|art|prints?|magazine
  * blueprint asks for activewear by name when it wants it).
  */
 const SPORT =
-  /\b(running|run|trail|hiking|hike|basketball|football|soccer|golf|tennis|training|gym|cycling|cycle|activewear|performance|compression|base ?layer|workout|yoga|pilates|leggings|sports? crop|marathon|stability|ski|skiing|snowboard(ing)?|capilene)\b/i
+  /\b(running|run|trail|hiking|hike|basketball|football|soccer|golf|tennis|training|gym|cycling|cycle|activewear|performance|compression|base ?layer|workout|yoga|pilates|leggings?|sports? crop|marathon|stability|ski|skiing|snowboard(ing)?|capilene)\b/i
+
+/** A sports bra is a top to train in; every other bra is underwear. */
+const SPORTS_BRA = /\bsports? bras?\b/i
 
 /** Most specific first. The first rule that matches wins. */
 const RULES: Rule[] = [
-  { pattern: /\b(boots?|booties|chelseas?)\b/i, garment: 'boots' },
+  // Not a boot-cut or boot-leg jean.
+  { pattern: /\b(boots?|booties|chelseas?)\b(?![\s-]*(cut|leg))/i, garment: 'boots' },
   { pattern: /\b(sneakers?|trainers?|runners?)\b/i, garment: 'sneakers' },
   // A heel is a heel whatever else it is: a heeled sandal, a heeled mule.
   { pattern: /\b(heels?|heeled|pumps?|stilettos?|kitten|wedges?|platforms?)\b/i, garment: 'heels' },
   { pattern: /\b(sandals?|slides?|espadrilles?|jandals?|flip ?flops?)\b/i, garment: 'sandals' },
   {
-    pattern: /\b(flats?|ballet|ballerinas?|loafers?|mules?|slingbacks?|mary ?janes?|brogues?|moccasins?|clogs?|shoes?|footwear)\b/i,
+    // Not a flat-front trouser or a flat knit.
+    pattern: /\b(flats?|ballet|ballerinas?|loafers?|mules?|slingbacks?|mary ?janes?|brogues?|moccasins?|clogs?|shoes?|footwear)\b(?![\s-]*(front|knit|brim))/i,
     garment: 'flats',
   },
   {
     pattern: /\b(bags?|handbags?|clutch(es)?|totes?|backpacks?|cross ?body|shoulder ?bags?|baguettes?|hobos?|satchels?|bucket bags?|pouch(es)?|duffle|duffel)\b/i,
     garment: 'bag',
   },
-  { pattern: /\bbelts?\b/i, garment: 'belt' },
-  { pattern: /\b(earrings?|hoops?|huggies|studs?|ear ?cuffs?|drops?)\b/i, garment: 'jewellery', kind: 'earrings' },
-  { pattern: /\b(necklaces?|pendants?|chokers?|lockets?)\b/i, garment: 'jewellery', kind: 'necklace' },
+  // A dress "with belt" is a dress.
+  { pattern: /(?<!\b(with|and|plus|&)\s)\bbelts?\b/i, garment: 'belt' },
+  // Not "drop": a drop waist or a drop shoulder is no earring.
+  { pattern: /\b(earrings?|hoops?|huggies|studs?|ear ?cuffs?)\b/i, garment: 'jewellery', kind: 'earrings' },
+  { pattern: /\b(necklaces?|pendants?|chokers?|lockets?)\b(?![\s-]*neck)/i, garment: 'jewellery', kind: 'necklace' },
   { pattern: /\b(bracelets?|bangles?|anklets?)\b/i, garment: 'jewellery', kind: 'bracelet' },
-  { pattern: /\b(rings?|signet)\b(?![\s-]*spun)/i, garment: 'jewellery', kind: 'ring' },
+  // Not ring-spun cotton, an O-ring or a ring detail.
+  { pattern: /(?<!\bo[\s-]?)\b(rings?|signet)\b(?![\s-]*(spun|detail|front|trim|hardware))/i, garment: 'jewellery', kind: 'ring' },
   { pattern: /\bjewell?ery\b/i, garment: 'jewellery' },
   { pattern: /\b(scarf|scarves|snood|bandanas?)\b/i, garment: 'accessory', kind: 'scarf' },
   { pattern: /\b(claw ?clips?|hair ?clips?|scrunchies?|headbands?|hair ?ties?|barrettes?|hair ?bows?)\b/i, garment: 'accessory', kind: 'hair' },
-  { pattern: /\b(beanies?|caps?|hats?|berets?|bucket)\b/i, garment: 'accessory', kind: 'hat' },
+  // Not a cap sleeve.
+  { pattern: /\b(beanies?|caps?|hats?|berets?|bucket)\b(?![\s-]*sleeved?)/i, garment: 'accessory', kind: 'hat' },
   { pattern: /\b(gloves?|mittens?)\b/i, garment: 'accessory', kind: 'gloves' },
   { pattern: /\bwatch(es)?\b/i, garment: 'accessory', kind: 'watch' },
   // One-pieces before tops and bottoms, so a shirt dress is a dress and a
   // denim skirt a skirt. "Dress pants" are trousers.
   { pattern: /\b(jumpsuits?|playsuits?|rompers?|overalls|boiler ?suits?)\b/i, garment: 'jumpsuit' },
-  { pattern: /\b(dress(es)?|gowns?|kaftans?|caftans?)\b(?![\s-]*(pants?|trousers?|shirts?))/i, garment: 'dress' },
+  { pattern: /\b(dress(es)?|gowns?|kaftans?|caftans?)\b(?![\s-]*(pants?|trousers?|shirts?|shorts?|coats?))/i, garment: 'dress' },
   { pattern: /\b(skirts?|skorts?|sarongs?)\b/i, garment: 'skirt' },
   { pattern: /\b(jeans?|selvage|selvedge)\b/i, garment: 'jeans' },
-  { pattern: /\bshorts?\b(?![\s-]*sleeve)/i, garment: 'shorts' },
+  // "Linen Short" is shorts; a short sleeve, a short trench or a short puffer is not.
   {
-    pattern: /\b(trousers?|pants?|chinos?|slacks|culottes|flares|joggers?|track ?pants?|sweatpants?|palazzos?)\b/i,
+    pattern: /\bshorts\b|\bshort\b(?!(?:[\s-]+\w+){0,2}?[\s-]+(sleeved?|coats?|jackets?|trench|puffers?|cardigans?|parkas?|length|kimonos?)\b)/i,
+    garment: 'shorts',
+  },
+  {
+    pattern: /\b(trousers?|pants?|chinos?|slacks|culottes|flares|joggers?|track ?pants?|sweatpants?|palazzos?|leggings?)\b/i,
     garment: 'trousers',
   },
   { pattern: /\b(blazers?|suits?|waistcoats?|tailored vests?)\b/i, garment: 'tailoring' },
   { pattern: /\b(tanks?|singlets?|camis?|camisoles?|vest tops?)\b/i, garment: 'tank' },
   { pattern: /\b(t-?shirts?|tees?|henleys?)\b/i, garment: 'tee' },
-  // Insulation named like a knit (a Down Sweater, a Puff Hoody) is a jacket.
-  { pattern: /\b(down|puff(er)?|insulated)\b.*\b(sweaters?|hoody|hoodies?|pullovers?|jumpers?)\b/i, garment: 'jacket' },
+  // Insulation named like a knit (a Down Sweater, a Puffer Vest) is a jacket.
+  { pattern: /\b(down|puff(er)?|insulated|quilted|padded)\b.*\b(sweaters?|hoody|hoodies?|pullovers?|jumpers?|vests?)\b/i, garment: 'jacket' },
   {
     pattern: /\b(sweat ?shirts?|sweats?|sweat tops?|hoodies?|hoody|hooded sweat|crew sweat|fleece)\b/i,
     garment: 'sweatshirt',
@@ -98,8 +111,9 @@ const RULES: Rule[] = [
     garment: 'knitwear',
   },
   { pattern: /\b(shirts?|shackets?)\b/i, garment: 'shirt' },
+  // A crop puffer or a crop trench is outerwear, below.
   {
-    pattern: /\b(tops?|blouses?|bodysuits?|bustiers?|corsets?|tunics?|crops?|bandeaus?|halters?)\b/i,
+    pattern: /\b(tops?|blouses?|bodysuits?|bustiers?|corsets?|tunics?|crops?|bandeaus?|halters?)\b(?![\s-]*(jackets?|coats?|trench|puffers?|bombers?|blazers?))/i,
     garment: 'top',
   },
   {
@@ -143,6 +157,7 @@ export function garmentOf(
 ): { garment_type: GarmentType | null; garment_kind: string | null } {
   const type = productType ?? ''
   const text = `${title} | ${type}`
+  if (SPORTS_BRA.test(text)) return { garment_type: options.sport === false ? 'tank' : 'activewear', garment_kind: null }
   if (NOT_CLOTHING.test(text) || NOT_CLOTHING_TYPE.test(type)) return { garment_type: null, garment_kind: null }
   if (options.sport !== false && SPORT.test(text)) return { garment_type: 'activewear', garment_kind: null }
   for (const rule of RULES) {
@@ -350,6 +365,23 @@ const LETTER_TO_AU: Record<string, number[]> = {
   XXXL: [18, 20],
 }
 
+/**
+ * The jeans waists, in inches, an AU size usually means, for when she gave a
+ * size but no waist: denim is labelled by the waist, and labels disagree by
+ * an inch either way, so each size takes two.
+ */
+const AU_TO_WAIST: Record<number, number[]> = {
+  4: [23, 24],
+  6: [24, 25],
+  8: [25, 26],
+  10: [27, 28],
+  12: [29, 30],
+  14: [31, 32],
+  16: [33, 34],
+  18: [35, 36],
+  20: [37, 38],
+}
+
 /** The letters an AU number usually falls under. */
 function lettersForAu(au: number): string[] {
   return LETTER_ORDER.filter((letter) => LETTER_TO_AU[letter]?.includes(au))
@@ -400,8 +432,12 @@ export function wantedSizeKeys(
       return keys.length > 0 ? keys : null
     }
     case 'bottoms': {
+      const clothing = clothingKeys(sizes)
       const waist = sizes.jeans ?? (sizes.waist_cm ? Math.round(sizes.waist_cm / 2.54) : null)
-      const keys = [...clothingKeys(sizes), ...(waist ? [`W${waist}`] : [])]
+      const waists = waist
+        ? [waist]
+        : clothing.flatMap((key) => (key.startsWith('AU') ? (AU_TO_WAIST[Number(key.slice(2))] ?? []) : []))
+      const keys = [...new Set([...clothing, ...waists.map((inches) => `W${inches}`)])]
       return keys.length > 0 ? keys : null
     }
     case 'feet': {

@@ -80,7 +80,7 @@ async function productId(title: string): Promise<number> {
 /** Oxblood and pine from the fixture, and a rust. */
 const guide = {
   ...guideFixture,
-  palette: { ...guideFixture.palette, best: [...guideFixture.palette.best, { hex: '#a0522d', name: 'rust', use: 'overshirts' }] },
+  palette: { ...guideFixture.palette, best: [...guideFixture.palette.best, { hex: '#a0522d', name: 'rust', use: 'jackets and skirts' }] },
 }
 
 const verdict = (fields: Partial<StatementOutput>): StatementOutput => ({
@@ -99,23 +99,23 @@ test('the rules pick from everything read, the judge keeps one verdict a version
     returning id::int as id
   `
   await writePage(sql, shop!.id, [
-    product('Rust Corduroy Overshirt', { S: '240.00', M: '240.00' }),
-    product('Pine Cuban Collar Shirt', { S: '150.00' }),
+    product('Rust Corduroy Jacket', { S: '240.00', M: '240.00' }),
+    product('Pine Puff Sleeve Blouse', { S: '150.00' }),
     product('Mohair Cardigan - Ecru', { S: '260.00' }),
-    product('Navy Oxford Shirt', { S: '120.00' }),
+    product('Navy Poplin Shirt', { S: '120.00' }),
     product('Brick Merino Crew', { M: '200.00' }),
     product('Rust Suede Jacket', { S: '1200.00' }),
     product('Oxblood Velvet Blazer', { S: '600.00' }),
   ])
-  const overshirt = await productId('Rust Corduroy Overshirt')
-  const cuban = await productId('Pine Cuban Collar Shirt')
+  const jacket = await productId('Rust Corduroy Jacket')
+  const blouse = await productId('Pine Puff Sleeve Blouse')
   const mohair = await productId('Mohair Cardigan - Ecru')
   const blazer = await productId('Oxblood Velvet Blazer')
-  // He dismissed the blazer before: it is never offered again.
+  // She dismissed the blazer before: it is never offered again.
   await recordAction({ action: 'dismissed', product_id: blazer, slot_id: null, reason: 'fit' }, sql)
 
-  const [chinos] = await sql<{ id: number }[]>`
-    insert into wardrobe_pieces (name, garment_type, colour_name, source) values ('Ink navy chinos', 'trousers', 'ink navy', 'typed')
+  const [trousers] = await sql<{ id: number }[]>`
+    insert into wardrobe_pieces (name, garment_type, colour_name, source) values ('Ink navy wide-leg trousers', 'trousers', 'ink navy', 'typed')
     returning id::int as id
   `
   const [old] = await sql<{ id: number }[]>`
@@ -124,7 +124,7 @@ test('the rules pick from everything read, the judge keeps one verdict a version
   `
 
   const { candidates, stats } = await findStatementCandidates(sql, {
-    sizes: { tee: 'S' },
+    sizes: { letter: 'S' },
     budget: { outerwear: 800 },
     slots: [],
     guide,
@@ -132,14 +132,14 @@ test('the rules pick from everything read, the judge keeps one verdict a version
   })
   assert.deepEqual(
     candidates.map((candidate) => candidate.product_id),
-    [overshirt, cuban, mohair],
-    'two signals first; navy is quiet, the crew is not in his size, the jacket is over his outerwear budget, the blazer dismissed',
+    [jacket, blouse, mohair],
+    'two signals first; navy is quiet, the crew is not in her size, the jacket is over her outerwear budget, the blazer dismissed',
   )
   assert.deepEqual(candidates[0]!.signals, ['colour', 'texture'])
-  assert.deepEqual(candidates[0]!.sizes, ['S'], 'narrowed to his size')
+  assert.deepEqual(candidates[0]!.sizes, ['S'], 'narrowed to her size')
   assert.equal(candidates[0]!.price_cents, 24000)
   assert.deepEqual(stats.by_signal, { colour: 2, texture: 2, cut: 1 })
-  assert.equal(stats.read, 4, 'the three and the navy oxford: in his size and budget, not dismissed')
+  assert.equal(stats.read, 4, 'the three and the navy shirt: in her size and budget, not dismissed')
 
   const [run] = await sql<{ id: number }[]>`insert into finder_runs (status) values ('running') returning id::int as id`
   await recordStatementCandidates(sql, run!.id, candidates)
@@ -152,11 +152,11 @@ test('the rules pick from everything read, the judge keeps one verdict a version
     concurrency: 1,
     log: () => {},
     judgeOne: async (_context, item, pieceIds) => {
-      assert.ok(pieceIds.has(chinos!.id) && !pieceIds.has(old!.id), 'a piece set aside is not offered')
+      assert.ok(pieceIds.has(trousers!.id) && !pieceIds.has(old!.id), 'a piece set aside is not offered')
       const output =
-        item.product_id === overshirt
-          ? verdict({ qualities: ['colour', 'texture'], score: 91, colour: null, wears_with: [chinos!.id, old!.id] })
-          : item.product_id === cuban
+        item.product_id === jacket
+          ? verdict({ qualities: ['colour', 'texture'], score: 91, colour: null, wears_with: [trousers!.id, old!.id] })
+          : item.product_id === blouse
             ? verdict({ qualities: ['cut'], score: 74 })
             : verdict({ qualities: ['texture'], score: 55 })
       return { output, usage: { input: 1000, output: 100, cacheWrite: 0, cacheRead: 0 }, servedBy: MODELS.scoring }
@@ -170,27 +170,27 @@ test('the rules pick from everything read, the judge keeps one verdict a version
 
   const shelf = await getStatements({}, sql)
   assert.equal(shelf.run?.id, run!.id)
-  assert.deepEqual(shelf.finds.map((find) => find.product_id), [overshirt, cuban], 'over the bar, best first')
+  assert.deepEqual(shelf.finds.map((find) => find.product_id), [jacket, blouse], 'over the bar, best first')
   assert.equal(shelf.total, 2)
   assert.deepEqual(shelf.byQuality, { colour: 1, texture: 1, cut: 1 })
   assert.equal(shelf.waiting, 0)
   const [first] = shelf.finds
-  assert.deepEqual(first!.wears_with, [{ id: chinos!.id, name: 'Ink navy chinos', colour_hex: null, image: null, photo: null }])
+  assert.deepEqual(first!.wears_with, [{ id: trousers!.id, name: 'Ink navy wide-leg trousers', colour_hex: null, image: null, photo: null }])
   assert.equal(first!.slot_id, null)
   assert.deepEqual(first!.qualities, ['colour', 'texture'])
   assert.equal(first!.price.nzdCents, 24000)
 
   assert.deepEqual(
     (await getStatements({ quality: 'cut' }, sql)).finds.map((find) => find.product_id),
-    [cuban],
+    [blouse],
     'the filter keeps the counts of all',
   )
 
-  // Saved from the shelf: at the price and size the run found in his size, and off the shelf.
-  await recordAction({ action: 'saved', product_id: overshirt, slot_id: null }, sql)
+  // Saved from the shelf: at the price and size the run found in her size, and off the shelf.
+  await recordAction({ action: 'saved', product_id: jacket, slot_id: null }, sql)
   const [saved] = await sql<{ price_cents: number; size: string }[]>`
-    select price_cents, size from feed_actions where product_id = ${overshirt} order by id desc limit 1
+    select price_cents, size from feed_actions where product_id = ${jacket} order by id desc limit 1
   `
   assert.deepEqual(saved, { price_cents: 24000, size: 'S' })
-  assert.deepEqual((await getStatements({}, sql)).finds.map((find) => find.product_id), [cuban])
+  assert.deepEqual((await getStatements({}, sql)).finds.map((find) => find.product_id), [blouse])
 })

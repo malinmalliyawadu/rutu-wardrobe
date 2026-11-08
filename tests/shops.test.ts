@@ -21,15 +21,16 @@ test('a query from the URL: junk falls back to the defaults, and the defaults st
     parseShopQuery({ q: '  navy  ', kind: 'cardigan', shop: 'Not A Slug!', size: 'huge', sort: 'random', page: '-2' }),
     { q: 'navy', kind: null, shop: null, size: 'mine', sort: 'closest', page: 1 },
   )
-  const query = parseShopQuery({ q: 'navy overshirt', kind: ['overshirt', 'tee'], shop: 'barkers', size: 'any', sort: 'price', page: '3' })
-  assert.deepEqual(query, { q: 'navy overshirt', kind: 'overshirt', shop: 'barkers', size: 'any', sort: 'price', page: 3 })
-  assert.equal(shopQueryString(query), '?q=navy+overshirt&kind=overshirt&shop=barkers&size=any&sort=price&page=3')
-  assert.equal(shopQueryString(query, 1), '?q=navy+overshirt&kind=overshirt&shop=barkers&size=any&sort=price', 'page one is the default')
+  const query = parseShopQuery({ q: 'navy dress', kind: ['dress', 'tee'], shop: 'kowtow', size: 'any', sort: 'price', page: '3' })
+  assert.deepEqual(query, { q: 'navy dress', kind: 'dress', shop: 'kowtow', size: 'any', sort: 'price', page: 3 })
+  assert.equal(shopQueryString(query), '?q=navy+dress&kind=dress&shop=kowtow&size=any&sort=price&page=3')
+  assert.equal(shopQueryString(query, 1), '?q=navy+dress&kind=dress&shop=kowtow&size=any&sort=price', 'page one is the default')
+  assert.equal(parseShopQuery({ kind: 'overshirt' }).kind, null, 'not one of her garments')
   assert.equal(shopQueryString(parseShopQuery({})), '')
 })
 
 test('search words match anywhere, each one, with % and _ taken literally', () => {
-  assert.deepEqual(searchPatterns(' navy   overshirt '), ['%navy%', '%overshirt%'])
+  assert.deepEqual(searchPatterns(' navy   dress '), ['%navy%', '%dress%'])
   assert.deepEqual(searchPatterns('100% wool_blend'), ['%100\\%%', '%wool\\_blend%'])
   assert.deepEqual(searchPatterns(''), [])
 })
@@ -125,23 +126,23 @@ async function productId(title: string): Promise<number> {
 const query = (fields: Partial<ShopQuery> = {}): ShopQuery => ({ ...parseShopQuery({}), ...fields })
 const titles = (page: { pieces: { title: string }[] }) => page.pieces.map((piece) => piece.title)
 
-test('the catalogue: in stock at a shop he has on, in his size, Claude’s verdict first, searchable', async () => {
-  await sql`insert into profile (id, sizes) values (1, ${sql.json({ tee: 'S' })}) on conflict (id) do update set sizes = excluded.sizes`
+test('the catalogue: in stock at a shop she has on, in her size, Claude’s verdict first, searchable', async () => {
+  await sql`insert into profile (id, sizes) values (1, ${sql.json({ letter: 'S' })}) on conflict (id) do update set sizes = excluded.sizes`
   const shop = await retailer('shop')
   const off = await retailer('off', false)
   const knit = await slot('Pine merino crewneck', 'knitwear')
-  await slot('Navy overshirt', 'overshirt')
+  await slot('Navy shirt dress', 'dress')
   await slot('Ecru tee', 'tee', 'owned')
 
   await writePage(sql, shop, [
     product('shop', 'Pine Merino Knit Crew', { S: { price: '200.00' }, M: { price: '200.00' } }),
     product('shop', 'Bottle Merino Knit Crew', { S: { price: '220.00', available: false }, M: { price: '220.00' } }),
-    product('shop', 'Navy Cotton Overshirt', { S: { price: '150.00' } }),
+    product('shop', 'Navy Cotton Shirt Dress', { S: { price: '150.00' } }),
     product('shop', 'Rust Merino Knit Crew', { S: { price: '90.00' } }),
     product('shop', 'Sold Out Knit Crew', { S: { price: '90.00', available: false } }),
     product('shop', 'Gone Knit Crew', { S: { price: '90.00' } }),
     product('shop', 'Wool Scarf 100% Lambswool', { 'One size': { price: '80.00' } }),
-    product('shop', 'Field Overshirt', {}, {
+    product('shop', 'Field Shirt Dress', {}, {
       options: [
         { name: 'Colour', position: 1, values: ['Navy'] },
         { name: 'Size', position: 2, values: ['S'] },
@@ -155,7 +156,7 @@ test('the catalogue: in stock at a shop he has on, in his size, Claude’s verdi
   const pine = await productId('Pine Merino Knit Crew')
   const bottle = await productId('Bottle Merino Knit Crew')
   const rust = await productId('Rust Merino Knit Crew')
-  const navy = await productId('Navy Cotton Overshirt')
+  const navy = await productId('Navy Cotton Shirt Dress')
   const [run] = await sql<{ id: number }[]>`insert into finder_runs (status, finished_at) values ('succeeded', now()) returning id::int as id`
   await sql`
     insert into finder_candidates (run_id, product_id, content_hash, slot_ids, sizes, size_known, price_cents)
@@ -176,19 +177,19 @@ test('the catalogue: in stock at a shop he has on, in his size, Claude’s verdi
   assert.equal(mine.read, true)
   assert.deepEqual(
     titles(mine).slice(0, 3),
-    ['Pine Merino Knit Crew', 'Rust Merino Knit Crew', 'Navy Cotton Overshirt'],
+    ['Pine Merino Knit Crew', 'Rust Merino Knit Crew', 'Navy Cotton Shirt Dress'],
     'matched to an open slot first, then shortlisted and waiting, then judged a fit for no slot',
   )
-  assert.ok(!titles(mine).includes('Bottle Merino Knit Crew'), 'only an M is left, and he is an S')
+  assert.ok(!titles(mine).includes('Bottle Merino Knit Crew'), 'only an M is left, and she is an S')
   for (const gone of ['Sold Out Knit Crew', 'Gone Knit Crew', 'Off Shop Knit Crew']) {
     assert.ok(!titles(mine).includes(gone), `${gone} is not listed`)
   }
-  assert.ok(titles(mine).includes('Wool Scarf 100% Lambswool'), 'his size for a scarf is not a thing; every size passes')
+  assert.ok(titles(mine).includes('Wool Scarf 100% Lambswool'), 'her size for a scarf is not a thing; every size passes')
 
   const [first, second] = mine.pieces
   assert.equal(first!.on_today, true, 'clears the bar for an open slot it was shortlisted for')
   assert.deepEqual(first!.judged, { score: 84, slot_id: knit, why: 'Your pine, in fine merino.' })
-  assert.deepEqual(first!.sizes, ['S'], 'narrowed to his size')
+  assert.deepEqual(first!.sizes, ['S'], 'narrowed to her size')
   assert.equal(first!.size_known, true)
   assert.equal(first!.price.nzdCents, 20000)
   assert.equal(second!.judged, null)
@@ -204,15 +205,15 @@ test('the catalogue: in stock at a shop he has on, in his size, Claude’s verdi
 
   assert.deepEqual(titles(await searchShops(query({ q: '100%' }), sql)), ['Wool Scarf 100% Lambswool'], '% is a character, not a wildcard')
   assert.deepEqual(
-    titles(await searchShops(query({ kind: 'overshirt' }), sql)).sort(),
-    ['Field Overshirt', 'Navy Cotton Overshirt'],
+    titles(await searchShops(query({ kind: 'dress' }), sql)).sort(),
+    ['Field Shirt Dress', 'Navy Cotton Shirt Dress'],
   )
   assert.deepEqual(
-    titles(await searchShops(query({ q: 'navy overshirt' }), sql)).sort(),
-    ['Field Overshirt', 'Navy Cotton Overshirt'],
+    titles(await searchShops(query({ q: 'navy dress' }), sql)).sort(),
+    ['Field Shirt Dress', 'Navy Cotton Shirt Dress'],
     'a colour named only on the variant is searched too',
   )
-  assert.deepEqual(titles(await searchShops(query({ shop: 'off' }), sql)), [], 'a shop he switched off lists nothing')
+  assert.deepEqual(titles(await searchShops(query({ shop: 'off' }), sql)), [], 'a shop she switched off lists nothing')
 
   const cheapest = await searchShops(query({ sort: 'price' }), sql)
   assert.deepEqual(
