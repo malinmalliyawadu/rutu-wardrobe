@@ -73,6 +73,30 @@ test('garment types from real titles and product types', () => {
   }
 })
 
+test('a store that files bags under "Bags and Wallets" still has bags; its cases and sleeves are not', () => {
+  const type = 'Womens - Accessories - Bags and Wallets'
+  assert.equal(garmentOf('Elly Tote Embossed - Dark Brown', type).garment_type, 'bag')
+  assert.equal(garmentOf('Pleated Baggu - Gradient Stripe Poppy Lilac', type).garment_type, 'bag')
+  assert.equal(garmentOf('Puffy Laptop Sleeve 13Inch - Cherries', type).garment_type, null)
+  assert.equal(garmentOf('Puffy Earbuds Case - Pink Houndstooth', type).garment_type, null)
+  assert.equal(garmentOf('Small Cosmetic Case - Strawberry Blossom', type).garment_type, null)
+  assert.equal(garmentOf('Penny Zip Wallet Silver', 'Wallet').garment_type, null)
+})
+
+test("a store's two-garment category gives way to the product's own name", () => {
+  assert.equal(garmentOf('Rory Jacket - Ecru', 'Coats & Jackets').garment_type, 'jacket')
+  assert.equal(garmentOf('Symi Dress (Rosette Haze Cotton) Morning Light', 'Dresses & Jumpsuits').garment_type, 'dress')
+  assert.equal(garmentOf('Isle Shirtdress (Afterglow Floral Cotton) Blanc', 'Dresses & Jumpsuits').garment_type, 'dress')
+  assert.equal(garmentOf('Ballerina Maxi Skirt White', 'Skirts').garment_type, 'skirt')
+  assert.equal(garmentOf('Chelsea Crinkle Tank Polka Dot', 'Tops').garment_type, 'tank')
+  assert.equal(garmentOf('Prime Chelsea Boot / Black', 'Footwear').garment_type, 'boots')
+})
+
+test('a hair claw is a hair accessory, a charm is jewellery', () => {
+  assert.deepEqual(garmentOf('Squiggle Hair Claw Gold', 'Hair Accessory'), { garment_type: 'accessory', garment_kind: 'hair' })
+  assert.equal(garmentOf('Crab Charm | 9ct Yellow Gold', 'Charms').garment_type, 'jewellery')
+})
+
 test('never a slot: swimwear, underwear, sleepwear, hosiery, sunglasses, towels', () => {
   for (const [title, type] of [
     ['Ribbed Bikini Top', 'Swim'],

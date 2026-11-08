@@ -34,7 +34,7 @@ type Rule = { pattern: RegExp; garment: GarmentType | null; kind?: string }
  * skirts are very much in.
  */
 const NOT_CLOTHING =
-  /\b(towels?|candles?|mugs?|posters?|stickers?|fragrances?|perfumes?|colognes?|eau de|parfum|skin ?care|make ?up|lipsticks?|soaps?|shampoo|conditioner|deodorant|gift ?cards?|vouchers?|cushions?|blankets?|vases?|toys?|dolls?|playing cards|keyrings?|key rings?|lanyards?|lighters?|umbrellas?|socks?|underwear|knickers|briefs|thongs?|g-strings?|bras?|bralettes?|lingerie|shapewear|swim\w*|bikinis?|one-pieces?|pyjamas?|pajamas?|robes?|loungewear|sleepwear|nightdress(es)?|nighties?|wallets?|card ?holders?|purses?|sunglasses|eyewear|glasses|tights|stockings|hosiery|laces|shoe care|insoles|wetsuits?|rash ?guards?|gaiters?|dressing gowns?)\b/i
+  /\b(towels?|candles?|mugs?|posters?|stickers?|fragrances?|perfumes?|colognes?|eau de|parfum|skin ?care|make ?up|lipsticks?|soaps?|shampoo|conditioner|deodorant|gift ?cards?|vouchers?|cushions?|blankets?|vases?|toys?|dolls?|playing cards|keyrings?|key rings?|lanyards?|lighters?|umbrellas?|socks?|underwear|knickers|briefs|thongs?|g-strings?|bras?|bralettes?|lingerie|shapewear|swim\w*|bikinis?|one-pieces?|pyjamas?|pajamas?|robes?|loungewear|sleepwear|nightdress(es)?|nighties?|wallets?|card ?holders?|purses?|laptops?|earbuds?|airpods|cosmetic cases?|dopp kits?|toiletr\w*|passports?|luggage|phone (?:cases?|straps?)|sunglasses|eyewear|glasses|tights|stockings|hosiery|laces|shoe care|insoles|wetsuits?|rash ?guards?|gaiters?|dressing gowns?)\b/i
 
 /** Words that only exclude when they are the product type, because they turn up in titles ("Book Club Shirt"). */
 const NOT_CLOTHING_TYPE = /\b(books?|cards?|home|homewares?|art|prints?|magazines?|beauty|gift)\b/i
@@ -53,14 +53,14 @@ const SPORTS_BRA = /\bsports? bras?\b/i
 /** Most specific first. The first rule that matches wins. */
 const RULES: Rule[] = [
   // Not a boot-cut or boot-leg jean.
-  { pattern: /\b(boots?|booties|chelseas?)\b(?![\s-]*(cut|leg))/i, garment: 'boots' },
+  { pattern: /\b(boots?|booties|chelsea boots?)\b(?![\s-]*(cut|leg))/i, garment: 'boots' },
   { pattern: /\b(sneakers?|trainers?|runners?)\b/i, garment: 'sneakers' },
   // A heel is a heel whatever else it is: a heeled sandal, a heeled mule.
   { pattern: /\b(heels?|heeled|pumps?|stilettos?|kitten|wedges?|platforms?)\b/i, garment: 'heels' },
   { pattern: /\b(sandals?|slides?|espadrilles?|jandals?|flip ?flops?)\b/i, garment: 'sandals' },
   {
     // Not a flat-front trouser or a flat knit.
-    pattern: /\b(flats?|ballet|ballerinas?|loafers?|mules?|slingbacks?|mary ?janes?|brogues?|moccasins?|clogs?|shoes?|footwear)\b(?![\s-]*(front|knit|brim))/i,
+    pattern: /\b(flats?|(?:ballet|ballerinas?)(?![^|]*\b(?:skirts?|dress(?:es)?|tops?|cardigans?|wraps?)\b)|loafers?|mules?|slingbacks?|mary ?janes?|brogues?|moccasins?|clogs?|shoes?|footwear)\b(?![\s-]*(front|knit|brim))/i,
     garment: 'flats',
   },
   {
@@ -71,13 +71,13 @@ const RULES: Rule[] = [
   { pattern: /(?<!\b(with|and|plus|&)\s)\bbelts?\b/i, garment: 'belt' },
   // Not "drop": a drop waist or a drop shoulder is no earring.
   { pattern: /\b(earrings?|hoops?|huggies|studs?|ear ?cuffs?)\b/i, garment: 'jewellery', kind: 'earrings' },
-  { pattern: /\b(necklaces?|pendants?|chokers?|lockets?)\b(?![\s-]*neck)/i, garment: 'jewellery', kind: 'necklace' },
+  { pattern: /\b(necklaces?|pendants?|chokers?|lockets?|charms?)\b(?![\s-]*neck)/i, garment: 'jewellery', kind: 'necklace' },
   { pattern: /\b(bracelets?|bangles?|anklets?)\b/i, garment: 'jewellery', kind: 'bracelet' },
   // Not ring-spun cotton, an O-ring or a ring detail.
   { pattern: /(?<!\bo[\s-]?)\b(rings?|signet)\b(?![\s-]*(spun|detail|front|trim|hardware))/i, garment: 'jewellery', kind: 'ring' },
   { pattern: /\bjewell?ery\b/i, garment: 'jewellery' },
   { pattern: /\b(scarf|scarves|snood|bandanas?)\b/i, garment: 'accessory', kind: 'scarf' },
-  { pattern: /\b(claw ?clips?|hair ?clips?|scrunchies?|headbands?|hair ?ties?|barrettes?|hair ?bows?)\b/i, garment: 'accessory', kind: 'hair' },
+  { pattern: /\b(claw ?clips?|hair ?claws?|hair ?clips?|scrunchies?|headbands?|hair ?ties?|barrettes?|hair ?bows?)\b/i, garment: 'accessory', kind: 'hair' },
   // Not a cap sleeve.
   { pattern: /\b(beanies?|caps?|hats?|berets?|bucket)\b(?![\s-]*sleeved?)/i, garment: 'accessory', kind: 'hat' },
   { pattern: /\b(gloves?|mittens?)\b/i, garment: 'accessory', kind: 'gloves' },
@@ -85,7 +85,7 @@ const RULES: Rule[] = [
   // One-pieces before tops and bottoms, so a shirt dress is a dress and a
   // denim skirt a skirt. "Dress pants" are trousers.
   { pattern: /\b(jumpsuits?|playsuits?|rompers?|overalls|boiler ?suits?)\b/i, garment: 'jumpsuit' },
-  { pattern: /\b(dress(es)?|gowns?|kaftans?|caftans?)\b(?![\s-]*(pants?|trousers?|shirts?|shorts?|coats?))/i, garment: 'dress' },
+  { pattern: /\b((?:shirt|sun|slip|sweater|tee|mini|midi|maxi)?dress(es)?|gowns?|kaftans?|caftans?)\b(?![\s-]*(pants?|trousers?|shirts?|shorts?|coats?))/i, garment: 'dress' },
   { pattern: /\b(skirts?|skorts?|sarongs?)\b/i, garment: 'skirt' },
   { pattern: /\b(jeans?|selvage|selvedge)\b/i, garment: 'jeans' },
   // "Linen Short" is shorts; a short sleeve, a short trench or a short puffer is not.
@@ -128,6 +128,12 @@ const RULES: Rule[] = [
   { pattern: /\bdenim\b/i, garment: 'jeans' },
 ]
 
+/** "Coats & Jackets", "Dresses and Jumpsuits", "Tops / Tees". */
+const COMPOUND_TYPE = /\b[a-z]+\s*(?:&|\band\b|\/)\s*[a-z]+/i
+
+/** A title whose only garment word is "top" or "crop". */
+const GENERIC_TOP = /^(?!.*\b(blouses?|bodysuits?|bustiers?|corsets?|tunics?|bandeaus?|halters?)\b).*\b(tops?|crops?)\b/i
+
 /** "Merino Crew" says knitwear only once the product type says so; these types settle it on their own. */
 const TYPE_ONLY: Rule[] = [
   { pattern: /\b(knitwear|knits?)\b/i, garment: 'knitwear' },
@@ -155,11 +161,17 @@ export function garmentOf(
   productType: string | null,
   options: { sport?: boolean } = {},
 ): { garment_type: GarmentType | null; garment_kind: string | null } {
-  const type = productType ?? ''
+  // A store's "Bags and Wallets" category is a bag's filing, not a wallet's.
+  const type = (productType ?? '').replace(/\b(bags?)\s*(?:and|&)\s*wallets?\b/i, '$1')
   const text = `${title} | ${type}`
   if (SPORTS_BRA.test(text)) return { garment_type: options.sport === false ? 'tank' : 'activewear', garment_kind: null }
   if (NOT_CLOTHING.test(text) || NOT_CLOTHING_TYPE.test(type)) return { garment_type: null, garment_kind: null }
   if (options.sport !== false && SPORT.test(text)) return { garment_type: 'activewear', garment_kind: null }
+  // A type that names two garments ("Coats & Jackets", "Dresses & Jumpsuits")
+  // is the store's filing, not a description, so the product's own name
+  // outranks it ("Rory Jacket", "Symi Dress"), unless that name says only "top".
+  const named = COMPOUND_TYPE.test(type) ? RULES.find((rule) => rule.pattern.test(title)) : undefined
+  if (named && !(named.garment === 'top' && GENERIC_TOP.test(title))) return { garment_type: named.garment, garment_kind: named.kind ?? null }
   for (const rule of RULES) {
     if (rule.pattern.test(text)) return { garment_type: rule.garment, garment_kind: rule.kind ?? null }
   }
