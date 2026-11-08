@@ -80,7 +80,7 @@ export function manualProduct(
     url: url.toString(),
     images: [image],
     variants: [variant],
-    menswear: true,
+    womenswear: true,
     garment_type: find.garment_type,
     garment_kind: null,
   }

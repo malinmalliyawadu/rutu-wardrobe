@@ -12,7 +12,7 @@
  *
  * Four stages, each recorded in one finder_runs row:
  *   1. ingest   every enabled store's Shopify feed, politely (free)
- *   2. filter   menswear, the slot's garment, in his size, in the slot's band, not
+ *   2. filter   womenswear, the slot's garment, in his size, in the slot's band, not
  *               dismissed, not plainly the wrong colour (free; reads a photo once
  *               when the listing names no colour)
  *   3. score    new or changed candidates, with Sonnet (costs tokens)
@@ -124,7 +124,7 @@ try {
   log({ event: 'find.retailers', ...seeded })
   const allRetailers = await listRetailers(sql)
   // Only a store the finder walks can be switched on; one read only from
-  // pasted links (Uniqlo, Rodd & Gunn) never is, whatever its row says.
+  // pasted links (Uniqlo) never is, whatever its row says.
   const retailers = allRetailers.filter((retailer) => retailer.enabled && walkedNightly(retailer))
 
   // 1. Ingest. Stores run side by side; each host gets its own one-a-second queue.
@@ -140,7 +140,7 @@ try {
     )
     stats.ingested = {
       products: sum(results, 'products'),
-      menswear: sum(results, 'menswear'),
+      womenswear: sum(results, 'womenswear'),
       variants: sum(results, 'variants'),
       new: sum(results, 'new'),
       changed: sum(results, 'changed'),

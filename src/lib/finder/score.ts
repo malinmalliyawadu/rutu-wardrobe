@@ -58,7 +58,7 @@ export const ScoreSchema = z.object({
 
 export type ScoreOutput = z.infer<typeof ScoreSchema>
 
-export const SCORE_SYSTEM_PROMPT = `You are an experienced menswear stylist working for one client. Every night a private app reads New Zealand menswear shops and END. (UK, ships to New Zealand), keeps the products that are the right garment, in his size and inside his budget, and asks you about each one. You have his profile, his style guide and the open slots of his wardrobe blueprint: each slot is an archetype he wants to buy, such as "pine fine-gauge merino crewneck".
+export const SCORE_SYSTEM_PROMPT = `You are an experienced womenswear stylist working for one client. Every night a private app reads New Zealand womenswear shops and END. (UK, ships to New Zealand), keeps the products that are the right garment, in his size and inside his budget, and asks you about each one. You have his profile, his style guide and the open slots of his wardrobe blueprint: each slot is an archetype he wants to buy, such as "pine fine-gauge merino crewneck".
 
 For each product you get its photo, its listing and the ids of the slots it could fill by garment type. Decide which of those slots it fills best, if any, and score it against that slot.
 

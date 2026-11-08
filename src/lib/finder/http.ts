@@ -14,7 +14,7 @@ import { isAllowed, parseRobots, type Robots } from './robots.ts'
  */
 
 export const PRODUCT_TOKEN = 'Wardrobe'
-export const USER_AGENT = `${PRODUCT_TOKEN}/0.3 (a personal menswear finder for one person; reads /products.json once a night)`
+export const USER_AGENT = `${PRODUCT_TOKEN}/0.3 (a personal womenswear finder for one person; reads /products.json once a night)`
 
 const MIN_INTERVAL_MS = 1000
 const HOST_INTERVAL_MS: Record<string, number> = { 'https://cdn.shopify.com': 200 }

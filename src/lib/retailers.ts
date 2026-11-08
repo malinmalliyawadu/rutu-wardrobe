@@ -9,7 +9,7 @@ import type { Sql } from './db.ts'
  * what the runs learn (robots.txt, last ingest).
  */
 
-export const PLATFORMS = ['shopify', 'rodd-and-gunn', 'uniqlo', 'manual'] as const
+export const PLATFORMS = ['shopify', 'uniqlo', 'manual'] as const
 
 export type Platform = (typeof PLATFORMS)[number]
 
@@ -21,7 +21,7 @@ export const WALKED_PLATFORMS = ['shopify'] as const satisfies readonly Platform
  * not (every size it makes counts as available), and a find added by hand
  * has only the size he typed.
  */
-export const STOCK_PLATFORMS = ['shopify', 'rodd-and-gunn'] as const satisfies readonly Platform[]
+export const STOCK_PLATFORMS = ['shopify'] as const satisfies readonly Platform[]
 
 const url = z
   .string()
@@ -49,25 +49,23 @@ export const RetailerSeedSchema = z.object({
   name: z.string().min(1),
   /**
    * How a product is read. "shopify": the whole catalogue from /products.json
-   * every night, and one product from /products/<handle>.js. "uniqlo" and
-   * "rodd-and-gunn": one product at a time from its own page, only for a link
-   * he pastes; never walked, so never on the finder's switches (Rodd & Gunn's
-   * catalogue is a page per colour, too slow to walk at a page a second).
-   * "manual": a site that cannot
+   * every night, and one product from /products/<handle>.js. "uniqlo": one
+   * product at a time from its own page, only for a link she pastes; never
+   * walked, so never on the finder's switches. "manual": a site that cannot
    * be read at all (Lululemon's answers with a bot challenge), so a find from
-   * it is typed in by him on Saved, and never checked again.
+   * it is typed in by her, and never checked again.
    */
   platform: z.enum(PLATFORMS),
   base_url: url,
   /** Where /products.json is read, when it is not the public site. */
   feed_url: url.optional(),
-  /** Collection handles holding the men's range, read instead of the whole catalogue. */
+  /** Collection handles holding the women's range, read instead of the whole catalogue. */
   feed_collections: z.array(z.string().regex(/^[a-z0-9-]+$/)).default([]),
   country: z.string().length(2),
   currency: z.string().length(3),
   ships_to_nz: z.boolean(),
-  /** "menswear" when the whole catalogue is men's, "mixed" when it has to be read per product. */
-  catalogue: z.enum(['menswear', 'mixed']),
+  /** "womenswear" when the whole catalogue is women's, "mixed" when it has to be read per product. */
+  catalogue: z.enum(['womenswear', 'mixed']),
   notes: z.string().optional(),
   /** Whether a newly added store starts on. After that, /you/finder decides. */
   enabled: z.boolean().default(true),
@@ -92,7 +90,7 @@ export type Retailer = {
   country: string
   currency: string
   ships_to_nz: boolean
-  catalogue: 'menswear' | 'mixed'
+  catalogue: 'womenswear' | 'mixed'
   wellington_store: WellingtonStore | null
   enabled: boolean
 }

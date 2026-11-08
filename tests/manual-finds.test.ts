@@ -107,13 +107,13 @@ test('a find added by hand is a product with his photo, price, colour and size, 
           vendor: string
           url: string
           garment_type: string
-          menswear: boolean
+          womenswear: boolean
           image: { src: string; width: number; height: number }
           find_photo_id: number
           variants: { option_size: string; option_colour: string; price_cents: number; available: boolean; size_key: string | null }[]
         }[]
       >`
-        select p.title, p.vendor, p.url, p.garment_type, p.menswear, p.images -> 0 as image, p.find_photo_id::int as find_photo_id,
+        select p.title, p.vendor, p.url, p.garment_type, p.womenswear, p.images -> 0 as image, p.find_photo_id::int as find_photo_id,
                json_agg(json_build_object('option_size', v.option_size, 'option_colour', v.option_colour,
                  'price_cents', v.price_cents, 'available', v.available, 'size_key', v.size_key)) as variants
         from products p join product_variants v on v.product_id = p.id
@@ -128,7 +128,7 @@ test('a find added by hand is a product with his photo, price, colour and size, 
       vendor: 'Lululemon',
       url: LINK,
       garment_type: 'trousers',
-      menswear: true,
+      womenswear: true,
       image: { src: findPhotoSrc(first.id), width: 800, height: 1000 },
       find_photo_id: first.id,
       variants: [{ option_size: 'M', option_colour: 'Black', price_cents: 14900, available: true, size_key: 'M' }],

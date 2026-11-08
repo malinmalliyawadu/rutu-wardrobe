@@ -7,7 +7,8 @@
 export const UNDERTONES = ['warm', 'cool', 'neutral', 'olive'] as const
 export const SKIN_DEPTHS = ['fair', 'light', 'medium', 'tan', 'deep'] as const
 export const CONTRAST_LEVELS = ['low', 'medium', 'high'] as const
-export const BUILDS = ['slim', 'athletic', 'broad'] as const
+export const BUILDS = ['slim', 'athletic', 'curvy', 'full'] as const
+export const WAIST_DEFINITIONS = ['defined', 'moderate', 'straight'] as const
 export const SHOULDER_HIP = ['shoulders_wider', 'balanced', 'hips_wider'] as const
 export const TORSO_LEG = ['long_torso', 'balanced', 'long_legs'] as const
 export const NECK_LENGTHS = ['short', 'average', 'long'] as const
@@ -27,7 +28,7 @@ export const SEASONS = [
 ] as const
 export const FITS = ['slim', 'regular', 'relaxed', 'oversized'] as const
 
-/** The days of the week, Monday first, as Life stores the days he trains. */
+/** The days of the week, Monday first, as Life stores the days she trains. */
 export const WEEKDAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const
 export type Weekday = (typeof WEEKDAYS)[number]
 
@@ -45,18 +46,23 @@ export const WEEKDAY_SHORT: Record<Weekday, string> = {
 export function weekdayOf(date: string): Weekday {
   return WEEKDAYS[(new Date(`${date}T12:00:00Z`).getUTCDay() + 6) % 7]!
 }
-export const TEE_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'] as const
+/** Letter sizes, smallest first. */
+export const LETTER_SIZES = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL'] as const
+/** AU and NZ women's dress sizes, which UK sizing shares. */
+export const DRESS_SIZES = [4, 6, 8, 10, 12, 14, 16, 18, 20, 22] as const
 
 export type Undertone = (typeof UNDERTONES)[number]
 export type SkinDepth = (typeof SKIN_DEPTHS)[number]
 export type ContrastLevel = (typeof CONTRAST_LEVELS)[number]
 export type Build = (typeof BUILDS)[number]
+export type WaistDefinition = (typeof WAIST_DEFINITIONS)[number]
 export type ShoulderHip = (typeof SHOULDER_HIP)[number]
 export type TorsoLeg = (typeof TORSO_LEG)[number]
 export type NeckLength = (typeof NECK_LENGTHS)[number]
 export type Season = (typeof SEASONS)[number]
 export type Fit = (typeof FITS)[number]
-export type TeeSize = (typeof TEE_SIZES)[number]
+export type LetterSize = (typeof LETTER_SIZES)[number]
+export type DressSize = (typeof DRESS_SIZES)[number]
 
 /** Human labels for the snake_case values. */
 export const LABELS: Record<string, string> = {
@@ -73,7 +79,11 @@ export const LABELS: Record<string, string> = {
   high: 'High',
   slim: 'Slim',
   athletic: 'Athletic',
-  broad: 'Broad',
+  curvy: 'Curvy',
+  full: 'Full',
+  defined: 'Defined waist',
+  moderate: 'Some waist definition',
+  straight: 'Straight through the waist',
   shoulders_wider: 'Shoulders wider than hips',
   balanced: 'Balanced',
   hips_wider: 'Hips wider than shoulders',

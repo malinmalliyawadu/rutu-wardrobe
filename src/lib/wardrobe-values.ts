@@ -10,11 +10,13 @@ import type { Budget } from './profile.ts'
 export const GARMENT_TYPES = [
   'tee',
   'tank',
-  'polo',
+  'top',
   'shirt',
-  'overshirt',
   'knitwear',
   'sweatshirt',
+  'dress',
+  'jumpsuit',
+  'skirt',
   'trousers',
   'jeans',
   'shorts',
@@ -22,12 +24,15 @@ export const GARMENT_TYPES = [
   'jacket',
   'coat',
   'activewear',
-  'shoes',
+  'flats',
+  'heels',
+  'sandals',
   'boots',
   'sneakers',
   'belt',
-  'accessory',
   'bag',
+  'jewellery',
+  'accessory',
 ] as const
 
 export const SLOT_STATUSES = ['wanted', 'candidate', 'owned', 'retired'] as const
@@ -41,12 +46,14 @@ export type Metal = (typeof METALS)[number]
 
 export const GARMENT_LABELS: Record<GarmentType, string> = {
   tee: 'Tee',
-  tank: 'Tank top',
-  polo: 'Polo',
+  tank: 'Tank or cami',
+  top: 'Top',
   shirt: 'Shirt',
-  overshirt: 'Overshirt',
   knitwear: 'Knitwear',
   sweatshirt: 'Sweatshirt',
+  dress: 'Dress',
+  jumpsuit: 'Jumpsuit',
+  skirt: 'Skirt',
   trousers: 'Trousers',
   jeans: 'Jeans',
   shorts: 'Shorts',
@@ -54,12 +61,15 @@ export const GARMENT_LABELS: Record<GarmentType, string> = {
   jacket: 'Jacket',
   coat: 'Coat',
   activewear: 'Activewear',
-  shoes: 'Shoes',
+  flats: 'Flats',
+  heels: 'Heels',
+  sandals: 'Sandals',
   boots: 'Boots',
   sneakers: 'Sneakers',
   belt: 'Belt',
-  accessory: 'Accessory',
   bag: 'Bag',
+  jewellery: 'Jewellery',
+  accessory: 'Accessory',
 }
 
 export const STATUS_LABELS: Record<SlotStatus, string> = {
@@ -77,26 +87,31 @@ export const PRIORITY_LABELS: Record<Priority, { title: string; hint: string }> 
 
 /** Which budget ceiling on the profile governs each garment type. */
 export const BUDGET_CATEGORY: Record<GarmentType, keyof Omit<Budget, 'monthly'>> = {
-  tee: 'tees',
-  tank: 'tees',
-  polo: 'tees',
-  activewear: 'tees',
-  shirt: 'shirts',
-  overshirt: 'shirts',
+  tee: 'tops',
+  tank: 'tops',
+  top: 'tops',
+  shirt: 'tops',
+  activewear: 'tops',
   knitwear: 'knits',
   sweatshirt: 'knits',
-  trousers: 'trousers',
-  jeans: 'trousers',
-  shorts: 'trousers',
+  dress: 'dresses',
+  jumpsuit: 'dresses',
+  skirt: 'bottoms',
+  trousers: 'bottoms',
+  jeans: 'bottoms',
+  shorts: 'bottoms',
   tailoring: 'outerwear',
   jacket: 'outerwear',
   coat: 'outerwear',
-  shoes: 'shoes',
+  flats: 'shoes',
+  heels: 'shoes',
+  sandals: 'shoes',
   boots: 'shoes',
   sneakers: 'shoes',
+  bag: 'bags',
+  jewellery: 'jewellery',
   belt: 'accessories',
   accessory: 'accessories',
-  bag: 'accessories',
 }
 
 const HEX = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i
@@ -110,7 +125,7 @@ export function normaliseHex(value: string): string | null {
 }
 
 /*
- * The wardrobe (migration 0006): the pieces he owns. Warmth is for dressing
+ * The wardrobe (migration 0006): the pieces she owns. Warmth is for dressing
  * Wellington's weather; the groups are how the Pieces page shelves them.
  */
 
@@ -143,7 +158,7 @@ export const forGym = (piece: { worn_for: WornFor }) => piece.worn_for !== 'ever
 /**
  * The garments a piece can be. Activewear says nothing about what a piece is,
  * so a new piece names its garment and says it is for the gym instead; a
- * piece filed as activewear before keeps it until he says what it is.
+ * piece filed as activewear before keeps it until she says what it is.
  */
 export const PIECE_GARMENT_TYPES = GARMENT_TYPES.filter((type) => type !== 'activewear')
 
@@ -151,12 +166,13 @@ export const PIECE_SOURCES = ['slot', 'find', 'link', 'photo', 'typed'] as const
 export type PieceSource = (typeof PIECE_SOURCES)[number]
 
 export const GARMENT_GROUPS: { title: string; types: GarmentType[] }[] = [
-  { title: 'Tops', types: ['tee', 'tank', 'polo', 'shirt'] },
+  { title: 'Tops', types: ['tee', 'tank', 'top', 'shirt'] },
   { title: 'Knitwear', types: ['knitwear', 'sweatshirt'] },
-  { title: 'Layers and outerwear', types: ['overshirt', 'jacket', 'coat', 'tailoring'] },
-  { title: 'Trousers', types: ['trousers', 'jeans', 'shorts'] },
-  { title: 'Shoes', types: ['shoes', 'boots', 'sneakers'] },
-  { title: 'Accessories', types: ['belt', 'accessory', 'bag'] },
+  { title: 'Dresses', types: ['dress', 'jumpsuit'] },
+  { title: 'Skirts and trousers', types: ['skirt', 'trousers', 'jeans', 'shorts'] },
+  { title: 'Layers and outerwear', types: ['tailoring', 'jacket', 'coat'] },
+  { title: 'Shoes', types: ['flats', 'heels', 'sandals', 'boots', 'sneakers'] },
+  { title: 'Bags and jewellery', types: ['bag', 'jewellery', 'belt', 'accessory'] },
   { title: 'Activewear', types: ['activewear'] },
 ]
 

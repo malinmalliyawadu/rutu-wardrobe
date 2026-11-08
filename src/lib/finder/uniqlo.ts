@@ -191,7 +191,7 @@ export function normaliseUniqlo(
       .filter(Boolean)
       .join('<br>') || null
 
-  // Uniqlo's own gender is the menswear rule's best evidence; the title never says.
+  // Uniqlo's own gender is the womenswear rule's best evidence; the title never says.
   const classification = classify({ title, productType, tags, vendor, catalogue: 'mixed' })
 
   const promo = product.prices.promo?.value ?? null

@@ -189,7 +189,7 @@ export type StoreCount = {
   slug: string
   name: string
   enabled: boolean
-  /** Menswear pieces it has now. */
+  /** Womenswear pieces it has now. */
   products: number
   /** How many made the latest run's shortlist: what Claude is asked to judge. */
   shortlisted: number
@@ -216,7 +216,7 @@ export async function storeCounts(sql: Sql = db()): Promise<StoreCount[]> {
       order by r.started_at desc limit 1
     )
     select r.slug, r.name, r.enabled,
-           count(p.id) filter (where p.menswear and p.removed_at is null)::int as products,
+           count(p.id) filter (where p.womenswear and p.removed_at is null)::int as products,
            count(c.product_id)::int as shortlisted,
            count(c.product_id) filter (where exists (
              select 1 from product_scores s
@@ -230,7 +230,7 @@ export async function storeCounts(sql: Sql = db()): Promise<StoreCount[]> {
     from retailers r
     left join products p on p.retailer_id = r.id
     left join finder_candidates c on c.product_id = p.id and c.run_id = (select id from latest)
-    -- A store read only from pasted links (Uniqlo, Rodd & Gunn) is never walked, so it has no switch.
+    -- A store read only from pasted links (Uniqlo) is never walked, so it has no switch.
     where r.platform = any (${[...WALKED_PLATFORMS]}::text[])
     group by r.id
     order by count(c.product_id) desc, r.name

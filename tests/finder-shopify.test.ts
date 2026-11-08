@@ -20,7 +20,7 @@ import {
 const page = ShopifyPageSchema.parse(JSON.parse(readFileSync(new URL('./fixtures/shopify-page.json', import.meta.url), 'utf8')))
 const raws = page.products.map((raw) => ShopifyProductSchema.parse(raw))
 
-function normalised(title: string, catalogue: 'menswear' | 'mixed' = 'menswear'): NormalisedProduct {
+function normalised(title: string, catalogue: 'womenswear' | 'mixed' = 'womenswear'): NormalisedProduct {
   const raw = raws.find((product) => product.title.startsWith(title))
   assert.ok(raw, `fixture has ${title}`)
   return normaliseProduct(raw, { base_url: 'https://shop.test', catalogue })
@@ -29,7 +29,7 @@ function normalised(title: string, catalogue: 'menswear' | 'mixed' = 'menswear')
 test('every product on the saved page parses and normalises', () => {
   assert.equal(raws.length, 6)
   for (const raw of raws) {
-    const product = normaliseProduct(raw, { base_url: 'https://shop.test', catalogue: 'menswear' })
+    const product = normaliseProduct(raw, { base_url: 'https://shop.test', catalogue: 'womenswear' })
     assert.match(product.content_hash, /^[0-9a-f]{32}$/)
     assert.equal(product.url, `https://shop.test/products/${raw.handle}`)
     assert.equal(product.variants.length, raw.variants.length)
@@ -40,7 +40,7 @@ test('colour and size come from the options they are named for, prices in cents'
   const tee = normalised('NIGHT CAMO BOX TEE')
   assert.equal(tee.external_id, '9634913648808')
   assert.equal(tee.garment_type, 'tee')
-  assert.equal(tee.menswear, true)
+  assert.equal(tee.womenswear, true)
   const small = tee.variants.find((variant) => variant.option_size === 'S')!
   assert.equal(small.option_colour, 'BLACK')
   assert.equal(small.price_cents, 8999)
@@ -61,7 +61,7 @@ test('a compare-at price only counts when it is above the price', () => {
 
 test('END. zero prices are placeholders, not free, and its "XLarge" is XL', () => {
   const tee = normalised('PICANTE Peaks Patch T-Shirt', 'mixed')
-  assert.equal(tee.menswear, true, 'gender:Mens tag')
+  assert.equal(tee.womenswear, true, 'gender:Mens tag')
   assert.equal(tee.garment_type, 'tee')
   assert.ok(tee.variants.every((variant) => variant.price_cents === 0 && !variant.available))
   assert.deepEqual(
@@ -72,20 +72,20 @@ test('END. zero prices are placeholders, not free, and its "XLarge" is XL', () =
 
 test('the content hash follows what the scorer sees, not price or stock', () => {
   const raw = raws.find((product) => product.title.startsWith('STRIPE SS TEE'))!
-  const base = normaliseProduct(raw, { base_url: 'https://shop.test', catalogue: 'menswear' }).content_hash
+  const base = normaliseProduct(raw, { base_url: 'https://shop.test', catalogue: 'womenswear' }).content_hash
   const repriced = {
     ...raw,
     variants: raw.variants.map((variant) => ({ ...variant, price: '19.99', compare_at_price: '79.99', available: false })),
   }
-  assert.equal(normaliseProduct(repriced, { base_url: 'https://shop.test', catalogue: 'menswear' }).content_hash, base)
+  assert.equal(normaliseProduct(repriced, { base_url: 'https://shop.test', catalogue: 'womenswear' }).content_hash, base)
 
   const reuploaded = { ...raw, images: raw.images.map((image) => ({ ...image, src: `${image.src.split('?')[0]}?v=999` })) }
-  assert.equal(normaliseProduct(reuploaded, { base_url: 'https://shop.test', catalogue: 'menswear' }).content_hash, base, 'the ?v= cache-buster is ignored')
+  assert.equal(normaliseProduct(reuploaded, { base_url: 'https://shop.test', catalogue: 'womenswear' }).content_hash, base, 'the ?v= cache-buster is ignored')
 
   const retitled = { ...raw, title: `${raw.title} RELAXED` }
-  assert.notEqual(normaliseProduct(retitled, { base_url: 'https://shop.test', catalogue: 'menswear' }).content_hash, base)
+  assert.notEqual(normaliseProduct(retitled, { base_url: 'https://shop.test', catalogue: 'womenswear' }).content_hash, base)
   const rephotographed = { ...raw, images: [{ ...raw.images[0]!, src: 'https://cdn.shopify.com/s/files/new.jpg' }] }
-  assert.notEqual(normaliseProduct(rephotographed, { base_url: 'https://shop.test', catalogue: 'menswear' }).content_hash, base)
+  assert.notEqual(normaliseProduct(rephotographed, { base_url: 'https://shop.test', catalogue: 'womenswear' }).content_hash, base)
 })
 
 test('the hash is stable however the store orders tags or colours', () => {
@@ -131,7 +131,7 @@ test('a size option the store did not call "Size" is still found', () => {
     options: [{ name: 'Title', position: 1, values: ['30', '32', '34'] }],
     variants: [{ id: 2, option1: '32', price: '160.00', available: true }],
   })
-  const chino = normaliseProduct(raw, { base_url: 'https://shop.test', catalogue: 'menswear' })
+  const chino = normaliseProduct(raw, { base_url: 'https://shop.test', catalogue: 'womenswear' })
   assert.equal(chino.variants[0]!.option_size, '32')
   assert.equal(chino.variants[0]!.size_key, 'W32')
 })

@@ -161,7 +161,7 @@ export function forecastUrl(date: string): string {
 export async function fetchForecast(date: string, fetcher: typeof fetch = fetch): Promise<Forecast | null> {
   try {
     const response = await fetcher(forecastUrl(date), {
-      headers: { 'user-agent': `${PRODUCT_TOKEN} (a personal menswear app for one person in Wellington)` },
+      headers: { 'user-agent': `${PRODUCT_TOKEN} (a personal womenswear app for one person in Wellington)` },
       signal: AbortSignal.timeout(TIMEOUT_MS),
     })
     if (!response.ok) throw new Error(`HTTP ${response.status}`)

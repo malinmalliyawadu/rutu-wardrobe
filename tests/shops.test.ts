@@ -96,13 +96,13 @@ function product(
     images: [{ src: `https://cdn.shopify.com/s/files/${id}.jpg?v=1` }],
     ...extra,
   })
-  return normaliseProduct(raw, { base_url: `https://${slug}.test`, catalogue: 'menswear' })
+  return normaliseProduct(raw, { base_url: `https://${slug}.test`, catalogue: 'womenswear' })
 }
 
 async function retailer(slug: string, enabled = true): Promise<number> {
   const [row] = await sql<{ id: number }[]>`
     insert into retailers (slug, name, platform, base_url, country, currency, catalogue, enabled)
-    values (${slug}, ${slug}, 'shopify', ${`https://${slug}.test`}, 'NZ', 'NZD', 'menswear', ${enabled})
+    values (${slug}, ${slug}, 'shopify', ${`https://${slug}.test`}, 'NZ', 'NZD', 'womenswear', ${enabled})
     returning id::int as id
   `
   return row!.id

@@ -94,7 +94,7 @@ const COLOUR_OPTION = /\b(colou?rs?|shade)\b/i
 
 export function normaliseProduct(
   raw: ShopifyProduct,
-  retailer: { base_url: string; catalogue: 'menswear' | 'mixed' },
+  retailer: { base_url: string; catalogue: 'womenswear' | 'mixed' },
 ): NormalisedProduct {
   const options = [...raw.options].sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
   const colourIndex = options.findIndex((option) => COLOUR_OPTION.test(option.name))

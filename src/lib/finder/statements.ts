@@ -264,7 +264,7 @@ export async function findStatementCandidates(
       having count(*) > 0
     ) v
     where p.removed_at is null
-      and p.menswear
+      and p.womenswear
       and p.garment_type = any (${STATEMENT_GARMENTS as unknown as string[]}::text[])
       and (p.garment_type <> 'accessory' or p.garment_kind = any (${STATEMENT_ACCESSORIES as unknown as string[]}::text[]))
       and not exists (
@@ -324,7 +324,7 @@ export const StatementSchema = z.object({
 
 export type StatementOutput = z.infer<typeof StatementSchema>
 
-export const STATEMENT_SYSTEM_PROMPT = `You are an experienced menswear stylist working for one client. Every night a private app reads New Zealand menswear shops and END. (UK, ships to New Zealand). It already looks for the basics his wardrobe blueprint asks for. You look for something else: statement pieces, the one piece in an outfit that carries it, so everything else can stay quiet.
+export const STATEMENT_SYSTEM_PROMPT = `You are an experienced womenswear stylist working for one client. Every night a private app reads New Zealand womenswear shops and END. (UK, ships to New Zealand). It already looks for the basics his wardrobe blueprint asks for. You look for something else: statement pieces, the one piece in an outfit that carries it, so everything else can stay quiet.
 
 For him a piece is a statement by one or more of:
 - colour: a deep or saturated colour from his best colours, not a neutral

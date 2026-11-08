@@ -3,7 +3,7 @@ import { test } from 'node:test'
 
 import sharp from 'sharp'
 
-import { categoryText, garmentOf, isMenswear, kitGarmentOf, sizeKey, slotKind, wantedSizeKeys } from '../src/lib/finder/classify.ts'
+import { categoryText, garmentOf, isWomenswear, kitGarmentOf, sizeKey, slotKind, wantedSizeKeys } from '../src/lib/finder/classify.ts'
 import { colourCompatible, cutCompatible, familiesIn, namedCut, productFamilies, slotFamilies } from '../src/lib/finder/colour.ts'
 import { readPhoto } from '../src/lib/finder/photo-colour.ts'
 
@@ -88,7 +88,7 @@ test('as a piece he owns, sport kit is the garment it is', () => {
   assert.equal(kitGarmentOf('Brooks Adrenaline GTS 4', 'Running Shoes'), 'shoes')
   assert.equal(kitGarmentOf('Restrained Active Crop Tee - Off White', 'activewear'), 'tee')
   assert.equal(kitGarmentOf('Training Singlet', null), 'tank')
-  assert.equal(kitGarmentOf('Compression Leggings', null), null, 'still not menswear the app dresses')
+  assert.equal(kitGarmentOf('Compression Leggings', null), null, 'still not womenswear the app dresses')
 })
 
 test("END.'s empty product type is read from its category tags", () => {
@@ -96,22 +96,22 @@ test("END.'s empty product type is read from its category tags", () => {
   assert.equal(garmentOf('Umbro Diamond Drill Top', type).garment_type, 'sweatshirt')
 })
 
-test('menswear: a menswear store needs only not to say women or kids; a mixed store must say men', () => {
+test('womenswear: a womenswear store needs only not to say women or kids; a mixed store must say men', () => {
   const base = { title: 'Box Tee', productType: 'Tops', tags: [] as string[] }
-  assert.ok(isMenswear({ ...base, catalogue: 'menswear' }))
-  assert.ok(!isMenswear({ ...base, title: 'WOMENS FINE RIB TANK', catalogue: 'menswear' }))
-  assert.ok(!isMenswear({ ...base, catalogue: 'mixed' }))
-  assert.ok(isMenswear({ ...base, tags: ['Mens'], catalogue: 'mixed' }))
-  assert.ok(isMenswear({ ...base, tags: ['Gender:Unisex'], catalogue: 'mixed' }))
-  assert.ok(!isMenswear({ ...base, tags: ['Gender:Women'], catalogue: 'mixed' }))
-  assert.ok(isMenswear({ ...base, tags: ['Woman Man Nov 2026'], catalogue: 'mixed' }), 'says men as well as women')
-  assert.ok(!isMenswear({ ...base, tags: ['Child Boys', 'Mens'], catalogue: 'mixed' }), 'kids never')
+  assert.ok(isWomenswear({ ...base, catalogue: 'womenswear' }))
+  assert.ok(!isWomenswear({ ...base, title: 'WOMENS FINE RIB TANK', catalogue: 'womenswear' }))
+  assert.ok(!isWomenswear({ ...base, catalogue: 'mixed' }))
+  assert.ok(isWomenswear({ ...base, tags: ['Mens'], catalogue: 'mixed' }))
+  assert.ok(isWomenswear({ ...base, tags: ['Gender:Unisex'], catalogue: 'mixed' }))
+  assert.ok(!isWomenswear({ ...base, tags: ['Gender:Women'], catalogue: 'mixed' }))
+  assert.ok(isWomenswear({ ...base, tags: ['Woman Man Nov 2026'], catalogue: 'mixed' }), 'says men as well as women')
+  assert.ok(!isWomenswear({ ...base, tags: ['Child Boys', 'Mens'], catalogue: 'mixed' }), 'kids never')
   assert.ok(
-    !isMenswear({ ...base, productType: 'Womens Pants', tags: ['Mens', 'Mens: Pants'], catalogue: 'mixed' }),
+    !isWomenswear({ ...base, productType: 'Womens Pants', tags: ['Mens', 'Mens: Pants'], catalogue: 'mixed' }),
     "a women's product type outweighs a loose men tag",
   )
   assert.ok(
-    isMenswear({ ...base, productType: 'Womens Denim', tags: ['Gender:Men', 'Gender:Women'], catalogue: 'mixed' }),
+    isWomenswear({ ...base, productType: 'Womens Denim', tags: ['Gender:Men', 'Gender:Women'], catalogue: 'mixed' }),
     'but not a gender tag',
   )
 })

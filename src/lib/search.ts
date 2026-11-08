@@ -77,7 +77,7 @@ export class SearchError extends Error {}
 export const RequestReadSchema = z.object({
   understood: z
     .boolean()
-    .describe('True when this is a piece of menswear the shops could sell, specific enough to search for.'),
+    .describe('True when this is a piece of womenswear the shops could sell, specific enough to search for.'),
   garment_type: z
     .enum(GARMENT_TYPES)
     .nullable()
@@ -103,7 +103,7 @@ export const RequestReadSchema = z.object({
 
 export type RequestRead = z.infer<typeof RequestReadSchema>
 
-export const READ_SYSTEM_PROMPT = `You read one shopping request Malin typed into his private menswear app, and turn it into the terms the app's filter uses. The app then searches New Zealand menswear shops and END. (UK, ships to New Zealand) for products in his size, and a stylist judges the closest against his request and his style guide.
+export const READ_SYSTEM_PROMPT = `You read one shopping request Malin typed into his private womenswear app, and turn it into the terms the app's filter uses. The app then searches New Zealand womenswear shops and END. (UK, ships to New Zealand) for products in his size, and a stylist judges the closest against his request and his style guide.
 
 Garment types, and what each covers:
 - tee: t-shirts
@@ -400,7 +400,7 @@ export async function runSearch(
     stats.read_usd = Number(usd.toFixed(6))
     if (!read) throw new SearchError('Claude could not read that. Try putting it another way.')
     if (!read.understood || !read.garment_type) {
-      throw new SearchError(read.problem ?? 'That is not something the shops sell. Name a piece of menswear.')
+      throw new SearchError(read.problem ?? 'That is not something the shops sell. Name a piece of womenswear.')
     }
     const [profile, guide, retailers] = await Promise.all([getProfile(), getGuide(), listRetailers(sql)])
     if (!guide) throw new SearchError('Search judges against your style guide. Draft it first.')

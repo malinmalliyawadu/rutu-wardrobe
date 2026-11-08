@@ -72,7 +72,7 @@ test('one colour is one product: its photo, its sizes, the sale price beside the
   assert.equal(black.external_id, 'E475296-000-00-09')
   assert.equal(black.handle, 'E475296-000/00/09')
   assert.equal(black.url, 'https://www.uniqlo.com/au/en/products/E475296-000/00?colorDisplayCode=09')
-  assert.deepEqual([black.vendor, black.product_type, black.garment_type, black.menswear], ['Uniqlo', 'Jumpers & Sweaters', 'knitwear', true])
+  assert.deepEqual([black.vendor, black.product_type, black.garment_type, black.womenswear], ['Uniqlo', 'Jumpers & Sweaters', 'knitwear', true])
   assert.equal(black.images[0]!.src, 'https://image.uniqlo.com/UQ/ST3/au/imagesgoods/475296/item/augoods_09_475296_3x4.jpg')
   assert.ok(
     black.images.every((image) => image.src.includes('_09_') || !/goods_\d\d_/.test(image.src)),
@@ -103,7 +103,7 @@ test('a video among the photos is left out, not read as a broken page', () => {
 test('jeans are sized by waist and at full price have nothing to compare against', () => {
   const blue = normaliseUniqlo(jeans, '66', store)
   assert.equal(blue.garment_type, 'jeans')
-  assert.equal(blue.menswear, true, 'unisex counts')
+  assert.equal(blue.womenswear, true, 'unisex counts')
   assert.equal(blue.variants[0]!.size_key, 'W28')
   assert.equal(blue.variants[0]!.compare_at_cents, null)
   assert.equal(blue.variants[0]!.price_cents, 5990)

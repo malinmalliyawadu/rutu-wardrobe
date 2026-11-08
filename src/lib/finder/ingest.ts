@@ -20,7 +20,7 @@ export type RetailerIngest = {
   status: 'ok' | 'disallowed' | 'failed'
   pages: number
   products: number
-  menswear: number
+  womenswear: number
   variants: number
   new: number
   changed: number
@@ -48,7 +48,7 @@ export async function ingestRetailer(
     status: 'ok',
     pages: 0,
     products: 0,
-    menswear: 0,
+    womenswear: 0,
     variants: 0,
     new: 0,
     changed: 0,
@@ -70,11 +70,11 @@ export async function ingestRetailer(
     if (!allowed) throw new DisallowedError(`robots.txt on ${new URL(feedOrigin).host} disallows ${firstFeed}`)
 
     // A store with a men's collection is read through it, and everything in it
-    // counts as menswear; otherwise the whole catalogue, read per product.
+    // counts as womenswear; otherwise the whole catalogue, read per product.
     const feeds = retailer.feed_collections.length > 0
       ? retailer.feed_collections.map((handle) => `/collections/${handle}/products.json`)
       : ['/products.json']
-    const catalogue = retailer.feed_collections.length > 0 ? 'menswear' : retailer.catalogue
+    const catalogue = retailer.feed_collections.length > 0 ? 'womenswear' : retailer.catalogue
     const seen = new Set<string>()
 
     for (const path of feeds) {
@@ -100,7 +100,7 @@ export async function ingestRetailer(
         const written = await writePage(sql, retailer.id, products)
         stats.pages += 1
         stats.products += products.length
-        stats.menswear += products.filter((product) => product.menswear).length
+        stats.womenswear += products.filter((product) => product.womenswear).length
         stats.variants += written.variants
         stats.new += written.new
         stats.changed += written.changed
@@ -160,7 +160,7 @@ export async function writePage(
       body_html: product.body_html,
       url: product.url,
       images: tx.json(product.images),
-      menswear: product.menswear,
+      womenswear: product.womenswear,
       garment_type: product.garment_type,
       garment_kind: product.garment_kind,
       content_hash: product.content_hash,
@@ -178,7 +178,7 @@ export async function writePage(
         body_html = excluded.body_html,
         url = excluded.url,
         images = excluded.images,
-        menswear = excluded.menswear,
+        womenswear = excluded.womenswear,
         garment_type = excluded.garment_type,
         garment_kind = excluded.garment_kind,
         content_hash = excluded.content_hash,
@@ -267,7 +267,7 @@ export async function writePage(
 
 /**
  * Re-runs the classification rules over what is stored, without reading any
- * store: garment type, kind and menswear on products, the size key on their
+ * store: garment type, kind and womenswear on products, the size key on their
  * variants. For trying a rule change against the real catalogue. The next
  * ingest would apply the same rules anyway.
  */
@@ -275,13 +275,13 @@ export async function reclassify(sql: Sql, retailers: Retailer[]): Promise<{ pro
   let products = 0
   let changed = 0
   for (const retailer of retailers) {
-    const catalogue = retailer.feed_collections.length > 0 ? 'menswear' : retailer.catalogue
+    const catalogue = retailer.feed_collections.length > 0 ? 'womenswear' : retailer.catalogue
     let after = 0
     for (;;) {
       const rows = await sql<
-        { id: number; title: string; product_type: string | null; tags: string[]; vendor: string | null; menswear: boolean | null; garment_type: GarmentType | null; garment_kind: string | null }[]
+        { id: number; title: string; product_type: string | null; tags: string[]; vendor: string | null; womenswear: boolean | null; garment_type: GarmentType | null; garment_kind: string | null }[]
       >`
-        select id::int as id, title, product_type, tags, vendor, menswear, garment_type, garment_kind
+        select id::int as id, title, product_type, tags, vendor, womenswear, garment_type, garment_kind
         from products where retailer_id = ${retailer.id} and id > ${after} and removed_at is null
         order by id limit 2000
       `
@@ -289,15 +289,15 @@ export async function reclassify(sql: Sql, retailers: Retailer[]): Promise<{ pro
       after = rows.at(-1)!.id
       const updates = rows.flatMap((row) => {
         const next = classify({ title: row.title, productType: row.product_type, tags: row.tags, vendor: row.vendor, catalogue })
-        const same = next.menswear === row.menswear && next.garment_type === row.garment_type && next.garment_kind === row.garment_kind
+        const same = next.womenswear === row.womenswear && next.garment_type === row.garment_type && next.garment_kind === row.garment_kind
         return same ? [] : [{ id: row.id, ...next }]
       })
       products += rows.length
       changed += updates.length
       if (updates.length > 0) {
         await sql`
-          update products p set menswear = u.menswear, garment_type = u.garment_type, garment_kind = u.garment_kind
-          from jsonb_to_recordset(${sql.json(updates)}) as u(id bigint, menswear boolean, garment_type text, garment_kind text)
+          update products p set womenswear = u.womenswear, garment_type = u.garment_type, garment_kind = u.garment_kind
+          from jsonb_to_recordset(${sql.json(updates)}) as u(id bigint, womenswear boolean, garment_type text, garment_kind text)
           where p.id = u.id
         `
       }

@@ -10,7 +10,9 @@ import {
   SEASONS,
   SHOULDER_HIP,
   SKIN_DEPTHS,
-  TEE_SIZES,
+  DRESS_SIZES,
+  LETTER_SIZES,
+  WAIST_DEFINITIONS,
   TORSO_LEG,
   UNDERTONES,
   WEEKDAYS,
@@ -21,6 +23,7 @@ import {
   type ShoulderHip,
   type SkinDepth,
   type TorsoLeg,
+  type WaistDefinition,
   type Undertone,
 } from './profile-values.ts'
 
@@ -35,22 +38,26 @@ const nzd = z.number().int().min(0).max(100_000).nullable()
 const days = z.number().min(0).max(7).nullable()
 
 export const SizesSchema = z.object({
-  tee: z.enum(TEE_SIZES).nullable(),
-  chest_cm: cm,
+  /** Her letter size for tops, knits and dresses cut S, M, L. */
+  letter: z.enum(LETTER_SIZES).nullable(),
+  /** AU and NZ dress size (UK is the same number): 6, 8, 10. */
+  dress: z.number().int().refine((n) => (DRESS_SIZES as readonly number[]).includes(n), 'An even AU size').nullable(),
+  /** Jeans waist in inches, as denim is labelled: 26, 27. */
+  jeans: z.number().int().min(22).max(40).nullable(),
+  bust_cm: cm,
   waist_cm: cm,
   hips_cm: cm,
   inseam_cm: cm,
-  sleeve_cm: cm,
-  neck_cm: cm,
-  shoe_eu: z.number().min(35).max(55).nullable(),
-  shoe_uk: z.number().min(3).max(16).nullable(),
-  shoe_us: z.number().min(4).max(17).nullable(),
+  shoe_eu: z.number().min(34).max(44).nullable(),
+  /** AU and NZ women's shoe size, which is the US women's number. */
+  shoe_au: z.number().min(4).max(13).nullable(),
 })
 
 export const FitsSchema = z.object({
   tops: z.enum(FITS).nullable(),
   knits: z.enum(FITS).nullable(),
-  trousers: z.enum(FITS).nullable(),
+  dresses: z.enum(FITS).nullable(),
+  bottoms: z.enum(FITS).nullable(),
   outerwear: z.enum(FITS).nullable(),
 })
 
@@ -58,7 +65,7 @@ export const LifeSchema = z.object({
   /** Rough days per week in each context. */
   office: days,
   gym: days,
-  /** The days he trains, so Today can give him a gym fit on them. gym is how many there are. */
+  /** The days she trains, so Today can give her a gym fit on them. gym is how many there are. */
   gym_days: z.array(z.enum(WEEKDAYS)).nullable(),
   running: days,
   evenings_out: days,
@@ -73,12 +80,14 @@ export const TasteSchema = z.object({
 })
 
 export const BudgetSchema = z.object({
-  tees: nzd,
-  shirts: nzd,
+  tops: nzd,
   knits: nzd,
-  trousers: nzd,
+  dresses: nzd,
+  bottoms: nzd,
   outerwear: nzd,
   shoes: nzd,
+  bags: nzd,
+  jewellery: nzd,
   accessories: nzd,
   monthly: nzd,
 })
@@ -99,6 +108,7 @@ export const ColouringSchema = z.object({
   season: z.enum(SEASONS).nullable(),
   season_confidence: z.number().int().min(0).max(100).nullable(),
   build: z.enum(BUILDS).nullable(),
+  waist_definition: z.enum(WAIST_DEFINITIONS).nullable(),
   shoulder_hip: z.enum(SHOULDER_HIP).nullable(),
   torso_leg: z.enum(TORSO_LEG).nullable(),
   neck_length: z.enum(NECK_LENGTHS).nullable(),
@@ -117,6 +127,7 @@ export type Profile = {
   season: Season | null
   season_confidence: number | null
   build: Build | null
+  waist_definition: WaistDefinition | null
   shoulder_hip: ShoulderHip | null
   torso_leg: TorsoLeg | null
   neck_length: NeckLength | null
@@ -139,7 +150,7 @@ export async function getProfile(): Promise<Profile> {
     select height_cm::float as height_cm,
            undertone, skin_depth, hair_colour, hair_texture, eye_colour, contrast_level,
            season, season_confidence,
-           build, shoulder_hip, torso_leg, neck_length,
+           build, waist_definition, shoulder_hip, torso_leg, neck_length,
            sizes, fit_preferences, life, taste, budget,
            analysis, analysed_at, confirmed_at, updated_at
     from profile where id = 1
@@ -179,7 +190,7 @@ export async function saveAnalysis(analysis: unknown): Promise<void> {
   `
 }
 
-/** The confirmed read: Claude's proposal after Malin's corrections. */
+/** The confirmed read: Claude's proposal after Rutu's corrections. */
 export async function confirmColouring(values: Colouring): Promise<void> {
   await db()`
     update profile
@@ -192,6 +203,7 @@ export async function confirmColouring(values: Colouring): Promise<void> {
         season = ${values.season},
         season_confidence = ${values.season_confidence},
         build = ${values.build},
+        waist_definition = ${values.waist_definition},
         shoulder_hip = ${values.shoulder_hip},
         torso_leg = ${values.torso_leg},
         neck_length = ${values.neck_length},
@@ -209,22 +221,22 @@ export function parseSizesForm(form: FormData): ParseResult<{ height_cm: number 
     return { ok: false, errors: { height_cm: 'Between 100 and 250 cm' } }
   }
   const sizes = finish(SizesSchema, {
-    tee: text(form, 'tee'),
-    chest_cm: number(form, 'chest_cm'),
+    letter: text(form, 'letter'),
+    dress: number(form, 'dress'),
+    jeans: number(form, 'jeans'),
+    bust_cm: number(form, 'bust_cm'),
     waist_cm: number(form, 'waist_cm'),
     hips_cm: number(form, 'hips_cm'),
     inseam_cm: number(form, 'inseam_cm'),
-    sleeve_cm: number(form, 'sleeve_cm'),
-    neck_cm: number(form, 'neck_cm'),
     shoe_eu: number(form, 'shoe_eu'),
-    shoe_uk: number(form, 'shoe_uk'),
-    shoe_us: number(form, 'shoe_us'),
+    shoe_au: number(form, 'shoe_au'),
   })
   if (!sizes.ok) return sizes
   const fits = finish(FitsSchema, {
     tops: text(form, 'tops'),
     knits: text(form, 'knits'),
-    trousers: text(form, 'trousers'),
+    dresses: text(form, 'dresses'),
+    bottoms: text(form, 'bottoms'),
     outerwear: text(form, 'outerwear'),
   })
   if (!fits.ok) return fits
@@ -258,12 +270,14 @@ export function parseTasteForm(form: FormData): ParseResult<Taste> {
 
 export function parseBudgetForm(form: FormData): ParseResult<Budget> {
   return finish(BudgetSchema, {
-    tees: number(form, 'tees'),
-    shirts: number(form, 'shirts'),
+    tops: number(form, 'tops'),
     knits: number(form, 'knits'),
-    trousers: number(form, 'trousers'),
+    dresses: number(form, 'dresses'),
+    bottoms: number(form, 'bottoms'),
     outerwear: number(form, 'outerwear'),
     shoes: number(form, 'shoes'),
+    bags: number(form, 'bags'),
+    jewellery: number(form, 'jewellery'),
     accessories: number(form, 'accessories'),
     monthly: number(form, 'monthly'),
   })
@@ -280,6 +294,7 @@ export function parseColouringForm(form: FormData): ParseResult<Colouring> {
     season: text(form, 'season'),
     season_confidence: number(form, 'season_confidence'),
     build: text(form, 'build'),
+    waist_definition: text(form, 'waist_definition'),
     shoulder_hip: text(form, 'shoulder_hip'),
     torso_leg: text(form, 'torso_leg'),
     neck_length: text(form, 'neck_length'),

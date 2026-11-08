@@ -92,7 +92,7 @@ export async function attachPhoto(pieceId: number, photoId: number, sql: Sql = d
 export const PieceReadSchema = z.object({
   is_garment: z
     .boolean()
-    .describe('False when the photo does not show one piece of menswear clearly enough to describe.'),
+    .describe('False when the photo does not show one piece of womenswear clearly enough to describe.'),
   name: z
     .string()
     .describe('What he would call it, colour first, under 6 words, no brand: "Ink navy merino crewneck".'),
@@ -125,11 +125,11 @@ export type PieceRead = z.infer<typeof PieceReadSchema>
 
 export class PieceReadError extends Error {}
 
-export const PIECE_READ_SYSTEM_PROMPT = `You are an experienced menswear stylist cataloguing one client's wardrobe. He has photographed one piece he owns, laid flat, on a hanger or on him, often on a bed or a floor in indoor light. Fill in its record for him to check: what it is, its colour, cloth, cut and how warm it is. A private app keeps the record and later puts outfits together from his pieces, so be accurate and plain rather than flattering.
+export const PIECE_READ_SYSTEM_PROMPT = `You are an experienced womenswear stylist cataloguing one client's wardrobe. He has photographed one piece he owns, laid flat, on a hanger or on him, often on a bed or a floor in indoor light. Fill in its record for him to check: what it is, its colour, cloth, cut and how warm it is. A private app keeps the record and later puts outfits together from his pieces, so be accurate and plain rather than flattering.
 
 Colour matters most. Judge the garment's own colour, allowing for the light in the photo (warm lamps make navy look brown and white look cream). When the colour is one of his palette colours, or close enough that he would call it that, give that hex exactly as listed; when it is none of them, give null and name the colour in words.
 
-When the photo is not of a single piece of menswear (a room, a person with nothing in particular, several garments in a pile), set is_garment to false and fill the rest as best you can.`
+When the photo is not of a single piece of womenswear (a room, a person with nothing in particular, several garments in a pile), set is_garment to false and fill the rest as best you can.`
 
 export function buildReadRequest(base64: string, guide: Pick<Guide, 'palette'> | null) {
   const palette = guide ? guideColours(guide).map((colour) => ({ hex: colour.hex, name: colour.name })) : []

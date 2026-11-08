@@ -70,7 +70,7 @@ function raw(title: string, sizes: Record<string, { price: string; available?: b
   })
 }
 
-async function retailer(slug: string, currency: string, catalogue: 'menswear' | 'mixed'): Promise<number> {
+async function retailer(slug: string, currency: string, catalogue: 'womenswear' | 'mixed'): Promise<number> {
   const [row] = await sql<{ id: number }[]>`
     insert into retailers (slug, name, platform, base_url, country, currency, catalogue)
     values (${slug}, ${slug}, 'shopify', ${`https://${slug}.test`}, 'NZ', ${currency}, ${catalogue})
@@ -114,14 +114,14 @@ async function productId(title: string): Promise<number> {
 }
 
 test('the filter keeps what fits and drops each thing that does not, for its own reason', async () => {
-  const shop = await retailer('shop', 'NZD', 'menswear')
+  const shop = await retailer('shop', 'NZD', 'womenswear')
   const end = await retailer('end', 'GBP', 'mixed')
   const tee = await slot({ name: 'Ecru heavyweight cotton crew tee', garment_type: 'tee', colour_family: 'ecru', fit: 'slim', sizes: { labels: ['S'] }, budget_min_cents: 4500, budget_max_cents: 8500 })
   const chino = await slot({ name: 'Putty cotton twill chinos', garment_type: 'trousers', colour_family: 'putty', budget_min_cents: 12000, budget_max_cents: 23000 })
   const belt = await slot({ name: 'Espresso leather belt', garment_type: 'belt', colour_family: 'dark brown', budget_min_cents: 6000, budget_max_cents: 15000 })
   await slot({ name: 'Ecru crew tee', garment_type: 'tee', colour_family: 'ecru', status: 'owned' })
 
-  const local = { base_url: 'https://shop.test', catalogue: 'menswear' as const }
+  const local = { base_url: 'https://shop.test', catalogue: 'womenswear' as const }
   await writePage(sql, shop, [
     raw('Ecru Crew Tee', { S: { price: '60.00' }, M: { price: '60.00' } }),
     raw('Ecru Heavy Box Tee', { S: { price: '60.00' } }),
@@ -197,8 +197,8 @@ test('the filter keeps what fits and drops each thing that does not, for its own
 })
 
 test('a second ingest of the same page writes observations only for what moved', async () => {
-  const shop = await retailer('again', 'NZD', 'menswear')
-  const local = { base_url: 'https://again.test', catalogue: 'menswear' as const }
+  const shop = await retailer('again', 'NZD', 'womenswear')
+  const local = { base_url: 'https://again.test', catalogue: 'womenswear' as const }
   const product = raw('Navy Overshirt', { S: { price: '200.00' }, M: { price: '200.00' } })
   const first = await writePage(sql, shop, [normaliseProduct(product, local)])
   assert.deepEqual(first, { new: 1, changed: 0, variants: 2, observations: 2 })
@@ -224,11 +224,11 @@ test('a second ingest of the same page writes observations only for what moved',
 })
 
 test('feed actions move the slot: save makes it a candidate, removing the save undoes it, buying fills it', async () => {
-  const shop = await retailer('actions', 'NZD', 'menswear')
+  const shop = await retailer('actions', 'NZD', 'womenswear')
   const knit = await slot({ name: 'Pine merino crewneck', garment_type: 'knitwear' })
   await writePage(sql, shop, [
-    normaliseProduct(raw('Pine Merino Crew', { S: { price: '200.00' } }), { base_url: 'https://actions.test', catalogue: 'menswear' }),
-    normaliseProduct(raw('Bottle Merino Crew', { S: { price: '220.00' } }), { base_url: 'https://actions.test', catalogue: 'menswear' }),
+    normaliseProduct(raw('Pine Merino Crew', { S: { price: '200.00' } }), { base_url: 'https://actions.test', catalogue: 'womenswear' }),
+    normaliseProduct(raw('Bottle Merino Crew', { S: { price: '220.00' } }), { base_url: 'https://actions.test', catalogue: 'womenswear' }),
   ])
   const pine = await productId('Pine Merino Crew')
   const bottle = await productId('Bottle Merino Crew')
@@ -267,7 +267,7 @@ test('finder settings round-trip; the shop switches survive a re-seed and come w
     country: 'NZ',
     currency: 'NZD',
     ships_to_nz: true,
-    catalogue: 'menswear',
+    catalogue: 'womenswear',
     enabled: true,
     wellington_store: null,
   }
@@ -289,7 +289,7 @@ test('finder settings round-trip; the shop switches survive a re-seed and come w
   await seedRetailers(sql, [{ ...seed, name: 'Seeded Again' }])
   assert.equal(await off(), false, 'the file updates the store but never switches it back on')
 
-  const local = { base_url: 'https://seeded.test', catalogue: 'menswear' as const }
+  const local = { base_url: 'https://seeded.test', catalogue: 'womenswear' as const }
   const seeded = (await listRetailers(sql)).find((retailer) => retailer.slug === 'seeded')!
   await writePage(sql, seeded.id, [normaliseProduct(raw('Seeded Tee', { S: { price: '50.00' } }), local)])
   const counts = await storeCounts(sql)
@@ -466,8 +466,8 @@ test('a Uniqlo link is read from its page, one product per colour, never walked 
 })
 
 test('Saved tracks his size: a drop, selling out and coming back are each news on the night they happen', async () => {
-  const shop = await retailer('tracked', 'NZD', 'menswear')
-  const local = { base_url: 'https://tracked.test', catalogue: 'menswear' as const }
+  const shop = await retailer('tracked', 'NZD', 'womenswear')
+  const local = { base_url: 'https://tracked.test', catalogue: 'womenswear' as const }
   const knit = await slot({ name: 'Rust lambswool crewneck', garment_type: 'knitwear', sizes: { labels: ['M'] } })
   const product = raw('Rust Lambswool Crew', { S: { price: '249.00' }, M: { price: '249.00' } })
   await writePage(sql, shop, [normaliseProduct(product, local)])

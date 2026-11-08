@@ -29,7 +29,7 @@ let sql: Sql
 let dir: string
 let shop: number
 
-const local = { base_url: 'https://photos.test', catalogue: 'menswear' as const }
+const local = { base_url: 'https://photos.test', catalogue: 'womenswear' as const }
 const shot = (n: number, v = 1) => `https://cdn.shopify.com/s/files/overshirt-${n}.jpg?v=${v}`
 
 /** The overshirt as the shop lists it, with its photos in the order given. */
@@ -78,7 +78,7 @@ before(async () => {
 
   const [row] = await sql<{ id: number }[]>`
     insert into retailers (slug, name, platform, base_url, country, currency, catalogue)
-    values ('photos', 'Photos', 'shopify', ${local.base_url}, 'NZ', 'NZD', 'menswear')
+    values ('photos', 'Photos', 'shopify', ${local.base_url}, 'NZ', 'NZD', 'womenswear')
     returning id::int as id
   `
   shop = row!.id

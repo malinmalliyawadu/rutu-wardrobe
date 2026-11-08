@@ -46,7 +46,7 @@ before(async () => {
   await saveGuide(guideFixture, { model: 'fixture', served_by: 'fixture', input_tokens: 0, output_tokens: 0, generated_at: new Date().toISOString() })
   const [row] = await sql<{ id: number }[]>`
     insert into retailers (slug, name, platform, base_url, country, currency, catalogue)
-    values ('shop', 'Shop', 'shopify', 'https://shop.test', 'NZ', 'NZD', 'menswear')
+    values ('shop', 'Shop', 'shopify', 'https://shop.test', 'NZ', 'NZD', 'womenswear')
     returning id::int as id
   `
   shopId = row!.id
@@ -155,7 +155,7 @@ function fakeShop(): PoliteClient {
 const noop = () => {}
 
 test('a search reads the request, filters in his size, judges the closest, and re-checks what it shows', async () => {
-  const local = { base_url: 'https://shop.test', catalogue: 'menswear' as const }
+  const local = { base_url: 'https://shop.test', catalogue: 'womenswear' as const }
   await writePage(sql, shopId, [wool, cord, olive, dear, small, tee].map((item) => normaliseProduct(item.feed, local)))
 
   const started = await startSearch('  a navy   overshirt under $300 ', sql)
@@ -215,7 +215,7 @@ test('a search stops at its limit, closest to his words first', async () => {
     sql,
   )
   // A new product that matches, so there are two to judge again.
-  await writePage(sql, shopId, [normaliseProduct(product('Navy Linen Overshirt', { M: { price: 190 } }).feed, { base_url: 'https://shop.test', catalogue: 'menswear' })])
+  await writePage(sql, shopId, [normaliseProduct(product('Navy Linen Overshirt', { M: { price: 190 } }).feed, { base_url: 'https://shop.test', catalogue: 'womenswear' })])
   const started = await startSearch('a navy wool overshirt', sql)
   assert.ok(started.ok)
   await runSearch(started.id, { sql, log: noop, read: fakeRead(read, 0.01), scoreOne: fakeScore, client: fakeShop() })
@@ -238,14 +238,14 @@ test('a request that is not clothing fails with the read’s own words, and cost
   const outcome = await runSearch(started.id, {
     sql,
     log: noop,
-    read: fakeRead({ ...read, understood: false, garment_type: null, problem: 'A phone is not clothing. Name a piece of menswear.' }),
+    read: fakeRead({ ...read, understood: false, garment_type: null, problem: 'A phone is not clothing. Name a piece of womenswear.' }),
     scoreOne: fakeScore,
     client: fakeShop(),
   })
   assert.equal(outcome, 'failed')
   const view = (await getSearch(started.id, sql))!
   assert.equal(view.status, 'failed')
-  assert.equal(view.error, 'A phone is not clothing. Name a piece of menswear.')
+  assert.equal(view.error, 'A phone is not clothing. Name a piece of womenswear.')
   assert.equal(view.usd, 0.004)
 })
 

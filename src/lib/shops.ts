@@ -9,7 +9,7 @@ import { SHOPS_PAGE_SIZE, type ShopQuery } from './shop-query.ts'
 import { GARMENT_TYPES, type GarmentType } from './wardrobe-values.ts'
 
 /*
- * Everything the finder read, for the Shops page: every menswear product
+ * Everything the finder read, for the Shops page: every womenswear product
  * still in stock at a store he has on, searchable, with what the finder made
  * of it. The feed on Today shows only what clears the bar for a slot; this is
  * where he finds what it passed over (too low a match, never shortlisted,
@@ -167,7 +167,7 @@ export async function searchShops(query: ShopQuery, sql: Sql = db()): Promise<Sh
       left join blueprint_slots b on b.id = s.slot_id
       left join finder_candidates c on c.run_id = ${run?.id ?? null} and c.product_id = p.id
       where p.removed_at is null
-        and p.menswear
+        and p.womenswear
         and (${query.kind}::text is null or p.garment_type = ${query.kind})
         and (${query.shop}::text is null or r.slug = ${query.shop})
         and (

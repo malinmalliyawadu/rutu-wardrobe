@@ -22,7 +22,7 @@ import {
 } from './try-on.ts'
 
 /*
- * A picture of a look without him: a menswear lookbook flat lay, drawn by
+ * A picture of a look without him: a womenswear lookbook flat lay, drawn by
  * OpenAI from his own photo of each piece, else the shop's photo, else the
  * piece's description. Made for the outfit of the day's option on show, with
  * no tap (Malin's ask, 2026-11-05; the photo rule in docs/plan.md 1.1 says
@@ -97,7 +97,7 @@ export function lookImagePrompt(look: { title: string; styling: string | null; p
         : `Images 1 to ${image} are photos of the pieces: his own, laid flat or on a hanger, or a shop's photo.`
   return [
     photos,
-    `Make a photograph of this whole outfit, "${look.title}", as a menswear lookbook flat lay, so a man can see how the pieces he owns look together. The pieces, from the outermost layer in:`,
+    `Make a photograph of this whole outfit, "${look.title}", as a womenswear lookbook flat lay, so a man can see how the pieces he owns look together. The pieces, from the outermost layer in:`,
     ...lines,
     look.styling ? `Lay it out the way it is worn: ${look.styling}` : null,
     'Arrange them as they would be worn, seen from directly above: the outer layer open over the top, the top above the trousers, the shoes at the foot, anything carried beside. Every piece whole and in frame, nothing overlapping so much that it is hidden.',

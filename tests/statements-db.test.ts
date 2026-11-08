@@ -69,7 +69,7 @@ function product(title: string, sizes: Record<string, string>, extra: object = {
     images: [{ src: `https://cdn.shopify.com/s/files/${id}.jpg?v=1` }],
     ...extra,
   })
-  return normaliseProduct(raw, { base_url: 'https://shop.test', catalogue: 'menswear' })
+  return normaliseProduct(raw, { base_url: 'https://shop.test', catalogue: 'womenswear' })
 }
 
 async function productId(title: string): Promise<number> {
@@ -95,7 +95,7 @@ const verdict = (fields: Partial<StatementOutput>): StatementOutput => ({
 test('the rules pick from everything read, the judge keeps one verdict a version, and the shelf shows the best', async () => {
   const [shop] = await sql<{ id: number }[]>`
     insert into retailers (slug, name, platform, base_url, country, currency, catalogue)
-    values ('shop', 'Shop', 'shopify', 'https://shop.test', 'NZ', 'NZD', 'menswear')
+    values ('shop', 'Shop', 'shopify', 'https://shop.test', 'NZ', 'NZD', 'womenswear')
     returning id::int as id
   `
   await writePage(sql, shop!.id, [

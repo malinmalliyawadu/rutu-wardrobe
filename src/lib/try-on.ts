@@ -460,7 +460,7 @@ export async function fetchProductImage(src: string, fetchImpl: typeof fetch = f
   let response: Response
   try {
     response = await fetchImpl(productImageUrl(src), {
-      headers: { 'user-agent': 'wardrobe/0.1 (personal menswear stylist)' },
+      headers: { 'user-agent': 'wardrobe/0.1 (personal womenswear stylist)' },
       signal: AbortSignal.timeout(30_000),
     })
   } catch {

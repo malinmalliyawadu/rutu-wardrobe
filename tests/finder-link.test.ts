@@ -58,7 +58,7 @@ test('the per-product endpoint reads as a products.json product: cents to dollar
   assert.equal(small.price, '179.00')
   assert.equal(small.available, true)
 
-  const stored = normaliseProduct(product, { base_url: 'https://www.countryroad.co.nz', catalogue: 'menswear' })
+  const stored = normaliseProduct(product, { base_url: 'https://www.countryroad.co.nz', catalogue: 'womenswear' })
   assert.equal(stored.url, 'https://www.countryroad.co.nz/products/cot-strap-knit-shirt-60321701')
   assert.equal(stored.garment_type, 'knitwear', 'a knit shirt is a knit')
   const s = stored.variants.find((variant) => variant.option_size === 'Small')!

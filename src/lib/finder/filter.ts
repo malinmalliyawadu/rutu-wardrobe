@@ -9,7 +9,7 @@ import { familiesOfColours } from './photo-colour.ts'
 
 /*
  * Stage 2: rules and SQL only, no Claude. A product is a candidate for a slot
- * when it is menswear, still in the feed, the same garment (and, for
+ * when it is womenswear, still in the feed, the same garment (and, for
  * accessories, the same kind), in stock in his size, inside the slot's budget
  * band in NZD, not dismissed or bought, from a store he has on, and not
  * plainly the wrong colour (see colour.ts). Slots that are wanted or already
@@ -203,7 +203,7 @@ async function matchInSql(sql: Sql, targets: SlotTarget[], rates: Rates, product
       join targets t on t.garment_type = p.garment_type and (t.kind is null or t.kind = p.garment_kind)
       join product_variants v on v.product_id = p.id and v.available and v.price_cents > 0
       where p.removed_at is null
-        and p.menswear
+        and p.womenswear
         and (${productIds}::bigint[] is null or p.id = any (${productIds}::bigint[]))
         and (t.sizes is null or v.size_key = any (t.sizes))
         and (t.max_cents is null or v.price_cents * x.rate <= t.max_cents)
