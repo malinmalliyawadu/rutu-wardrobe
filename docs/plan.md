@@ -71,6 +71,17 @@ finds he saved: his full-length photo goes with his photo of each piece, or
 the shop's photo, on his tap only, one image at a time. (Asked for by Malin on
 2026-11-04.)
 
+Pictures on Rutu's inspiration board (Style, Board) are a third kind:
+screenshots and photos of outfits she loves, or the picture a page she pastes
+a link to offers (its og:image, read through the finder's polite client).
+Each is stored like her other photos, without metadata, in the same private
+store, served only through `/photos/board/:id`, and goes to the Claude API
+(Sonnet) once, when she pins it, to be read into a few words. It goes nowhere
+else: the summary of her board is written from those words, not from the
+pictures, and only goes into her profile's taste when she taps "Add to my
+taste". Taking a pin off the board deletes its picture. (Asked for by Rutu
+on 2026-11-08.)
+
 The outfit of the day on Today has a picture of the outfit without him: a
 flat lay OpenAI draws from his own photo of each piece, else the shop's
 photo, else its description. This is the one place photos of his clothes go

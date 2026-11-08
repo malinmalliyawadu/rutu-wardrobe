@@ -63,7 +63,7 @@ test('a redraft keeps what Rutu wrote, edited, owns or has a candidate for', () 
   const base = { source: 'claude' as const, edited_at: null, status: 'wanted' as const }
   assert.equal(isKeptOnRedraft(base), false)
   assert.equal(isKeptOnRedraft({ ...base, status: 'retired' }), false)
-  assert.equal(isKeptOnRedraft({ ...base, source: 'malin' }), true)
+  assert.equal(isKeptOnRedraft({ ...base, source: 'own' }), true)
   assert.equal(isKeptOnRedraft({ ...base, edited_at: new Date() }), true)
   assert.equal(isKeptOnRedraft({ ...base, status: 'owned' }), true)
   assert.equal(isKeptOnRedraft({ ...base, status: 'candidate' }), true)

@@ -76,7 +76,7 @@ export type Slot = {
   budget_min_cents: number | null
   budget_max_cents: number | null
   status: SlotStatus
-  source: 'claude' | 'malin'
+  source: 'claude' | 'own'
   edited_at: Date | null
   replaces_id: number | null
   /** Set on a retired slot once a refill has taken its place. */
@@ -260,7 +260,7 @@ export function sortDrafts(slots: SlotDraft[]): SlotDraft[] {
  * retired slots) is replaced.
  */
 export function isKeptOnRedraft(slot: Pick<Slot, 'source' | 'edited_at' | 'status'>): boolean {
-  return slot.source === 'malin' || slot.edited_at !== null || slot.status === 'owned' || slot.status === 'candidate'
+  return slot.source === 'own' || slot.edited_at !== null || slot.status === 'owned' || slot.status === 'candidate'
 }
 
 // ---------------------------------------------------------------------------
@@ -295,7 +295,7 @@ export async function getSlot(id: number): Promise<Slot | null> {
   return slot ?? null
 }
 
-function insertRow(slot: SlotDraft, position: number, source: 'claude' | 'malin', replacesId: number | null = null) {
+function insertRow(slot: SlotDraft, position: number, source: 'claude' | 'own', replacesId: number | null = null) {
   return {
     position,
     name: slot.name,
@@ -388,7 +388,7 @@ export async function createSlot(values: SlotValues): Promise<number> {
     const [{ max } = { max: 0 }] = await sql<{ max: number }[]>`
       select coalesce(max(position), 0)::int as max from blueprint_slots
     `
-    const row = { ...valuesRow(values), status: values.status ?? 'wanted', position: max + 1, source: 'malin' }
+    const row = { ...valuesRow(values), status: values.status ?? 'wanted', position: max + 1, source: 'own' }
     const [inserted] = await sql<{ id: number }[]>`insert into blueprint_slots ${sql(row)} returning id::int as id`
     if (!inserted) throw new Error('slot insert returned nothing')
     // "I already own this" makes it a piece in the wardrobe.

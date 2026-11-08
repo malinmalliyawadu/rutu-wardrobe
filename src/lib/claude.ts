@@ -18,6 +18,7 @@ export const MODELS = {
   profile: OPUS,
   scoring: SONNET,
   piece: SONNET,
+  board: SONNET,
   cut: SONNET,
   looks: OPUS,
   day: OPUS,

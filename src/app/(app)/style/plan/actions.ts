@@ -23,27 +23,21 @@ import {
 import { text } from '@/lib/form-parse'
 import { getProfile } from '@/lib/profile'
 import { GenerationError } from '@/lib/structured'
-import {
-  StyleGuideError,
-  draftGuide,
-  getGuide,
-  isRuleSection,
-  parseFitsForm,
-  parsePaletteForm,
-  parseSectionForm,
-  saveFits,
-  saveGuide,
-  savePalette,
-  saveSection,
-} from '@/lib/style-guide'
+import { StyleGuideError, getGuide } from '@/lib/style-guide'
 import { SLOT_STATUSES, type SlotStatus } from '@/lib/wardrobe-values'
 
-/** Every mutation touches Today, the hub and the blueprint, so refresh the tree. */
+/*
+ * The plan's actions (the blueprint in the library): drafting and redrafting
+ * it, refilling a retired slot, and a slot's own edits. The guide's actions
+ * live beside the palette.
+ */
+
+/** Every mutation touches Today, the closet and the plan, so refresh the tree. */
 function refreshAll(): void {
   revalidatePath('/', 'layout')
 }
 
-/** Errors a person can act on become a message; anything else is a bug and throws. */
+/** Errors she can act on become a message; anything else is a bug and throws. */
 function expected(error: unknown): string | null {
   if (error instanceof GenerationError || error instanceof StyleGuideError || error instanceof BlueprintError) {
     return error.message
@@ -61,58 +55,11 @@ function note(form: FormData): string | null {
   return value ? value.slice(0, 1000) : null
 }
 
-// ---------------------------------------------------------------------------
-// Style guide
-// ---------------------------------------------------------------------------
-
-export async function generateGuide(): Promise<ActionState> {
-  try {
-    const { guide, meta } = await draftGuide(await getProfile())
-    await saveGuide(guide, meta)
-  } catch (error) {
-    const message = expected(error)
-    if (message) return { ok: false, message }
-    throw error
-  }
-  refreshAll()
-  redirect('/blueprint/guide')
-}
-
-export async function submitPalette(_prev: ActionState, form: FormData): Promise<ActionState> {
-  const parsed = parsePaletteForm(form)
-  if (!parsed.ok) return { ok: false, errors: parsed.errors, values: echo(form) }
-  await savePalette(parsed.data)
-  refreshAll()
-  redirect('/blueprint/guide')
-}
-
-export async function submitSection(_prev: ActionState, form: FormData): Promise<ActionState> {
-  const section = text(form, 'section') ?? ''
-  if (!isRuleSection(section)) return { ok: false, message: 'Unknown section.' }
-  const parsed = parseSectionForm(form)
-  if (!parsed.ok) return { ok: false, errors: parsed.errors, values: echo(form) }
-  await saveSection(section, parsed.data)
-  refreshAll()
-  redirect('/blueprint/guide')
-}
-
-export async function submitFits(_prev: ActionState, form: FormData): Promise<ActionState> {
-  const parsed = parseFitsForm(form)
-  if (!parsed.ok) return { ok: false, errors: parsed.errors, values: echo(form) }
-  await saveFits(parsed.data)
-  refreshAll()
-  redirect('/blueprint/guide')
-}
-
-// ---------------------------------------------------------------------------
-// Blueprint
-// ---------------------------------------------------------------------------
-
 /** First draft and redraft are the same call: the kept slots are passed in. */
-export async function draftBlueprint(_prev: ActionState, form: FormData): Promise<ActionState> {
+export async function draftPlan(_prev: ActionState, form: FormData): Promise<ActionState> {
   try {
     const [profile, guide, slots] = await Promise.all([getProfile(), getGuide(), listSlots()])
-    if (!guide) return { ok: false, message: 'Draft your style guide first. The blueprint is built from it.' }
+    if (!guide) return { ok: false, message: 'Draft your palette first. The plan is built from it.' }
     const kept = slots.filter(isKeptOnRedraft)
     const { slots: drafts } = await draftSlots(profile, guide, kept, note(form))
     await replaceDraft(drafts)
@@ -122,18 +69,18 @@ export async function draftBlueprint(_prev: ActionState, form: FormData): Promis
     throw error
   }
   refreshAll()
-  redirect('/blueprint')
+  redirect('/style/plan')
 }
 
 export async function refillSlot(_prev: ActionState, form: FormData): Promise<ActionState> {
   const slotId = id(form)
-  if (!slotId) return { ok: false, message: 'Unknown slot.' }
+  if (!slotId) return { ok: false, message: 'That piece is not in the plan any more.' }
   let newId: number
   try {
     const [profile, guide, retired, slots] = await Promise.all([getProfile(), getGuide(), getSlot(slotId), listSlots()])
-    if (!guide) return { ok: false, message: 'Draft your style guide first.' }
-    if (!retired || retired.status !== 'retired') return { ok: false, message: 'Only a retired slot can be refilled.' }
-    if (retired.refilled_by) return { ok: false, message: 'This slot has already been refilled.' }
+    if (!guide) return { ok: false, message: 'Draft your palette first.' }
+    if (!retired || retired.status !== 'retired') return { ok: false, message: 'Only a retired piece can be refilled.' }
+    if (retired.refilled_by) return { ok: false, message: 'Something already took its place.' }
     const others = slots.filter((slot) => slot.id !== slotId && slot.status !== 'retired')
     const { slot } = await draftRefill(profile, guide, retired, others, note(form))
     newId = await insertRefill(retired, slot)
@@ -143,7 +90,7 @@ export async function refillSlot(_prev: ActionState, form: FormData): Promise<Ac
     throw error
   }
   refreshAll()
-  redirect(`/blueprint/${newId}`)
+  redirect(`/style/plan/${newId}`)
 }
 
 export async function submitSlot(_prev: ActionState, form: FormData): Promise<ActionState> {
@@ -153,7 +100,7 @@ export async function submitSlot(_prev: ActionState, form: FormData): Promise<Ac
   if (slotId) await updateSlot(slotId, parsed.data)
   else await createSlot(parsed.data)
   refreshAll()
-  redirect('/blueprint')
+  redirect(slotId ? `/style/plan/${slotId}` : '/style/plan')
 }
 
 export async function changeStatus(form: FormData): Promise<void> {
@@ -176,5 +123,5 @@ export async function removeSlot(form: FormData): Promise<void> {
   const slotId = id(form)
   if (slotId) await deleteSlot(slotId)
   refreshAll()
-  redirect('/blueprint')
+  redirect('/style/plan')
 }
