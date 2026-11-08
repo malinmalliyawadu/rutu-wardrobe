@@ -109,5 +109,5 @@ container. Only one run goes at a time: a run that finds another going logs
 
 - Sign in at the domain. `/api/health` (signed in) says ok for the database,
   Claude and Photos (`R2 bucket rutu-wardrobe-photos is writable`).
-- On her iPhone, in Safari: **Share → Add to Home Screen**. It opens as Rutu,
+- On her iPhone, in Safari: **Share → Add to Home Screen**. It opens as Dressing room,
   with the mirror as its icon, signed in.

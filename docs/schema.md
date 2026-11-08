@@ -2,7 +2,9 @@
 
 The contract is `db/migrations/*.sql`, applied in order by `scripts/migrate.ts`.
 This file records the reasoning. Applied migrations are never edited; a change
-is a new file.
+is a new file. Migrations 0001 to 0022 are the history of Malin's menswear app
+this one started from, and the reasoning below was written for it ("he" is
+Malin); 0023 onwards are Rutu's, described under "For Rutu" at the end.
 
 ## Shape
 
@@ -36,6 +38,8 @@ Three layers, each derived from the one above, then the finder's tables.
 | `searches` | one per search on the Search tab | What he typed, what it was read as, its limit, what it spent |
 | `search_results` | up to 150 a search | The products a search offered Claude, in order, each with its verdict and a re-checked price |
 | `statement_candidates` | hundreds a run | What the statement rules picked in a run, with the signals that picked it and the price and sizes in his size |
+| `board_pins` | tens | Her inspiration board: a picture she pinned or a page she linked to (and its picture), its note, Claude's read of it, what the read cost |
+| `board_summaries` | one per summary she asks for | What her board says: the summary, its threads, lines for references and no-gos, the pins it was written from, cost, and when she added it to her taste |
 | `statement_scores` | one per product version | Claude's verdict on a product as a statement piece for him: score, what makes it one, the colour, the why, the pieces it wears with, tokens and cost |
 
 ## Decisions
@@ -235,9 +239,30 @@ size the run found in his size. `finder_settings.max_usd_statements` is the
 nightly cap, and a run's `stats.usd` is both stages together, so the month
 counts it.
 
+## For Rutu
+
+**0023 womenswear.** The garment type check on slots, products and pieces
+takes the womenswear list (dress, jumpsuit, skirt, top, flats, heels,
+sandals, jewellery among them; polo and overshirt gone, shoes renamed flats),
+moving any old rows across. `products.menswear` became `womenswear` and was
+cleared, since every product is reclassified at the next ingest; a store's
+`catalogue` is `womenswear` or `mixed`. `profile.build` reads slim, athletic,
+curvy or full, and `profile.waist_definition` is new. The Rodd & Gunn
+platform went with its adapter. Sizes, fits and budget stay jsonb on the
+profile, shaped by zod in `src/lib/profile.ts`, so they needed no column.
+
+**0025 board.** `board_pins.kind` is `photo` or `link`, and a link pin is
+exactly one with a `source_url` (a check). The picture is stored like every
+other photo, keyed by its hash, so pinning the same picture twice finds the
+first. `read` is jsonb: Claude's structured read, or `{failure}` when it could
+not be read, plus the model and tokens. A summary keeps the ids of the pins it
+was written from, so the board can say when pins have been added since.
+
+**0026 own slots.** A slot she added or wrote herself was source `malin`; it
+is `own`.
+
 ## Expected growth
 
-Reading the men's collections, the eleven stores came to 29,048 products and
-157,442 variants on the first ingest (2026-11-04), END. alone 19,857 and
-116,016. Nightly deltas are hundreds. Nothing here needs partitioning for
-years.
+Her sixteen switched-on shops came to 18,933 products on the first ingest
+(2026-11-08), Superette alone 4,999. Nightly deltas are hundreds. Nothing here
+needs partitioning for years.

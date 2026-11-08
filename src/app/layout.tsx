@@ -29,13 +29,13 @@ const hanken = localFont({
 
 export const metadata: Metadata = {
   title: {
-    default: 'Rutu',
-    template: '%s, Rutu',
+    default: 'Dressing room',
+    template: '%s, Dressing room',
   },
-  description: 'A personal stylist that learns what suits Rutu and finds it in Wellington and online.',
+  description: 'A personal stylist that learns what suits you and finds it in Wellington and online.',
   appleWebApp: {
     capable: true,
-    title: 'Rutu',
+    title: 'Dressing room',
     statusBarStyle: 'default',
   },
 }

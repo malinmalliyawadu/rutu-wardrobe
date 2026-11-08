@@ -69,7 +69,7 @@ describe('a page and its picture', () => {
     </head><body></body></html>`
     assert.deepEqual(pageMeta(html, page), {
       image: 'https://shop.example.com/images/coat.jpg?w=1200&h=1600',
-      title: 'Camel wrap coat – Shop',
+      title: 'Camel wrap coat \u2013 Shop',
     })
   })
 

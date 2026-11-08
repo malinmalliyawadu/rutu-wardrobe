@@ -41,7 +41,10 @@ title (`SectionChips`).
 | Style | `/style` | Board (`/style`), Palette (`/style/palette`), Plan (`/style/plan`) | What she loves and what suits her. The board is her inspiration: pictures and links of outfits she loves, read by Claude into her taste. The palette is her style guide (colours, shapes, fits; sections edited at `/style/palette/[section]`). The plan is what to own by priority (a slot `/style/plan/[id]`, a new one `/style/plan/new`). |
 | Me | `/me` | none (a hub of rows) | Her profile, edited rarely: photos (`/me/photos`), colouring and proportions (`/me/colouring`), sizes (`/me/sizes`), her week (`/me/week`), taste (`/me/taste`), budget (`/me/budget`), and the finder's spend and shops (`/me/finder`). |
 
-Sign-in is `/login`, outside the frame.
+Sign-in is `/login`, outside the frame. It is the one page a stranger can
+reach, so it names no one: the public name (the page title, the home-screen
+name in the manifest) is "Dressing room", and "Rutu" appears only inside,
+as the wordmark.
 
 ## Material
 

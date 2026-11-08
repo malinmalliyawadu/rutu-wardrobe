@@ -9,9 +9,9 @@ import type { MetadataRoute } from 'next'
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: '/',
-    name: 'Rutu',
-    short_name: 'Rutu',
-    description: 'A personal stylist that learns what suits Rutu and finds it in Wellington and online.',
+    name: 'Dressing room',
+    short_name: 'Dressing',
+    description: 'A personal stylist that learns what suits you and finds it in Wellington and online.',
     start_url: '/',
     scope: '/',
     display: 'standalone',

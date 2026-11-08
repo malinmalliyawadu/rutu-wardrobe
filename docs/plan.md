@@ -1,31 +1,42 @@
-# Wardrobe - personal styling app
+# Rutu - personal styling app
 
-Working title only. Pick a real name before M0 (the folder can be renamed then).
+Rutu's personal stylist: it learns what suits her (colouring, proportions,
+sizes, life in Wellington), keeps a board of the outfits she loves, turns all
+of that into a concrete plan of what to own, dresses her each morning from her
+own closet, and every night finds real pieces from NZ and ships-to-NZ
+womenswear shops that fill a slot in that plan. Single user, on her phone and
+her laptop.
 
-Malin's personal stylist: it learns what suits him (colouring, proportions,
-sizes, life in Wellington), turns that into a concrete wardrobe blueprint, and
-every night finds real products from NZ and ships-to-NZ menswear retailers that
-fill a slot in that blueprint. Single user. Mobile-first web app.
+## 0. Where it came from
 
-Decisions made on 2026-11-04:
+Built on 2026-11-08 from Malin's menswear wardrobe app, asked for by Malin as
+a gift for Rutu, his fiancee. The machinery is his (section 3 is its history);
+four things are new:
 
-- Mobile-first web app, not native. Next.js App Router + TypeScript +
-  `postgres.js` (no ORM), Tailwind 4, Dockerised on Coolify with plain Postgres,
-  the nightly finder as a Coolify scheduled task running a CLI. Same shape as
-  finance-tracker so the operational knowledge carries over.
-- Profile comes from photos analysed by Claude, then confirmed or corrected by
-  Malin. Measurements and sizes are typed in.
-- Sourcing covers menswear retailers (NZ, with Wellington stores flagged) and
-  global retailers that ship to NZ. No womenswear, no secondhand for now.
-- Daily in-app feed, no email. The finder runs nightly.
+- **Womenswear throughout.** Garments (dresses, jumpsuits, skirts, tops,
+  flats, heels, sandals, jewellery), AU/NZ women's sizes with US, EU and IT
+  numbers read into them, jeans by the waist, shoes in EU and AU; the read
+  adds waist definition; a whole look is a top and a bottom or a dress, plus
+  shoes; every Claude and OpenAI prompt is written for a womenswear stylist
+  dressing her (migration 0023, `src/lib/finder/classify.ts`,
+  `src/lib/look-rules.ts`, `src/lib/warmth.ts`).
+- **Her shops.** Sixteen NZ womenswear shops read nightly, four Australian or
+  international ones and ten more NZ ones she can switch on, Uniqlo and
+  Lululemon as links only (`data/retailers.json`, with what was probed and
+  what was blocked).
+- **Her inspiration board** under Style: pictures and links of outfits she
+  loves, each read by Claude once, summed up into her taste on her tap
+  (migration 0025, `src/lib/board.ts`).
+- **A complete redesign**, information architecture included: see
+  `docs/design.md`.
 
 ## 1. The model
 
 Three layers, each derived from the one above it. The finder never matches
 products against a vague "your style"; it matches them against named slots in
-a blueprint. That is what makes every recommendation explainable ("fills your
-'dark brown suede chukka' slot, warm mid-brown sits in your palette, 42 EU in
-stock at Good As Gold on Victoria St").
+a plan. That is what makes every recommendation explainable ("fills your
+'tan leather slingback' slot, warm mid-brown sits in your palette, 38 EU in
+stock at Mi Piaci on Willis St").
 
 ### 1.1 Profile (who you are)
 
@@ -33,45 +44,41 @@ Captured once, edited rarely.
 
 | Group | Fields | Source |
 |---|---|---|
-| Colouring | undertone (warm / cool / neutral / olive), skin depth, hair colour and texture, eye colour, overall contrast (low / medium / high), 12-season palette placement with confidence | Claude vision over 2 to 4 photos, confirmed by Malin |
-| Proportions | height, shoulder vs hip, torso vs leg ratio, neck length, build (slim / athletic / broad) | height typed; the rest from a full-length photo, confirmed |
-| Sizes | chest, waist, inseam, sleeve, neck, shoe (EU / UK / US), preferred fit per garment type (e.g. relaxed trousers, fitted knit) | typed |
-| Life | climate (Wellington: wind, rain, mild, layers year round), contexts with rough weekly split (contract office work, gym 4x, running, weekends, dinners out), travel | typed, short form |
-| Taste | 6 to 10 reference images or brands he likes, hard no-gos (logos, skinny fit, whatever), owned staples he is happy with | typed and uploaded |
-| Budget | per-category ceiling (tees, knits, outerwear, shoes, accessories) and an overall monthly figure | typed |
+| Colouring | undertone (warm / cool / neutral / olive), skin depth, hair colour and texture, eye colour, overall contrast (low / medium / high), 12-season palette placement with confidence | Claude vision over 2 to 4 photos, confirmed by Rutu |
+| Proportions | height, build (slim / athletic / curvy / full), waist definition (defined / moderate / straight), shoulder vs hip, torso vs leg, neck length | height typed; the rest from a full-length photo, confirmed |
+| Sizes | letter size, AU/NZ dress size, jeans waist, bust, waist, hips, inseam, shoe (EU and AU), preferred fit for tops, knits, dresses, bottoms and outerwear | typed |
+| Life | the days she works, trains (which days), runs and goes out, travel, notes | typed, short form |
+| Taste | references, no-gos, staples she is happy with; her board's summary adds to it on her tap | typed, and from the board |
+| Budget | per-category ceiling (tops, knits, dresses, bottoms, outerwear, shoes, bags, jewellery, accessories) and a monthly figure | typed |
 
 Photos are sensitive. They live in a private Cloudflare R2 bucket, never in
 the database and never public: the bucket has no public address, the app
 reads it with its own key, and the app's sign-in is the only way to see one.
-R2 stores them encrypted and does nothing else with them. (Moved there from a
-Coolify volume by Malin's call on 2026-11-07, so photos do not fill the
-server.) One is sent to the Claude API for the analysis call. One full-length photo is
-sent to the OpenAI Images API only for a try-on Malin asks for, one find at a
-time, together with the product's own image. OpenAI does not train on API data.
-It keeps the request and the result in abuse-monitoring logs for up to 30 days,
-processed in the US, and they cannot be deleted sooner without a
-zero-data-retention agreement. Results are stored with the photos, and
-"delete photos" removes them with the photos. The Anthropic API does not train
-on API traffic either. The profile page has a "delete photos, keep the derived
-profile" action. (Agreed with Malin on 2026-11-04, with OpenAI as the try-on
-provider; see M3.5.)
+R2 stores them encrypted and does nothing else with them. One is sent to the
+Claude API for the analysis call. One full-length photo is sent to the OpenAI
+Images API only for a try-on Rutu asks for, one at a time, together with the
+garment's own image. OpenAI does not train on API data. It keeps the request
+and the result in abuse-monitoring logs for up to 30 days, processed in the
+US, and they cannot be deleted sooner without a zero-data-retention agreement.
+Results are stored with the photos, and "delete photos" removes them with the
+photos. The Anthropic API does not train on API traffic either. The photos
+page has a "delete photos, keep the derived profile" action. (The rule Malin
+agreed for his app on 2026-11-04, carried across; Rutu should read and agree
+to it before her first photo goes up.)
 
-Photos of his clothes (the wardrobe, M5) are a second kind: not of him. Each
-is stored like his photos, without metadata, served only through the app, and
-goes to the Claude API (Sonnet) once, when he adds the piece, to fill in the
-form he checks. Looks are made from the pieces' words, not their photos.
-"Delete photos" stays for photos of him; a clothing photo goes with its piece.
-(Agreed with Malin on 2026-11-04.) The one other place a clothing photo goes:
-"See it on me" on a look sends his full-length photo to OpenAI with the photos
-of that look's pieces (or the shop's photo for a piece he never
-photographed), only when he taps it, one image at a time, under the same terms
-as a find's try-on. (Asked for by Malin on 2026-11-04.) The same holds for
-pieces he chooses himself on the On me page, any mix of his pieces and the
-finds he saved: his full-length photo goes with his photo of each piece, or
-the shop's photo, on his tap only, one image at a time. (Asked for by Malin on
-2026-11-04.)
+Photos of her clothes (the closet) are a second kind: not of her. Each is
+stored like her photos, without metadata, served only through the app, and
+goes to the Claude API (Sonnet) once, when she adds the piece, to fill in the
+form she checks. Looks are made from the pieces' words, not their photos.
+"Delete photos" stays for photos of her; a clothing photo goes with its piece.
+The one other place a clothing photo goes: "See it on me" on a look sends her
+full-length photo to OpenAI with the photos of that look's pieces (or the
+shop's photo for a piece she never photographed), only when she taps it, one
+image at a time, under the same terms as a find's try-on. The same holds for
+pieces she chooses herself under Try-ons, any mix of her pieces and the finds
+she saved.
 
-Pictures on Rutu's inspiration board (Style, Board) are a third kind:
+Pictures on her inspiration board (Style, Board) are a third kind:
 screenshots and photos of outfits she loves, or the picture a page she pastes
 a link to offers (its og:image, read through the finder's polite client).
 Each is stored like her other photos, without metadata, in the same private
@@ -79,161 +86,111 @@ store, served only through `/photos/board/:id`, and goes to the Claude API
 (Sonnet) once, when she pins it, to be read into a few words. It goes nowhere
 else: the summary of her board is written from those words, not from the
 pictures, and only goes into her profile's taste when she taps "Add to my
-taste". Taking a pin off the board deletes its picture. (Asked for by Rutu
-on 2026-11-08.)
+taste". Taking a pin off the board deletes its picture.
 
-The outfit of the day on Today has a picture of the outfit without him: a
-flat lay OpenAI draws from his own photo of each piece, else the shop's
-photo, else its description. This is the one place photos of his clothes go
+The outfit of the day on Today has a picture of the outfit without her: a
+flat lay OpenAI draws from her own photo of each piece, else the shop's
+photo, else its description. This is the one place photos of her clothes go
 to OpenAI without a tap: once a day for the option on show, and once more for
-each other option he turns to, one picture per look, kept until the look's
-pieces or their photos change. His own photo is never part of it; he is in a
-picture only through "See it on me", on his tap. (Asked for by Malin on
-2026-11-05.)
+each other option she turns to, one picture per look, kept until the look's
+pieces or their photos change. Her own photo is never part of it; she is in a
+picture only through "See it on me", on her tap.
 
 ### 1.2 Style guide (what suits you)
 
-Generated by Claude from the profile, then editable. Persisted as structured
-data, not prose, so the finder can use it.
+Generated by Claude from the profile, then editable (Style, Palette).
+Persisted as structured data, not prose, so the finder can use it.
 
-- Colour: best colours (hex plus names), best neutrals, colours to avoid, and
-  the metal tone for hardware and accessories (silver vs gold vs mixed follows
-  undertone).
-- Silhouette and proportion rules written for his height and build: rise,
-  hem break, jacket length, where to put visual weight, pattern scale, fabric
-  weight.
-- Shoe guidance: shapes and heights that work with the trouser rules.
-- Accessories: watch size, bag scale, glasses frame guidance, scarves and hats
-  for Wellington wind.
-- Fit vocabulary per garment type, used to filter retailer fits (slim / regular
+- Colour: best colours (hex plus names), best neutrals, colours to keep away
+  from her face, and the metal for jewellery and hardware (gold, silver or
+  mixed, following undertone).
+- Silhouette and proportion rules written for her height, build and waist:
+  necklines, where the waist sits, hem lengths against the knee and calf,
+  where to put visual weight, pattern scale, fabric weight and drape.
+- Shoes: shapes and heel heights that work with the hems, and with
+  Wellington's hills.
+- Accessories: bag scale, jewellery scale and metal, scarves and hats for the
+  wind.
+- Fit vocabulary per garment type, used to filter shop fits (fitted / regular
   / relaxed / oversized).
 
-### 1.3 Blueprint (what to own)
+### 1.3 Plan (what to own)
 
-The core artefact. Roughly 30 to 40 slots, each a specific archetype item with
-a why, a priority, a budget band and a status.
+The core artefact (Style, Plan; `blueprint` in the code and the database).
+Roughly 30 to 40 slots, each a specific archetype piece with a why, a
+priority, a budget band and a status.
 
-Example slot: "Navy unstructured wool overshirt. Why: your best neutral,
-layers over tees for 9 months of Wellington weather, the unstructured shoulder
-suits a broad frame. Priority 1. Budget $250 to $450. Status: wanted."
+Example slot: "Camel wool wrap coat. Why: your best neutral, over everything
+from a slip dress to jeans for eight months of Wellington weather, and the
+wrap marks your waist. Priority 1. Budget $350 to $650. Status: wanted."
 
 Slot statuses: wanted, saved candidate, owned, retired. Slots carry the
 colour family, garment type, fabric preferences, fit, and the sizes to look
-for, all of which the finder reads. Malin can add, edit, reorder and delete
-slots; Claude proposes the first draft and can propose refills when a slot
-becomes owned.
+for, all of which the finder reads. Rutu can add, edit, reorder and delete
+slots (her own are kept through a redraft); Claude proposes the first draft
+and refills a slot when it is retired.
 
 ## 2. The finder
 
-Nightly CLI (`scripts/find.ts`) with four stages. Stages 1 and 2 are
-deterministic and free. Stage 3 costs Claude tokens and only runs on new or
-changed products. Stage 4, statement pieces (added 2026-11-05, see the build
-sequence), is free rules then Claude, on its own nightly cap.
+Nightly CLI (`scripts/find.ts`) with four stages. Ingest and filter are rules
+and free. Scoring costs Claude tokens and only runs on new or changed
+products. Statement pieces are free rules then Claude, on their own nightly
+cap.
 
 ### 2.1 Ingest
 
-Retailer adapters normalise products into one table: retailer, external id,
-title, vendor, product type, tags, description, images, variants (size, colour,
-price, compare-at price, availability), URL, first seen, last seen, content
-hash.
-
 Shopify storefronts expose `/products.json?limit=250&page=N` publicly, no key.
-Probed on 2026-11-04:
+One generic Shopify adapter reads every store in `data/retailers.json`; the
+notes there say what was probed on 2026-11-08 and which shops were blocked
+(Glassons, Number One Shoes and Taylor answer a bot wall; Witchery's feed is
+empty; Paris Georgia, Lonely and Wynn Hamlyn have none; Mollini, Trelise
+Cooper and Andrea Moore are not Shopify). Uniqlo (AU and US) is read one
+product at a time from a link she pastes, and Lululemon is added by hand.
 
-| Store | Shopify feed | Wellington store |
-|---|---|---|
-| Barkers | yes | yes (342 Lambton Quay; also 82 Cuba St) |
-| I Love Ugly | yes | yes (3/115 Victoria St; also Old Bank Arcade) |
-| Good As Gold | yes | yes (20 Bond St, Te Aro) |
-| Country Road NZ | yes | not listed on its own site |
-| Workshop | yes | yes (cnr Customhouse Quay and Hunter St) |
-| Huffer | yes | yes (60 Cuba St) |
-| Crane Brothers | yes | no (Auckland) |
-| Checks Downtown | yes | no (Auckland only) |
-| Commoners | yes | no (stockists only) |
-| Area 51 | yes | yes (49 Dixon St) |
-| END. (UK, ships to NZ) | yes | no |
-| Patagonia NZ (added 2026-11-05) | yes | not readable (locator drawn by script) |
-| Bronze Snake (AU, ships to NZ; added 2026-11-07) | yes | no (Australia only) |
-| LSKD (AU, ships to NZ; added 2026-11-07) | yes, whole catalogue only (robots.txt disallows collection feeds); links only | not checked |
-| Hallensteins | no (406) | yes |
-| Rodd & Gunn (added 2026-11-05) | no (410); links only | yes (46 Willis St) |
-| THE ICONIC | no | no |
-| Uniqlo AU | no | no |
-| Lululemon NZ | no (Cloudflare 403); added by hand | not checked |
-| ASOS | no | no |
-| Mr Porter | no (403) | no |
+Shopify limits `/products.json` per client address across every Shopify
+shop, so the finder reads stores one after another, one request a second,
+with a real User-Agent that names the app and each store's robots.txt read
+once a run and respected. The first full read, on 2026-11-08: sixteen shops,
+about 19,000 products, three minutes, no limits hit.
 
-One generic Shopify adapter covers the Shopify stores above and any other
-Shopify store Malin pastes a URL for. Non-Shopify stores need a per-retailer
-adapter each. Rodd & Gunn (Salesforce Commerce Cloud) has one since
-2026-11-05, asked for by Malin, for links only (`src/lib/finder/rodd-and-gunn.ts`,
-migration 0019): its product pages are allowed by robots.txt and answer the
-finder's own User-Agent, and each carries the price, the usual price, the
-photos and stock per size. Walking it was built first and dropped: the
-catalogue is a page per colour (about 2,540 in the NZ sitemap) and the
-paginated grids are disallowed, so a whole read takes most of an hour at a
-page a second, and Malin chose pasting links over reading it a slice a
-night. A colour's leg lengths (each its own page) are stored as one product,
-sizes named with their length.
-
-THE ICONIC, Uniqlo and Hallensteins were researched in M5 and are not read
-(THE ICONIC's terms forbid robots, Uniqlo does not sell to NZ, Hallensteins
-by Malin's choice; see M5 below). Lululemon NZ (Salesforce Commerce Cloud)
-answers everything but robots.txt with a Cloudflare challenge, and its
-affiliate feed on Commission Factory needs a public site to promote it from,
-so since 2026-11-05 it is a store added by hand (platform `manual`, migration
-0012): a Lululemon link pasted on Saved opens fields for its photo, name,
-kind, price, colour and size, and the price is never checked. The Wellington stores above were first written from memory and
-verified on each retailer's own site on 2026-11-04 (M4); each one's page is
-the `source` in `data/retailers.json`.
-
-Ingest is polite: one request per second per host, a real User-Agent that names
-the app, and the robots.txt of each store checked once and respected.
+No Wellington store is shown as "try on at" until its address is checked on
+the shop's own site (`verified` in the file); the ones written in from the
+research are unverified.
 
 ### 2.2 Filter
 
-Cheap SQL and rules: menswear only (product type, tags, vendor collections),
-in stock in one of Malin's sizes, within the slot's budget band, not previously
-dismissed, garment type compatible with at least one wanted slot. This usually
-cuts a few thousand products a night to a few hundred candidates.
+Cheap SQL and rules: womenswear only (from the store's catalogue, its
+collections, product type, tags and title), in stock in one of Rutu's sizes,
+within the slot's budget band, not previously dismissed, the same garment
+type (and for jewellery and accessories the same kind), and not plainly the
+wrong colour.
 
 ### 2.3 Score
 
-For each candidate, Claude receives the main product image, the normalised
-product data, the style guide, and the compatible slots. It returns structured
-JSON: best slot (or none), colour verdict against the palette, fit and
-proportion verdict, fabric and quality notes, a 0 to 100 match score, and a
-one-sentence why written for Malin. Below a threshold the product is not shown.
+For each candidate, Sonnet receives the main product image, the normalised
+product data, the style guide and the compatible slots, and returns a best
+slot (or none), colour and proportion verdicts, a 0 to 100 match score, and a
+one-sentence why written for her. Below a threshold the product is not shown.
+The spend is capped per night and per month under Me, Finder.
 
-Model split: Sonnet for scoring (volume, cheap), the top model for the one-off
-profile analysis and blueprint drafting (quality matters, runs rarely). Load
-the `claude-api` skill before writing any of this code.
+### 2.4 Shop
 
-Rough cost shape, planned before M3:
+New finds grouped by plan slot, best match first. Each card: the shop's
+photo, the shop, the price in NZD (converted for AUD and USD with a note that
+duty and shipping are extra), the why, the sizes in stock, and for a verified
+Wellington store a "try on at" line. Actions: save, "See it on me", not for
+me with a one-tap reason (the colour, the fit, the price, not my thing), and
+bought it (fills the slot and becomes a piece in her closet). Dismiss reasons
+go to the scorer next run. Saved finds are re-checked nightly for price drops
+and stock changes, and the wishlist says what changed.
 
-| Run | Products scored | Approximate cost |
-|---|---|---|
-| First full pass | 3,000 to 5,000 | $15 to $40 |
-| Nightly delta | 100 to 400 | under $2 |
+## 3. Build history (Malin's app, carried across)
 
-Measured in M3 (first real pass, 2026-11-04): see "M3 first pass" under the
-build sequence below.
-
-### 2.4 Feed
-
-Grouped by blueprint slot, best match first. Each card: image, retailer,
-price in NZD (converted for END. with a note that duty and shipping are extra),
-the why, the size that is in stock, and for Wellington retailers a "try on at
-<store>" line. Actions: save, dismiss with a one-tap reason (colour, fit,
-price, not my thing), mark as bought (fills the slot). Dismiss reasons are
-appended to the taste profile so the scorer sees them next run. Saved items
-are re-checked nightly for price drops and stock changes.
-
-## 3. Build sequence (review gated)
-
-Each milestone ends with Malin using it and saying it is right before the next
-starts. This is how finance-tracker and meal-coverage were built.
+This app started on 2026-11-08 from Malin's menswear wardrobe app, where the
+milestones below were built and gated with him (each ended with him using it
+and agreeing). They are kept as the record of why the machinery works the way
+it does; the names, stores and numbers in them are his, not Rutu's. What
+changed for her is in section 0, and her own gates are in section 4.
 
 **M0 Scaffold.** Repo, Next.js app, Postgres schema in `docs/schema.sql`,
 Docker and Coolify config, Basic Auth on the proxy as the agreed single-user
@@ -574,30 +531,24 @@ default cap; after that only new pieces cost anything.
 Gate: Malin uses it for a week and agrees the shelf holds pieces he would buy,
 at a nightly cost he is happy with.
 
-## 4. Design direction
+## 4. Rutu's gates
 
-Redesigned on 2026-11-05: see `docs/design.md`. The paragraph below is the
-intent as it stood at M0.
+Nothing has been gated with her yet. In order:
 
-Decide properly at M1 with the frontend-design and ui-ux-pro-max skills loaded,
-but the intent is set: editorial rather than dashboard. Think a well-set
-menswear lookbook. Large product imagery with room around it, a serif display
-face with a quiet grotesque for data, no gradients, hairline rules. The one
-place colour is load-bearing is the palette itself: Malin's best colours become
-the app's accent swatches, so the interface literally wears his palette. Dark
-and light both first class since the feed is read on a phone at night.
+1. She reads the photo rule in 1.1 and agrees to it.
+2. Her read on her own photos (daylight, a face photo and a full-length one):
+   a season and proportions she agrees with.
+3. Her style guide and plan: things she would buy, in roughly that order.
+4. A week of new finds she would buy, at a known cost a night.
+5. A week of outfits of the day she would wear, from a closet she has added.
+6. A board of a dozen pins whose summary she recognises as her taste.
 
-## 5. Open questions for Malin
+## 5. Open questions for Rutu
 
-None block M0.
-
-1. App name.
-2. Budget ceilings per category and overall per month.
-3. Any Wellington or NZ stores to add beyond the eleven (anything on Shopify
-   is a URL paste away).
-4. Whether photos may be kept after the profile is confirmed, or should be
-   deleted automatically.
-5. Do we want a Claude-written weekly "state of the wardrobe" note in the app,
-   or is the feed enough.
-6. ~~Which try-on provider for M3.5.~~ OpenAI, agreed 2026-11-04 with the
-   photo rule in 1.1.
+1. Her budget ceilings per category and per month.
+2. Shops to add or drop (anything on Shopify is a URL paste away), and which
+   of the ten switched-off NZ shops to turn on.
+3. Her Wellington stores, to verify on each shop's own site so "try on at"
+   can show.
+4. Whether occasions (weddings and the engagement season) deserve a feature
+   of their own beyond "Something on today?".
