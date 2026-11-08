@@ -97,8 +97,9 @@ a new line), an arrow glued to link text, an em dash anywhere.
   Bodoni headline and a caption aside), separated by space (3.5rem, 5rem at
   `lg`), never by a rule. Hairlines (`border-line`) divide rows in a list.
 - Grids of garments: 2 across on the phone, 3 at `lg`, 4 at `xl`, gap-x 1rem
-  and gap-y 2rem. Product photos 4:5 on the sweep, `object-contain` with a
-  little padding; her own piece photos 3:4, `object-cover`.
+  and gap-y 2rem. Product photos 4:5 on the sweep, `object-contain` with no
+  padding (most shops shoot on light grey, which then fills the tile rather
+  than sitting as a box inside it); her own piece photos 3:4, `object-cover`.
 - A spread (Today, a piece, a look, a find in detail): the picture on the left
   (up to 34rem, sticky on the laptop), the words on the right; on the phone
   the picture first, then the words.

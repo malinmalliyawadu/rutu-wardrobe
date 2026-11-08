@@ -46,7 +46,7 @@ export function ProductPhoto({
           fill
           sizes={sizes}
           priority={priority}
-          className="object-contain p-[6%]"
+          className="object-contain"
         />
       ) : (
         <span className="absolute inset-0 grid place-items-center text-sm text-ink-3">No photo</span>

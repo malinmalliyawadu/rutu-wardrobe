@@ -232,7 +232,7 @@ function ByHand({
               alt="Its photo"
               width={photo.width}
               height={photo.height}
-              className="absolute inset-0 size-full object-contain p-[6%] mix-blend-multiply"
+              className="absolute inset-0 size-full object-contain mix-blend-multiply"
             />
           ) : (
             <>

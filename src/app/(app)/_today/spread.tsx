@@ -45,6 +45,8 @@ export function Spread({
 }) {
   const [index, setIndex] = useOptimistic(shown)
   const [changingId, setChangingId] = useState<number | null>(null)
+  /** Only an option she turned to crossfades in; the first one is simply there. */
+  const [turned, setTurned] = useState(false)
   const [, startTransition] = useTransition()
   const top = useRef<HTMLDivElement>(null)
   const option = options[index % options.length]!
@@ -54,6 +56,7 @@ export function Spread({
 
   function turn(next: number) {
     if (next === index) return
+    setTurned(true)
     startTransition(async () => {
       setIndex(next)
       await turnTo(dayId, next)
@@ -67,7 +70,7 @@ export function Spread({
         key={option.look.id}
         aria-roledescription="outfit"
         aria-label={option.look.title}
-        className={`crossfade grid gap-8 ${compact ? 'lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)]' : 'lg:grid-cols-[minmax(0,34rem)_minmax(0,1fr)]'} lg:items-start lg:gap-16`}
+        className={`${turned ? 'crossfade' : ''} grid gap-8 ${compact ? 'lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)]' : 'lg:grid-cols-[minmax(0,34rem)_minmax(0,1fr)]'} lg:items-start lg:gap-16`}
       >
         <div className="lg:sticky lg:top-6">
           <LookPicture look={option.look} image={option.image} canDraw={canDraw} priority={!compact} />
@@ -90,9 +93,9 @@ export function Spread({
           ) : (
             <>
               <div className="mt-8">
-                <ul className="flex flex-wrap gap-3" aria-label="The pieces">
+                <ul className="-mx-[var(--gutter)] flex gap-3 overflow-x-auto px-[var(--gutter)] [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0" aria-label="The pieces">
                   {option.look.pieces.map((piece) => (
-                    <li key={piece.id}>
+                    <li key={piece.id} className="shrink-0">
                       <Link href={`/closet/${piece.id}`} className="pressable block w-20" title={piece.name}>
                         <PiecePicture piece={piece} sizes="5rem" className="aspect-[3/4]" />
                         <span className="mt-1.5 line-clamp-2 block text-xs leading-snug text-ink-2">{piece.name}</span>

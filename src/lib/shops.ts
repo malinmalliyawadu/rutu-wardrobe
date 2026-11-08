@@ -189,12 +189,16 @@ export async function searchShops(query: ShopQuery, sql: Sql = db()): Promise<Sh
   `
 
   const total = rows[0]?.total ?? (offset > 0 ? await countOnly(sql, query) : 0)
+  // Read once anything is stored: before she has a plan, a run records no
+  // candidates, yet everything it read is here to browse.
+  const read =
+    run !== null || total > 0 || (await sql<{ any: boolean }[]>`select exists (select 1 from products where womenswear) as any`)[0]!.any
   return {
     pieces: rows.map((row) => piece(row, rates, today)),
     total,
     page: query.page,
     pages: Math.max(1, Math.ceil(total / SHOPS_PAGE_SIZE)),
-    read: run !== null,
+    read,
   }
 }
 

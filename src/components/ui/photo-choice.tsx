@@ -101,7 +101,7 @@ export function PhotoChoice({
               onClick={() => choose(photo.src)}
               className={`sweep pressable aspect-[4/5] w-[4.75rem] shrink-0 transition-shadow duration-150 ${active ? 'ring-2 ring-accent ring-offset-2 ring-offset-ground' : ''} ${own.includes(photo) ? 'tile-enter' : ''}`}
             >
-              <Image loader={productLoader} src={photo.src} alt="" fill sizes="5rem" className="object-contain p-[6%]" />
+              <Image loader={productLoader} src={photo.src} alt="" fill sizes="5rem" className="object-contain" />
             </button>
           )
         })}
