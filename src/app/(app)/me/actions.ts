@@ -18,12 +18,16 @@ import {
   saveLife,
   saveSizes,
   saveTaste,
+  type Fits,
+  type Sizes,
 } from '@/lib/profile'
 import { parseStoredAnalysis } from '@/lib/analysis'
 import { liveRun, type LiveRun } from '@/lib/finder/runs'
 import { parseFinderSettingsForm, saveFinderSettings } from '@/lib/finder/settings'
 import { startFinderRun } from '@/lib/finder/start'
 import { echo, type ActionState } from '@/lib/action-state'
+import { db } from '@/lib/db'
+import { listRetailers, walkedNightly } from '@/lib/retailers'
 
 export type { ActionState }
 
@@ -80,14 +84,14 @@ export async function runAnalysis(): Promise<ActionState> {
     throw error
   }
   refreshAll()
-  redirect('/you/colouring')
+  redirect('/me/colouring')
 }
 
 export async function submitColouring(_prev: ActionState, form: FormData): Promise<ActionState> {
   const parsed = parseColouringForm(form)
   if (!parsed.ok) return { ok: false, errors: parsed.errors, values: echo(form) }
 
-  // Claude's confidence only describes Claude's own pick. If Malin overrides
+  // Claude's confidence only describes Claude's own pick. If Rutu overrides
   // the season, the number no longer applies.
   const profile = await getProfile()
   const proposal = parseStoredAnalysis(profile.analysis)
@@ -98,7 +102,7 @@ export async function submitColouring(_prev: ActionState, form: FormData): Promi
 
   await confirmColouring({ ...parsed.data, season_confidence: confidence })
   refreshAll()
-  redirect('/you')
+  redirect('/me')
 }
 
 export async function submitSizes(_prev: ActionState, form: FormData): Promise<ActionState> {
@@ -106,7 +110,71 @@ export async function submitSizes(_prev: ActionState, form: FormData): Promise<A
   if (!parsed.ok) return { ok: false, errors: parsed.errors, values: echo(form) }
   await saveSizes(parsed.data.height_cm, parsed.data.sizes, parsed.data.fits)
   refreshAll()
-  redirect('/you')
+  redirect('/me')
+}
+
+/**
+ * Height alone, asked first on the photos page because the proportion read
+ * is a guess without it. The sizes and fits already saved are kept as they
+ * are; the sizes form parses height by the same rule. Stays on the page.
+ */
+export async function submitHeight(_prev: ActionState, form: FormData): Promise<ActionState> {
+  const parsed = parseSizesForm(heightOnly(form))
+  if (!parsed.ok) {
+    return {
+      ok: false,
+      errors: { height_cm: parsed.errors.height_cm ?? 'Check this value' },
+      values: echo(form),
+    }
+  }
+  if (parsed.data.height_cm === null) {
+    return {
+      ok: false,
+      errors: { height_cm: 'Give your height in centimetres' },
+      values: echo(form),
+    }
+  }
+  const profile = await getProfile()
+  await saveSizes(parsed.data.height_cm, known(EMPTY_SIZES, profile.sizes), known(EMPTY_FITS, profile.fit_preferences))
+  refreshAll()
+  return { ok: true }
+}
+
+/** A form with only the height in it, so parseSizesForm checks nothing else. */
+function heightOnly(form: FormData): FormData {
+  const only = new FormData()
+  const height = form.get('height_cm')
+  if (typeof height === 'string') only.set('height_cm', height)
+  return only
+}
+
+const EMPTY_SIZES: Sizes = {
+  letter: null,
+  dress: null,
+  jeans: null,
+  bust_cm: null,
+  waist_cm: null,
+  hips_cm: null,
+  inseam_cm: null,
+  shoe_eu: null,
+  shoe_au: null,
+}
+
+const EMPTY_FITS: Fits = {
+  tops: null,
+  knits: null,
+  dresses: null,
+  bottoms: null,
+  outerwear: null,
+}
+
+/** The saved values under today's keys only, so a key from an older shape is not written back. */
+function known<T extends Record<string, unknown>>(empty: T, saved: Partial<T>): T {
+  const result = { ...empty }
+  for (const key of Object.keys(empty) as (keyof T)[]) {
+    if (saved[key] !== undefined) result[key] = saved[key] as T[keyof T]
+  }
+  return result
 }
 
 export async function submitLife(_prev: ActionState, form: FormData): Promise<ActionState> {
@@ -114,7 +182,7 @@ export async function submitLife(_prev: ActionState, form: FormData): Promise<Ac
   if (!parsed.ok) return { ok: false, errors: parsed.errors, values: echo(form) }
   await saveLife(parsed.data)
   refreshAll()
-  redirect('/you')
+  redirect('/me')
 }
 
 export async function submitTaste(_prev: ActionState, form: FormData): Promise<ActionState> {
@@ -122,7 +190,7 @@ export async function submitTaste(_prev: ActionState, form: FormData): Promise<A
   if (!parsed.ok) return { ok: false, errors: parsed.errors, values: echo(form) }
   await saveTaste(parsed.data)
   refreshAll()
-  redirect('/you')
+  redirect('/me')
 }
 
 export async function submitBudget(_prev: ActionState, form: FormData): Promise<ActionState> {
@@ -130,21 +198,27 @@ export async function submitBudget(_prev: ActionState, form: FormData): Promise<
   if (!parsed.ok) return { ok: false, errors: parsed.errors, values: echo(form) }
   await saveBudget(parsed.data)
   refreshAll()
-  redirect('/you')
+  redirect('/me')
 }
 
 export async function submitFinderSettings(_prev: ActionState, form: FormData): Promise<ActionState> {
   const parsed = parseFinderSettingsForm(form)
   if (!parsed.ok) return { ok: false, errors: parsed.errors, values: echo(form) }
+  // The form also posts the shops read only from links, which have no
+  // switch, so "at least one on" is asked of the shops that have one.
+  const walked = (await listRetailers(db())).filter(walkedNightly)
+  if (walked.length > 0 && !walked.some((store) => parsed.data.stores.includes(store.slug))) {
+    return { ok: false, errors: { stores: 'Keep at least one shop on' }, values: echo(form) }
+  }
   await saveFinderSettings(parsed.data)
   refreshAll()
-  redirect('/you')
+  redirect('/me')
 }
 
 export type RunNowState = { ok: true; run: LiveRun | null } | { ok: false; message: string } | null
 
 /**
- * "Run now" on /you/finder: starts the nightly script and answers once it has
+ * "Run now" on /me/finder: starts the nightly script and answers once it has
  * begun, with the run as the page will show it. Refreshes the tree either
  * way, so a run that was already going shows up too.
  */

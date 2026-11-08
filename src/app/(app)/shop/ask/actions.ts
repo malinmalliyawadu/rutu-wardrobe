@@ -8,9 +8,9 @@ import { echo, type ActionState } from '@/lib/action-state'
 import { runSearch, startSearch } from '@/lib/search'
 
 /**
- * A search from the Search tab. Records it and opens its page at once; the
- * search itself runs after the response (it takes a minute or so), and the
- * page refreshes until it is done, so leaving loses nothing.
+ * Asking the shops, from New or the Ask page. Records the ask and opens its
+ * page at once; the search itself runs after the response (it takes a minute
+ * or so), and the page refreshes until it is done, so leaving loses nothing.
  */
 export async function search(_prev: ActionState, form: FormData): Promise<ActionState> {
   const request = form.get('request')
@@ -22,6 +22,6 @@ export async function search(_prev: ActionState, form: FormData): Promise<Action
   after(async () => {
     await runSearch(started.id)
   })
-  revalidatePath('/search')
-  redirect(`/search/${started.id}`)
+  revalidatePath('/', 'layout')
+  redirect(`/shop/ask/${started.id}`)
 }

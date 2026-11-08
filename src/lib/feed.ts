@@ -23,15 +23,9 @@ import type { GarmentType } from './wardrobe-values.ts'
  * every run for a lower price or a size that sold out.
  */
 
-export const DISMISS_REASONS = ['colour', 'fit', 'price', 'not_for_me'] as const
-export type DismissReason = (typeof DISMISS_REASONS)[number]
+import { DISMISS_REASONS } from './reasons.ts'
 
-export const REASON_LABELS: Record<DismissReason, string> = {
-  colour: 'Colour',
-  fit: 'Fit',
-  price: 'Price',
-  not_for_me: 'Not my thing',
-}
+export { DISMISS_REASONS, REASON_LABELS, type DismissReason } from './reasons.ts'
 
 export const CARDS_PER_SLOT = 8
 

@@ -18,12 +18,15 @@ export function LookActions({
   look,
   today,
   canWear = true,
+  quiet = false,
 }: {
   look: Look
   /** Today in New Zealand, YYYY-MM-DD. */
   today: string
   /** False when the look is for tomorrow: nothing to log as worn yet. */
   canWear?: boolean
+  /** In a grid of looks, where no one look's button may be the screen's solid one. */
+  quiet?: boolean
 }) {
   const [failed, setFailed] = useState(false)
   const [shown, setShown] = useOptimistic<Shown>({ saved: look.status === 'saved', woreToday: look.worn[0] === today })
@@ -45,7 +48,7 @@ export function LookActions({
           <button
             type="button"
             aria-pressed={shown.woreToday}
-            className={`btn ${shown.woreToday ? 'btn-quiet' : 'btn-primary'} min-w-36`}
+            className={`btn ${shown.woreToday || quiet ? 'btn-quiet' : 'btn-primary'} ${quiet ? 'btn-small' : 'min-w-36'}`}
             onClick={() =>
               send(
                 { action: shown.woreToday ? 'unwore' : 'wore', look_id: look.id },
@@ -61,7 +64,7 @@ export function LookActions({
           type="button"
           aria-pressed={shown.saved}
           aria-label={shown.saved ? 'Saved to your looks' : 'Save to your looks'}
-          className="btn btn-quiet"
+          className={`btn btn-quiet ${quiet ? 'btn-small' : ''}`}
           onClick={() => send({ action: shown.saved ? 'unsave' : 'save', look_id: look.id }, { ...shown, saved: !shown.saved })}
         >
           <HeartIcon filled={shown.saved} className={`size-5 ${shown.saved ? 'text-accent' : ''}`} />

@@ -41,16 +41,9 @@ export const OCCASION_LABELS: Record<Occasion, string> = {
   gym: 'Gym',
 }
 
-export const LOOK_DISMISS_REASONS = ['colours', 'too_dressy', 'too_casual', 'weather', 'not_me'] as const
-export type LookDismissReason = (typeof LOOK_DISMISS_REASONS)[number]
+import { LOOK_DISMISS_REASONS, type LookDismissReason } from './reasons.ts'
 
-export const LOOK_REASON_LABELS: Record<LookDismissReason, string> = {
-  colours: 'Colours',
-  too_dressy: 'Too dressy',
-  too_casual: 'Too casual',
-  weather: 'Wrong for the weather',
-  not_me: 'Not me',
-}
+export { LOOK_DISMISS_REASONS, LOOK_REASON_LABELS, type LookDismissReason } from './reasons.ts'
 
 export const LOOKS_PER_SET = 6
 

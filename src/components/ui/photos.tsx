@@ -18,6 +18,11 @@ import { productImageAt } from '@/lib/product-image'
 /** The shops' image hosts resize on their own, so the image optimiser is not needed. */
 export const productLoader: ImageLoader = ({ src, width }) => productImageAt(src, width)
 
+/** `relative` so the picture can fill its box, unless the caller positions the box itself. */
+function positioned(className: string): string {
+  return /\b(absolute|fixed|sticky)\b/.test(className) ? '' : 'relative'
+}
+
 export function ProductPhoto({
   image,
   title,
@@ -32,7 +37,7 @@ export function ProductPhoto({
   priority?: boolean
 }) {
   return (
-    <div className={`sweep ${className}`}>
+    <div className={`sweep block ${positioned(className)} ${className}`}>
       {image ? (
         <Image
           loader={productLoader}
@@ -74,7 +79,7 @@ export function PiecePicture({
 }) {
   if (piece.photo) {
     return (
-      <div className={`relative overflow-hidden rounded-[var(--radius-tile)] bg-photo ${className}`}>
+      <div className={`block overflow-hidden rounded-[var(--radius-tile)] bg-photo ${positioned(className)} ${className}`}>
         {/* Her own photo, served and sized by /photos/wardrobe; the optimiser cannot reach it behind the sign-in. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -94,7 +99,7 @@ export function PiecePicture({
       role="img"
       aria-label={piece.name}
       data-colour={(piece.colour_hex && piece.colour_name) || undefined}
-      className={`swatch relative overflow-hidden rounded-[var(--radius-tile)] ${className}`}
+      className={`swatch block overflow-hidden rounded-[var(--radius-tile)] ${positioned(className)} ${className}`}
       style={{ '--swatch': piece.colour_hex ?? 'var(--surface)' } as CSSProperties}
     >
       {label ? (

@@ -372,7 +372,6 @@
  */
 @layer components {
   .sweep {
-    position: relative;
     overflow: hidden;
     border-radius: var(--radius-tile);
     background: var(--photo);

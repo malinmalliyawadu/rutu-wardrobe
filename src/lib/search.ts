@@ -316,15 +316,15 @@ export async function startSearch(request: string, sql: Sql = db()): Promise<Sea
   if (text.length < 2) return { ok: false, message: 'Say what you are after.' }
   if (text.length > 200) return { ok: false, message: 'Keep it under 200 characters.' }
   const [guide, settings, spend] = await Promise.all([getGuide(), getFinderSettings(sql), getSpend(sql)])
-  if (!guide) return { ok: false, message: 'Search judges against your style guide. Draft it on the Blueprint tab first.' }
+  if (!guide) return { ok: false, message: 'Asking judges against your style guide. Draft it under Style, Palette first.' }
   const budget = searchBudget(settings.max_usd_per_search, settings.max_usd_per_month, spend.thisMonth)
   if (budget < MIN_BUDGET_USD) {
     return {
       ok: false,
       message:
         settings.max_usd_per_search < MIN_BUDGET_USD
-          ? 'Searching is off: its limit on You, Finder is below US$0.03.'
-          : 'This month’s limit is spent. Raise it on You, Finder to search again.',
+          ? 'Asking is off: its limit under Me, Finder is below US$0.03.'
+          : 'This month’s limit is spent. Raise it under Me, Finder to ask again.',
     }
   }
   await sweepStale(sql)

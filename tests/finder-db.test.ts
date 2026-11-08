@@ -302,6 +302,26 @@ test('finder settings round-trip; the shop switches survive a re-seed and come w
   assert.equal(counts.length, others.length + 1, 'every shop is listed, on or off')
 })
 
+test('saving the switches leaves a links-only store on, so her pasted links stay checked', async () => {
+  const seed = {
+    slug: 'by-hand',
+    name: 'By Hand',
+    platform: 'manual' as const,
+    base_url: 'https://by-hand.test',
+    feed_collections: [],
+    country: 'NZ',
+    currency: 'NZD',
+    ships_to_nz: true,
+    catalogue: 'womenswear' as const,
+    enabled: true,
+    wellington_store: null,
+  }
+  await seedRetailers(sql, [seed])
+  await saveFinderSettings({ max_usd_per_run: 1, max_usd_per_month: null, max_usd_per_search: 0.5, max_usd_statements: 0.5, stores: [] }, sql)
+  const store = (await listRetailers(sql)).find((retailer) => retailer.slug === 'by-hand')
+  assert.equal(store?.enabled, true)
+})
+
 /** A shop that answers robots.txt and one product's .js, with the product changeable between calls. */
 function fakeShop(product: () => unknown | null) {
   return new PoliteClient({

@@ -66,7 +66,11 @@ export async function saveFinderSettings(values: FinderForm, sql: Sql = db()): P
       set max_usd_per_run = excluded.max_usd_per_run, max_usd_per_month = excluded.max_usd_per_month,
           max_usd_per_search = excluded.max_usd_per_search, max_usd_statements = excluded.max_usd_statements
     `
-    await tx`update retailers set enabled = (slug = any (${values.stores}::text[]))`
+    // Only stores with a switch: a links-only store (Uniqlo, one added by hand) keeps its row on, so her pasted links stay checked each night.
+    await tx`
+      update retailers set enabled = (slug = any (${values.stores}::text[]))
+      where platform = any (${[...WALKED_PLATFORMS]}::text[])
+    `
   })
 }
 

@@ -63,7 +63,7 @@ function file(form: FormData): File | null {
 /**
  * A photo of a piece: stored, its colour read here, then read by Claude
  * (Sonnet) to fill in the form. If Claude cannot read it, the form still
- * opens with the colour, and he fills in the rest.
+ * opens with the colour, and she fills in the rest.
  */
 export async function draftFromPhoto(_prev: DraftState, form: FormData): Promise<DraftState> {
   const upload = file(form)
@@ -116,7 +116,7 @@ export async function draftFromLink(_prev: DraftState, form: FormData): Promise<
         return null
       }
     })
-    // The link stays in its field, so he can see what was read.
+    // The link stays in its field, so she can see what was read.
     return { ok: true, draft, values: echo(form) }
   } catch (error) {
     if (error instanceof ManualStoreError) {
@@ -148,12 +148,12 @@ export async function submitPiece(_prev: ActionState, form: FormData): Promise<A
     throw error
   }
   refreshAll()
-  if (pieceId) redirect(`/wardrobe/${pieceId}`)
+  if (pieceId) redirect(`/closet/${pieceId}`)
   // "Save and add another" comes back to a fresh form, camera first.
-  redirect(form.get('then') === 'another' ? `/wardrobe/new?added=${Date.now()}` : '/wardrobe')
+  redirect(form.get('then') === 'another' ? `/closet/new?added=${Date.now()}` : '/closet')
 }
 
-/** A new photo for a piece he already has. Read on our own server only; the form keeps what he saved. */
+/** A new photo for a piece she already has. Read on our own server only; the form keeps what she saved. */
 export async function replacePhoto(_prev: ActionState, form: FormData): Promise<ActionState> {
   const pieceId = id(form)
   const upload = file(form)
@@ -203,14 +203,14 @@ export async function removePiece(form: FormData): Promise<void> {
     if (photoPath) await removePair(photoPath)
   }
   refreshAll()
-  redirect('/wardrobe')
+  redirect('/closet')
 }
 
 // ---------------------------------------------------------------------------
 // Looks
 // ---------------------------------------------------------------------------
 
-/** A new set of looks from what he owns. Opus, about a minute; the page waits with a note. */
+/** A new set of looks from what she owns. Opus, about a minute; the page waits with a note. */
 export async function makeLooks(_prev: ActionState, form: FormData): Promise<ActionState> {
   const note = text(form, 'note')?.slice(0, 300) ?? null
   const kind = text(form, 'kind') === 'gym' ? ('gym' as const) : ('week' as const)
@@ -248,7 +248,7 @@ export async function makeLooks(_prev: ActionState, form: FormData): Promise<Act
 }
 
 /**
- * A few looks that each wear one piece, from the rest of what he owns, made
+ * A few looks that each wear one piece, from the rest of what she owns, made
  * on a tap on its page. Opus, about a minute, like a set of looks; the page
  * waits with a note and shows them under the button.
  */
@@ -266,8 +266,8 @@ export async function makePieceLooks(_prev: ActionState, form: FormData): Promis
     ])
     if (!guide) return { ok: false, message: 'Draft your style guide first. Looks are put together against it.' }
     const piece = pieces.find((one) => one.id === pieceId)
-    if (!piece) return { ok: false, message: 'This piece is no longer in your wardrobe.' }
-    if (piece.set_aside_at) return { ok: false, message: 'This piece is set aside. Put it back in the wardrobe first.' }
+    if (!piece) return { ok: false, message: 'This piece is no longer in your closet.' }
+    if (piece.set_aside_at) return { ok: false, message: 'This piece is set aside. Put it back in your closet first.' }
     if (dressable([piece]).length === 0) return { ok: false, message: 'Say what kind of piece it is first.', values: echo(form) }
     const ready = readinessAround(piece, pieces)
     if (!ready.ready) {

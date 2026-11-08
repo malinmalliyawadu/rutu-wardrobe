@@ -17,10 +17,11 @@ import { addOwnProductPhoto, chooseProductPhoto, ProductPhotoError, productPhoto
 import { listRetailers, readable, type Retailer } from '@/lib/retailers'
 
 /**
- * Save, un-save, dismiss with a reason, and mark as bought, from the feed on
- * Today. The input is checked by the schema in recordAction; the card hides
- * itself optimistically, and the revalidation brings the slot statuses (and
- * the Blueprint tab) along.
+ * Save, un-save, dismiss with a reason, and mark as bought, from any find in
+ * the Shop tab (New, the wishlist, statement pieces, all shops and an ask's
+ * results). The input is checked by the schema in recordAction; the card
+ * hides itself optimistically, and the revalidation brings the slot statuses
+ * (and the plan) along.
  */
 export async function feedAction(input: FeedAction): Promise<{ ok: boolean }> {
   try {
@@ -36,11 +37,11 @@ export async function feedAction(input: FeedAction): Promise<{ ok: boolean }> {
 export type AddLinkState = (NonNullable<ActionState> & { added?: ProductPhotos }) | null
 
 /**
- * Adds a product he pasted a link to, from any of the shops, to Saved. The
- * product is read from the shop there and then, stored like a find, and kept
- * current by the nightly run. A shop whose site cannot be read (Lululemon)
- * takes what he typed in the form instead, and the photo he chose. A slot is
- * optional.
+ * Adds a product she pasted a link to, from any of the shops, to her
+ * wishlist. The product is read from the shop there and then, stored like a
+ * find, and kept current by the nightly run. A shop whose site cannot be read
+ * takes what she typed in the form instead, and the photo she chose. A slot
+ * is optional.
  */
 export async function addLinkToSaved(_prev: AddLinkState, form: FormData): Promise<AddLinkState> {
   const link = form.get('link')
@@ -116,9 +117,9 @@ function price(raw: string | null): number | null {
 export type FindPhotoState = { ok: boolean; photo?: FindPhoto; message?: string } | null
 
 /**
- * The photo of a find he is adding by hand, stored as soon as he chooses it,
- * so a mistake elsewhere in the form never costs him the photo: the form only
- * carries its id.
+ * The photo of a find she is adding by hand, stored as soon as she chooses
+ * it, so a mistake elsewhere in the form never costs her the photo: the form
+ * only carries its id.
  */
 export async function chooseFindPhoto(_prev: FindPhotoState, form: FormData): Promise<FindPhotoState> {
   const upload = form.get('file')
@@ -135,7 +136,7 @@ export type PhotoResult = { ok: true; shown: ProductImage } | { ok: false; messa
 
 const ChoosePhotoSchema = z.object({ product_id: z.number().int().positive(), src: z.string().min(1).max(2048) })
 
-/** Makes one of a product's photos, or one of his own, the one it shows everywhere (src/lib/product-photos.ts). */
+/** Makes one of a product's photos, or one of her own, the one it shows everywhere (src/lib/product-photos.ts). */
 export async function choosePhoto(input: { product_id: number; src: string }): Promise<PhotoResult> {
   const parsed = ChoosePhotoSchema.safeParse(input)
   if (!parsed.success) return { ok: false, message: 'That photo could not be chosen.' }
@@ -149,7 +150,7 @@ export async function choosePhoto(input: { product_id: number; src: string }): P
   }
 }
 
-/** A photo of his own for a product, stored and shown in place of the shop's. */
+/** A photo of her own for a product, stored and shown in place of the shop's. */
 export async function addOwnPhoto(form: FormData): Promise<PhotoResult> {
   const productId = Number(form.get('product_id'))
   const upload = form.get('file')
