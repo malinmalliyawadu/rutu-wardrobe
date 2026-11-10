@@ -11,6 +11,7 @@ import {
   makeTryOn,
   startAgain,
   startLookTryOn,
+  startAskedOutfitTryOn,
   startOutfitTryOn,
   startStatementTryOn,
   startTryOn,
@@ -60,6 +61,13 @@ export async function seeStatementOutfitOnMe(productId: number, pieceIds: number
   const pieces = z.array(Id).min(1).max(MAX_OUTFIT_PIECES - 1).safeParse(pieceIds)
   if (!id.success || !pieces.success) return { ok: false, message: 'That outfit could not be read.' }
   return makeAfter(await startStatementTryOn(id.data, pieces.data, undefined, { again: again === true }))
+}
+
+/** An outfit she asked for under Dress me, her pieces and the shops' products together. */
+export async function seeAskedOutfitOnMe(outfitId: number, again: boolean = false): Promise<Started> {
+  const id = Id.safeParse(outfitId)
+  if (!id.success) return { ok: false, message: 'That outfit could not be read.' }
+  return makeAfter(await startAskedOutfitTryOn(id.data, undefined, { again: again === true }))
 }
 
 /** "p12" is wardrobe piece 12, "f34" saved find 34. */

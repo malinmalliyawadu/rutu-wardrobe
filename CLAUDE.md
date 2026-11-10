@@ -59,10 +59,12 @@ Local Postgres is Homebrew's on 5432, database `rutu_wardrobe`. `.env` holds
 - Claude calls go through `src/lib/claude.ts`: Opus for the rare,
   quality-sensitive calls, Sonnet for nightly scoring and photo reads.
 - Try-on images come from OpenAI (`OPENAI_API_KEY`), only through
-  `src/lib/try-on.ts`, only on Rutu's tap, one at a time. The one image made
-  without a tap is the outfit of the day's flat lay (`src/lib/look-image.ts`),
-  from photos of her clothes, never of her. The photo rule in docs/plan.md 1.1
-  is what was agreed; do not send her photos anywhere else.
+  `src/lib/try-on.ts`, only on Rutu's tap, one at a time. An outfit from
+  anything (Dress me) has no separate tap: the form says her photo goes before
+  she taps its button, and that tap is the tap. The one image made without a
+  tap is the outfit of the day's flat lay (`src/lib/look-image.ts`), from
+  photos of her clothes, never of her. The photo rule in docs/plan.md 1.1 is
+  what was agreed; do not send her photos anywhere else.
 - Fonts are committed under `src/fonts` and loaded with `next/font/local`; the
   Docker build runs with the network off and fails on any build-time fetch.
 - Plain dash, never an em dash, in copy, comments and prompts.
@@ -98,7 +100,7 @@ No gradients, no drop shadows, no tracked caps labels, no middle dots.
 
 Tabs: Today (`/`, the outfit of the day), Shop (`/shop`: New, Wishlist,
 Statement, All shops, and ask the shops), Closet (`/closet`: Pieces, Looks,
-Try-ons, Worn), Style (`/style`: her inspiration Board, Palette, Plan), Me
+Dress me, Try-ons, Worn), Style (`/style`: her inspiration Board, Palette, Plan), Me
 (`/me`: profile and the finder's settings).
 
 Motion only answers a tap (crossfade, a card leaving, the mirror opening, a
@@ -119,3 +121,29 @@ and looks, outfit of the day, gym fits, statement pieces, worn, and her
 inspiration board. Nothing has been gated with Rutu yet. First gates, in
 order: her read on her own photos (season and proportions she agrees with),
 then the guide and plan, then a week of finds and outfits she would wear.
+
+An outfit from scratch (migration 0027, ported 2026-11-10 from Malin's app) is
+Closet, Dress me: `/closet/dress` is the ask and her earlier outfits,
+`/closet/dress/[id]` the outfit, and Today's "Something on" section links to
+it. `src/lib/outfit.ts` is the pipeline; what the browser needs is in
+`outfit-values.ts`. She says what it is for, typed or from a prompt she taps,
+and what it is made from. From her closet (`closet`), Opus dresses her from
+her pieces alone. From the shops, Sonnet reads the brief into up to eight
+garments (`planOutfit`), the nightly filter finds each in her size over what
+the last run read (`findPool`: the ten closest to the plan's words, then up to
+four she saved or Claude rated 70 or more), and Opus puts the outfit together.
+From both, the plan names only what she lacks. From anything (`anywhere`), no
+shop is read and nothing she owns is used: Opus describes the ideal garments
+(`ideas`), each with Ask the shops, and `askOutfit` starts
+`startAskedOutfitTryOn` once the outfit is ready, every garment in words and
+her photo the one image sent, under the outfit's own key (`describedKey`); the
+spread's arch fills with the picture. The form's notice and button label for
+this follow the checked radio in CSS, so they show before the page hydrates,
+and Anything is never preselected. The brief sets the level of dress. Opus
+gives two and `tidyOutfit` keeps the first that is whole by `look-rules.ts`,
+at most eight things (what a try-on takes), with nothing from a source she did
+not ask for. An outfit made only of her pieces is a look in a `look_sets` row
+of kind `ask`, shown as a wide `LookCard`; any other is `outfit_items` rows
+shown by `OutfitSpread`, each product with Save at the price and size found,
+the whole with "See it on me". It runs in `after()`, one at a time, and the
+page refreshes while it does. Prices are last night's.

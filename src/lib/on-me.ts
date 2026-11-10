@@ -26,8 +26,8 @@ export type Source = {
   image: ProductImage | null
   /** How it reached OpenAI: her photo, the shop's photo, or only in words. */
   shown: 'photo' | 'product' | 'words'
-  /** One of her pieces, a find she saved and chose, or the find a "See it on me" was tapped on. */
-  kind: 'piece' | 'saved' | 'find'
+  /** One of her pieces, a find she saved and chose, the find a "See it on me" was tapped on, or a garment only described. */
+  kind: 'piece' | 'saved' | 'find' | 'described'
   /** The piece's page or the shop's, while it is still there. */
   href: string | null
 }
@@ -36,6 +36,7 @@ export type Subject =
   | { kind: 'find'; title: string; retailer: string | null }
   | { kind: 'look'; title: string; occasion: string | null }
   | { kind: 'outfit'; title: string; count: number }
+  | { kind: 'described'; title: string }
 
 export type OnMeImage = {
   id: number
@@ -75,6 +76,7 @@ type Row = {
   look_title: string | null
   look_occasion: Occasion | null
   pieces: PieceSent[] | null
+  asked_title: string | null
 }
 
 const SELECT = (sql: Sql) => sql`
@@ -84,12 +86,13 @@ const SELECT = (sql: Sql) => sql`
          t.product_id::int as product_id, t.product_image, pr.title as product_title, pr.url as product_url,
          pr.garment_type as product_garment, r.name as retailer,
          t.look_id::int as look_id, l.title as look_title, l.occasion as look_occasion,
-         t.pieces
+         t.pieces, o.title as asked_title
   from try_ons t
   join profile_photos ph on ph.id = t.photo_id and ph.deleted_at is null
   left join products pr on pr.id = t.product_id
   left join retailers r on r.id = pr.retailer_id
   left join looks l on l.id = t.look_id
+  left join outfits o on t.outfit_key = 'a' || o.id
   where t.deleted_at is null
     and (t.status = 'ready'
          or (t.status = 'making' and t.started_at >= now() - make_interval(mins => ${STALE_MINUTES})))
@@ -194,14 +197,16 @@ async function resolve(sql: Sql, rows: Row[]): Promise<OnMeDetail[]> {
         image: piece.shown.kind === 'product' ? { src: piece.shown.src, width: null, height: null, alt: null } : null,
         shown: piece.shown.kind,
         // A statement piece goes on without being saved, and a saved find may have been cleared since.
-        kind: owned ? 'piece' : piece.product_id && saved.has(piece.product_id) ? 'saved' : 'find',
+        kind: owned ? 'piece' : !piece.product_id ? 'described' : saved.has(piece.product_id) ? 'saved' : 'find',
         href,
       }
     })
     const subject: Subject =
       row.look_id !== null
         ? { kind: 'look', title: row.look_title ?? 'A look', occasion: row.look_occasion ? OCCASION_LABELS[row.look_occasion] : null }
-        : { kind: 'outfit', title: outfitTitle(sources.map((source) => source.name)), count: sources.length }
+        : row.asked_title !== null
+          ? { kind: 'described', title: row.asked_title }
+          : { kind: 'outfit', title: outfitTitle(sources.map((source) => source.name)), count: sources.length }
     return { ...base, subject, sources }
   })
 }

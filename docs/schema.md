@@ -27,7 +27,7 @@ Three layers, each derived from the one above, then the finder's tables.
 | `wardrobe_pieces` | tens | What he owns: garment, colour, cloth, fit, warmth, what it is worn for (`everyday`, `gym` or `both`), the slot it fills, the product it was bought as |
 | `wardrobe_photos` | one per piece photo | Index of photos of his clothes on disk, with the colour read here and Claude's read |
 | `find_photos` | one per find added by hand | Index of the photos of finds from a store that cannot be read (Lululemon), on disk under `finds/`; `products.find_photo_id` keeps one from being cleared |
-| `look_sets` | one per "Make new looks", and one per outfit of the day | His note, the weather it was dressed for, tokens and cost; `kind` is `set` (Looks tab) or `day` |
+| `look_sets` | one per "Make new looks", and one per outfit of the day | His note, the weather it was dressed for, tokens and cost; `kind` is `set` (Looks tab), `day`, `piece` or `ask` (an outfit from scratch made only of her pieces) |
 | `looks`, `look_pieces` | six a set, fewer as outfits come round again | An outfit from his pieces: occasion (`gym` for a gym fit), weather, why, styling, a wanted slot that would lift it, saved or dismissed with a reason. One look per outfit: a set or a day that puts the same pieces together again offers the look already made, unless he dismissed it |
 | `look_set_looks` | six a set, three or four a day | The looks a set offered, in order, new or already made; `looks.set_id` is only the set that first made a look |
 | `look_wears` | one per look per day | The days he wore a look, in New Zealand time |
@@ -35,6 +35,8 @@ Three layers, each derived from the one above, then the finder's tables.
 | `day_outfits` | one a day, more when he asks again | The outfit of the day: the date it dresses him for, his note, the forecast it was dressed for, which option is on show, and on a day he trains the gym fit and its line for the day |
 | `day_outfit_options` | three a day | The day's options, best first, each a look (an existing one, saved or offered before and not dismissed, when it matches piece for piece) with a sentence for that day |
 | `look_images` | one per outfit on show, again when its pieces change | A flat lay of a look drawn by OpenAI from photos of his clothes (never of him): what was sent, its `outfit_key`, cost, the file in the photo store. A look shows the picture of its pieces whichever look it was drawn for |
+| `outfits` | one per ask under Closet, Dress me | What she said it is for, what it is made from (`closet`, `shops`, `both`, `anywhere`), where it is while made, the outfit's words, its look set when all her own, counts and cost |
+| `outfit_items` | up to eight an outfit | What an outfit is made of, outermost first: a piece of hers, a product at the price and sizes found for her, or a garment described (`idea`) |
 | `searches` | one per search on the Search tab | What he typed, what it was read as, its limit, what it spent |
 | `search_results` | up to 150 a search | The products a search offered Claude, in order, each with its verdict and a re-checked price |
 | `statement_candidates` | hundreds a run | What the statement rules picked in a run, with the signals that picked it and the price and sizes in his size |
@@ -260,6 +262,10 @@ was written from, so the board can say when pins have been added since.
 
 **0026 own slots.** A slot she added or wrote herself was source `malin`; it
 is `own`.
+
+**0027 outfits.** One outfit in the making at a time, by a partial unique
+index. An `outfit_items` row is exactly one of a piece, a product or an `idea`.
+A try-on of an outfit from anything has `outfit_key` `a` plus the outfit's id.
 
 ## Expected growth
 
