@@ -162,3 +162,27 @@ export function ChooseSkeleton() {
     </div>
   )
 }
+
+export function DressSkeleton() {
+  return (
+    <>
+      <ClosetHead line={<LineBone />} />
+      <div aria-hidden className="max-w-2xl">
+        <Block className="mb-2 h-4 w-28" />
+        <Block className="h-12 rounded-[var(--radius-control)]" />
+        <div className="mt-3 flex gap-2 overflow-hidden">
+          {[0, 1, 2, 3].map((index) => (
+            <Block key={index} className="h-11 w-40 shrink-0 rounded-full" />
+          ))}
+        </div>
+        <Block className="mt-6 mb-2 h-4 w-20" />
+        <div className="flex gap-2">
+          {[0, 1, 2, 3].map((index) => (
+            <Block key={index} className="h-11 w-24 rounded-full" />
+          ))}
+        </div>
+        <Block className="mt-6 h-12 w-40 rounded-full" />
+      </div>
+    </>
+  )
+}

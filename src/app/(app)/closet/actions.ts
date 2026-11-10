@@ -3,6 +3,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import { after } from 'next/server'
 
 import { echo, type ActionState } from '@/lib/action-state'
 import { db } from '@/lib/db'
@@ -36,11 +37,12 @@ import {
   wantedSlots,
   wellingtonToday,
 } from '@/lib/looks'
+import { OUTFIT_SOURCES, runOutfit, startOutfit, type OutfitSource } from '@/lib/outfit'
 import { getProfile } from '@/lib/profile'
 import { listRetailers } from '@/lib/retailers'
 import { GenerationError } from '@/lib/structured'
 import { getGuide } from '@/lib/style-guide'
-import { fetchProductImage } from '@/lib/try-on'
+import { fetchProductImage, makeTryOn, startAskedOutfitTryOn } from '@/lib/try-on'
 
 /** What the add form's first step returns: the values to start the form from. */
 export type DraftState = (NonNullable<ActionState> & { draft?: PieceDraft }) | null
@@ -291,4 +293,29 @@ export async function makePieceLooks(_prev: ActionState, form: FormData): Promis
   }
   refreshAll()
   return { ok: true }
+}
+
+/**
+ * An outfit from scratch (outfit.ts). Records the ask and opens its page at
+ * once; the outfit is made after the response, and the page refreshes until
+ * it is ready. An outfit from anything is only words, so its picture of her
+ * is part of the ask: the form says her photo goes to OpenAI and the tap on
+ * its button is the tap (docs/plan.md 1.1). If it cannot start (no photo,
+ * another in the making), the page offers it.
+ */
+export async function askOutfit(_prev: ActionState, form: FormData): Promise<ActionState> {
+  const brief = text(form, 'brief') ?? ''
+  const chosen = text(form, 'source')
+  const source = (OUTFIT_SOURCES as readonly string[]).includes(chosen ?? '') ? (chosen as OutfitSource) : 'closet'
+  const started = await startOutfit({ brief, source })
+  if (!started.ok) return { ok: false, message: started.message, values: echo(form) }
+  after(async () => {
+    const made = await runOutfit(started.id)
+    if (made === 'ready' && source === 'anywhere') {
+      const tryOn = await startAskedOutfitTryOn(started.id)
+      if (tryOn.ok && !tryOn.reused) await makeTryOn(tryOn.id)
+    }
+  })
+  refreshAll()
+  redirect(`/closet/dress/${started.id}`)
 }

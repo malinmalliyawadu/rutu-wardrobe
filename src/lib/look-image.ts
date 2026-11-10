@@ -25,8 +25,8 @@ import {
  * A picture of a look without her: a womenswear lookbook flat lay, drawn by
  * OpenAI from her own photo of each piece, else the shop's photo, else the
  * piece's description. Made for the outfit of the day's option on show, with
- * no tap (the photo rule in docs/plan.md 1.1 says which photos may go). Her own photo is never sent: "See it on me" stays the
- * only way she is in a picture, and only on her tap.
+ * no tap (the photo rule in docs/plan.md 1.1 says which photos may go). Her own photo is never sent here: she is in a picture
+ * only through "See it on me", or an outfit from anything she asked for, and only on her tap.
  *
  * One picture per outfit, kept while its pieces and their photos stay the same
  * (pieces_key); a change, such as a photo added to a piece, makes a new one

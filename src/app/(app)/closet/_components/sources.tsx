@@ -11,6 +11,8 @@ export function eyebrow(subject: Subject): string {
       return subject.occasion ? `A look, ${subject.occasion.toLowerCase()}` : 'A look'
     case 'outfit':
       return subject.count === 1 ? 'Your choice' : `Your choice of ${subject.count} pieces`
+    case 'described':
+      return 'An outfit from anything'
   }
 }
 
@@ -30,7 +32,7 @@ export function SourceStrip({ sources }: { sources: Source[] }) {
 
 /** How a source reached OpenAI, in words for the picture's own page. */
 export function shownLine(source: Source): string {
-  const whose = source.kind === 'piece' ? 'Yours' : source.kind === 'saved' ? 'Saved find' : 'Find'
+  const whose = source.kind === 'piece' ? 'Yours' : source.kind === 'saved' ? 'Saved find' : source.kind === 'described' ? 'Described' : 'Find'
   const garment = source.garment_type ? GARMENT_LABELS[source.garment_type].toLowerCase() : null
   const how =
     source.shown === 'photo'

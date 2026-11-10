@@ -5,9 +5,9 @@ import { useTransition } from 'react'
 import { drawLook } from '@/app/actions/day'
 import type { LookImage } from '@/lib/look-image'
 import type { Look } from '@/lib/looks'
-import { GARMENT_LABELS } from '@/lib/wardrobe-values'
+import { GARMENT_LABELS, type GarmentType } from '@/lib/wardrobe-values'
 
-import { PiecePicture } from '../ui/photos.tsx'
+import { PiecePicture, type PieceLook } from '../ui/photos.tsx'
 
 /*
  * A whole look, in the arch. Once OpenAI has drawn its flat lay, that fills
@@ -60,12 +60,15 @@ export function LookPicture({
   )
 }
 
+/** What a flat lay shows: a look, or an outfit that mixes her pieces with the shops' (its ids are then keys). */
+export type Laid = { title: string; pieces: (PieceLook & { id: number | string; garment_type: GarmentType })[] }
+
 /**
  * The pieces inside the arch: the first (outermost) large, the next two
  * beside it, the rest, usually shoes and what is carried, along the bottom.
  * The top padding keeps every piece clear of the arch's curve.
  */
-export function FlatLay({ look, sizes }: { look: Look; sizes: string }) {
+export function FlatLay({ look, sizes }: { look: Laid; sizes: string }) {
   const [first, second, third, ...rest] = look.pieces
   if (!first) return null
   return (

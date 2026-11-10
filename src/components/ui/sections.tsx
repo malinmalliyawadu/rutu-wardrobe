@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 
 /*
  * The sections of a tab, as a row of chips under its title: Shop has New,
- * Wishlist, Statement and All shops; Closet has Pieces, Looks, Try-ons, Worn;
+ * Wishlist, Statement and All shops; Closet has Pieces, Looks, Dress me, Try-ons, Worn;
  * Style has Board, Palette, Plan. The open one is ink. On the phone the row
  * scrolls sideways if it must; it never wraps.
  */

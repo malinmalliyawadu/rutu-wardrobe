@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { connection } from 'next/server'
 
 import { ButtonLink } from '@/components/ui/layout'
@@ -163,6 +164,12 @@ export async function Day() {
           <DressAgain when={when} />
         </div>
         {day.note ? <p className="caption mt-4">This outfit is dressed for &ldquo;{day.note}&rdquo;.</p> : null}
+        <p className="mt-5 text-sm text-ink-2">
+          Further off, or nothing in your closet for it?{' '}
+          <Link href="/closet/dress" className="link">
+            Make an outfit from scratch
+          </Link>
+        </p>
       </section>
 
       <Credits day={day} imageUsd={shownImageUsd} />

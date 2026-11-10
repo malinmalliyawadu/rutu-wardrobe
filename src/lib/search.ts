@@ -103,9 +103,8 @@ export const RequestReadSchema = z.object({
 
 export type RequestRead = z.infer<typeof RequestReadSchema>
 
-export const READ_SYSTEM_PROMPT = `You read one shopping request Rutu typed into her private womenswear app, and turn it into the terms the app's filter uses. The app then searches womenswear shops in New Zealand and a few overseas that ship here for products in her size, and a stylist judges the closest against her request and her style guide.
-
-Garment types, and what each covers:
+/** The fixed garment types and what each covers, for any prompt that must name one. */
+export const GARMENT_GUIDE = `Garment types, and what each covers:
 - tee: t-shirts, including long-sleeved tees
 - tank: tanks, camisoles and singlets
 - top: blouses, bodysuits, corset and bustier tops, knit-look tops, tunics and other tops that are not a tee, a tank or a shirt
@@ -130,7 +129,11 @@ Garment types, and what each covers:
 - belt: belts
 - bag: bags: totes, shoulder bags, crossbody bags, clutches
 - jewellery: earrings, necklaces, bracelets and rings
-- accessory: scarves, hats and caps, hair clips, gloves, watches
+- accessory: scarves, hats and caps, hair clips, gloves, watches`
+
+export const READ_SYSTEM_PROMPT = `You read one shopping request Rutu typed into her private womenswear app, and turn it into the terms the app's filter uses. The app then searches womenswear shops in New Zealand and a few overseas that ship here for products in her size, and a stylist judges the closest against her request and her style guide.
+
+${GARMENT_GUIDE}
 
 Prices are in New Zealand dollars: "under $300" is a maximum of 300; "around $200" is about 160 to 240. A request may name a colour, a cut, a fabric, a price, all of these or none.
 

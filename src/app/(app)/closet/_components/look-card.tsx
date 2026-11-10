@@ -34,6 +34,8 @@ export function LookCard({
   occasion,
   wornLine,
   canDraw,
+  wide = false,
+  asked,
 }: {
   look: Look
   image: LookImage | null
@@ -43,6 +45,10 @@ export function LookCard({
   /** "Offered 4 times, 2 on Today. Worn twice, last on 2 November.", formatted on the server. */
   wornLine: string | null
   canDraw: boolean
+  /** Alone on its page, as a spread: the arch on the left, the words beside it. */
+  wide?: boolean
+  /** What she asked for, over the name, when she asked for this one. */
+  asked?: string
 }) {
   const [changing, setChanging] = useState(false)
   const [gone, setGone] = useState(false)
@@ -52,76 +58,92 @@ export function LookCard({
   const open = changing || look.remaking !== null
 
   return (
-    <article aria-label={look.title} aria-hidden={gone || undefined} className={`flex flex-col ${gone ? 'leaving' : ''}`}>
-      <LookPicture look={look} image={image} canDraw={canDraw} sizes="(min-width: 1024px) 26rem, (min-width: 640px) 45vw, 100vw" />
+    <article
+      aria-label={look.title}
+      aria-hidden={gone || undefined}
+      className={`${wide ? 'grid gap-8 lg:grid-cols-[minmax(0,34rem)_minmax(0,1fr)] lg:items-start lg:gap-16' : 'flex flex-col'} ${gone ? 'leaving' : ''}`}
+    >
+      <div className={wide ? 'lg:sticky lg:top-6' : undefined}>
+        <LookPicture
+          look={look}
+          image={image}
+          canDraw={canDraw}
+          sizes={wide ? undefined : '(min-width: 1024px) 26rem, (min-width: 640px) 45vw, 100vw'}
+          priority={wide}
+        />
+      </div>
 
-      <p className="caption mt-5">
-        {occasion}, {look.weather.toLowerCase()}
-      </p>
-      <h3 className="headline mt-2">{look.title}</h3>
-      <p className="mt-3 text-ink-2">{look.why}</p>
-      {look.styling ? <p className="voice mt-3">{look.styling}</p> : null}
+      <div className={`flex min-w-0 flex-1 flex-col ${wide ? 'lg:pt-10' : ''}`}>
+        {asked ? <p className="caption mb-3">{asked}</p> : null}
+        {wide ? <h1 className="display">{look.title}</h1> : null}
+        <p className={`caption ${wide ? 'mt-4' : 'mt-5'}`}>
+          {occasion}, {look.weather.toLowerCase()}
+        </p>
+        {wide ? null : <h3 className="headline mt-2">{look.title}</h3>}
+        <p className={wide ? 'prose-measure mt-4 text-lg' : 'mt-3 text-ink-2'}>{look.why}</p>
+        {look.styling ? <p className={`voice ${wide ? 'prose-measure mt-5' : 'mt-3'}`}>{look.styling}</p> : null}
 
-      {open ? (
-        <div className="mt-5">
-          <ChangePieces look={look} onClose={() => setChanging(false)} />
-        </div>
-      ) : (
-        <div className="mt-6">
-          <ul className="flex flex-wrap gap-2" aria-label="The pieces">
-            {look.pieces.map((piece) => (
-              <li key={piece.id}>
-                <Link href={`/closet/${piece.id}`} title={piece.name} className="pressable block">
-                  <PiecePicture
-                    piece={piece}
-                    sizes="3.5rem"
-                    className={`block aspect-[3/4] w-14 ${piece.set_aside_at ? 'opacity-45' : ''}`}
-                  />
-                  <span className="sr-only">{piece.name}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-          {missing > 0 || aside ? (
-            <p className="mt-2 text-sm text-alert">
-              {missing > 0
-                ? `${missing === 1 ? 'A piece' : `${missing} pieces`} of this look ${missing === 1 ? 'is' : 'are'} no longer in your closet.`
-                : 'Part of this look is set aside.'}
-            </p>
-          ) : null}
-          {whole ? (
-            <button type="button" className="link text-sm" onClick={() => setChanging(true)}>
-              Change pieces
-            </button>
-          ) : null}
-        </div>
-      )}
-
-      {look.better && !open ? (
-        <Link href={`/style/plan/${look.better.slot_id}`} className="pressable mt-3 flex items-center gap-3 py-1">
-          <span className="flex shrink-0 gap-0.5">
-            {look.better.colours.slice(0, 3).map((hex, index) => (
-              <Swatch key={`${index}-${hex}`} hex={hex} name={look.better?.colour_names[index]} className="h-8 w-5 rounded-[0.25rem]" />
-            ))}
-          </span>
-          <span className="min-w-0 text-sm leading-snug">
-            <span className="text-ink-2">Even better with the </span>
-            <span className="font-semibold text-accent">{look.better.name.toLowerCase()}</span>
-            <span className="text-ink-2"> in your plan.</span>
-            {look.better.why ? <span className="mt-0.5 block text-ink-3">{look.better.why}</span> : null}
-          </span>
-        </Link>
-      ) : null}
-
-      {wornLine ? <p className="caption mt-4">{wornLine}</p> : null}
-
-      <div className="mt-auto pt-6" hidden={open}>
-        <CardActions look={look} today={today} onDismissed={() => setGone(true)} onFailed={() => setGone(false)} />
-        {whole ? (
-          <div className="mt-4">
-            <LookOnMe look={look} occasion={occasion} />
+        {open ? (
+          <div className="mt-5">
+            <ChangePieces look={look} onClose={() => setChanging(false)} />
           </div>
+        ) : (
+          <div className="mt-6">
+            <ul className="flex flex-wrap gap-2" aria-label="The pieces">
+              {look.pieces.map((piece) => (
+                <li key={piece.id}>
+                  <Link href={`/closet/${piece.id}`} title={piece.name} className="pressable block">
+                    <PiecePicture
+                      piece={piece}
+                      sizes="3.5rem"
+                      className={`block aspect-[3/4] w-14 ${piece.set_aside_at ? 'opacity-45' : ''}`}
+                    />
+                    <span className="sr-only">{piece.name}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            {missing > 0 || aside ? (
+              <p className="mt-2 text-sm text-alert">
+                {missing > 0
+                  ? `${missing === 1 ? 'A piece' : `${missing} pieces`} of this look ${missing === 1 ? 'is' : 'are'} no longer in your closet.`
+                  : 'Part of this look is set aside.'}
+              </p>
+            ) : null}
+            {whole ? (
+              <button type="button" className="link text-sm" onClick={() => setChanging(true)}>
+                Change pieces
+              </button>
+            ) : null}
+          </div>
+        )}
+
+        {look.better && !open ? (
+          <Link href={`/style/plan/${look.better.slot_id}`} className="pressable mt-3 flex items-center gap-3 py-1">
+            <span className="flex shrink-0 gap-0.5">
+              {look.better.colours.slice(0, 3).map((hex, index) => (
+                <Swatch key={`${index}-${hex}`} hex={hex} name={look.better?.colour_names[index]} className="h-8 w-5 rounded-[0.25rem]" />
+              ))}
+            </span>
+            <span className="min-w-0 text-sm leading-snug">
+              <span className="text-ink-2">Even better with the </span>
+              <span className="font-semibold text-accent">{look.better.name.toLowerCase()}</span>
+              <span className="text-ink-2"> in your plan.</span>
+              {look.better.why ? <span className="mt-0.5 block text-ink-3">{look.better.why}</span> : null}
+            </span>
+          </Link>
         ) : null}
+
+        {wornLine ? <p className="caption mt-4">{wornLine}</p> : null}
+
+        <div className="mt-auto pt-6" hidden={open}>
+          <CardActions look={look} today={today} onDismissed={() => setGone(true)} onFailed={() => setGone(false)} />
+          {whole ? (
+            <div className="mt-4">
+              <LookOnMe look={look} occasion={occasion} />
+            </div>
+          ) : null}
+        </div>
       </div>
     </article>
   )

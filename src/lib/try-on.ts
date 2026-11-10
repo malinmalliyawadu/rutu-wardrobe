@@ -7,7 +7,7 @@ import { z } from 'zod'
 import { db, type Sql } from './db.ts'
 import { findPhotoFile, findPhotoId } from './find-photos.ts'
 import { cutListings, cutsFor, type Cut, type CutReader } from './garment-cut.ts'
-import { findKey, lookOutfitKey, outfitKey } from './outfit-key.ts'
+import { describedKey, describedOutfit, findKey, lookOutfitKey, outfitKey } from './outfit-key.ts'
 import { productImageAt } from './product-image.ts'
 import { files } from './storage.ts'
 
@@ -590,7 +590,7 @@ export async function startTryOn(productId: number, sql: Sql = db(), options: St
     return { ok: false, message: 'Try-on needs an OpenAI key: add OPENAI_API_KEY to the server’s environment.' }
   }
   const [photo, product] = await Promise.all([fullLengthPhoto(sql), productForTryOn(sql, productId)])
-  if (!photo) return { ok: false, message: 'Add a full-length photo under You, Photos first.' }
+  if (!photo) return { ok: false, message: 'Add a full-length photo under Me, Photos first.' }
   if (!product?.image) return { ok: false, message: 'This find has no photo to try on.' }
 
   await sweepStale(sql)
@@ -685,7 +685,7 @@ export async function startLookTryOn(lookId: number, sql: Sql = db(), options: S
     return { ok: false, message: 'Try-on needs an OpenAI key: add OPENAI_API_KEY to the server’s environment.' }
   }
   const photo = await fullLengthPhoto(sql)
-  if (!photo) return { ok: false, message: 'Add a full-length photo under You, Photos first.' }
+  if (!photo) return { ok: false, message: 'Add a full-length photo under Me, Photos first.' }
 
   await sweepStale(sql)
   const size = outputSize(photo.width, photo.height)
@@ -748,8 +748,8 @@ type Choosable = Omit<PieceSent, 'shown'> & { photo_id: number | null; image: st
 
 /**
  * Which finds an outfit may hold: those she saved, as the On me chooser offers
- * them, or any the shops listed (a statement piece, or a picture made again
- * after she cleared the find).
+ * them, or any the shops listed (a statement piece, an outfit she asked for,
+ * or a picture made again after she cleared the find).
  */
 type FindsTaken = 'saved' | 'any'
 
@@ -831,6 +831,95 @@ export async function startStatementTryOn(
   })
 }
 
+/**
+ * Record a request for an outfit she asked for under Dress me (outfit.ts) put
+ * on her: her pieces and the shops' products it is made of, none of which
+ * need be saved; or answer with the picture of exactly those already kept. An
+ * outfit made from anything has no photos, so every garment goes in words.
+ */
+export async function startAskedOutfitTryOn(outfitId: number, sql: Sql = db(), options: StartOptions = {}): Promise<Started> {
+  const items = await sql<{ piece_id: number | null; product_id: number | null; idea: DescribedGarment | null }[]>`
+    select piece_id::int as piece_id, product_id::int as product_id, idea from outfit_items
+    where outfit_id = ${outfitId} order by position
+  `
+  if (items.length === 0) return { ok: false, message: 'That outfit could not be found. Reload the page.' }
+  if (items.some((item) => item.idea)) return startDescribed(outfitId, items.flatMap((item) => (item.idea ? [item.idea] : [])), sql, options)
+  return startChosen(
+    {
+      piece_ids: items.flatMap((item) => (item.piece_id !== null ? [item.piece_id] : [])),
+      product_ids: items.flatMap((item) => (item.product_id !== null ? [item.product_id] : [])),
+    },
+    sql,
+    { ...options, finds: 'any', gone: 'A piece of this outfit is no longer in your closet. Ask for the outfit again.' },
+  )
+}
+
+/** A garment of an outfit made from anything, as outfit.ts keeps it. */
+type DescribedGarment = {
+  garment_type: string
+  name: string
+  colour_name: string
+  colour_hex: string | null
+  fabric: string | null
+  fit: string | null
+}
+
+/**
+ * An outfit whose garments are only described, put on her from the words:
+ * her photo is the one image sent (the extension to the photo rule in
+ * docs/plan.md 1.1). It goes by the outfit's own key, so the picture kept for
+ * it is found again and only "Make it again" makes another.
+ */
+async function startDescribed(outfitId: number, garments: DescribedGarment[], sql: Sql, options: StartOptions): Promise<Started> {
+  const key = describedKey(outfitId)
+  if (!options.again) {
+    const kept = await keptTryOn(key, sql)
+    if (kept !== null) return { ok: true, id: kept, reused: true }
+  }
+  if (!process.env.OPENAI_API_KEY) {
+    return { ok: false, message: 'Try-on needs an OpenAI key: add OPENAI_API_KEY to the server’s environment.' }
+  }
+  const photo = await fullLengthPhoto(sql)
+  if (!photo) return { ok: false, message: 'Add a full-length photo under Me, Photos first.' }
+  const [outfit] = await sql<{ title: string | null; styling: string | null }[]>`select title, styling from outfits where id = ${outfitId}`
+
+  await sweepStale(sql)
+  const size = outputSize(photo.width, photo.height)
+  const pieces: PieceSent[] = [...garments]
+    .sort((a, b) => layer(a.garment_type) - layer(b.garment_type))
+    .map((garment) => ({
+      piece_id: null,
+      product_id: null,
+      name: garment.name,
+      garment_type: garment.garment_type,
+      colour_name: garment.colour_name,
+      colour_hex: garment.colour_hex,
+      fabric: garment.fabric,
+      fit: garment.fit,
+      shown: { kind: 'words' },
+    }))
+  try {
+    const [row] = await sql<{ id: number }[]>`
+      insert into try_ons ${sql({
+        outfit_key: key,
+        photo_id: photo.id,
+        pieces: sql.json(pieces),
+        provider: PROVIDER,
+        model: MODEL,
+        prompt: lookTryOnPrompt({ title: outfit?.title ?? 'The outfit', styling: outfit?.styling ?? null, pieces }),
+        settings: sql.json({ size: `${size.width}x${size.height}`, quality: QUALITY }),
+      })}
+      returning id::int as id
+    `
+    return { ok: true, id: row!.id }
+  } catch (error) {
+    if ((error as { code?: string }).code === '23505') {
+      return { ok: false, message: 'Another try-on is still being made. One at a time.' }
+    }
+    throw error
+  }
+}
+
 /** The outfit try-ons' shared part: check the choice, find it kept, else record it. */
 async function startChosen(
   choice: OutfitChoice,
@@ -853,7 +942,7 @@ async function startChosen(
     return { ok: false, message: 'Try-on needs an OpenAI key: add OPENAI_API_KEY to the server’s environment.' }
   }
   const photo = await fullLengthPhoto(sql)
-  if (!photo) return { ok: false, message: 'Add a full-length photo under You, Photos first.' }
+  if (!photo) return { ok: false, message: 'Add a full-length photo under Me, Photos first.' }
 
   // Outermost first, as a look is; the order chosen breaks a tie.
   const order = [...wanted.piece_ids.map((id) => `p${id}`), ...wanted.product_ids.map((id) => `f${id}`)]
@@ -892,11 +981,14 @@ async function startChosen(
  * same chosen pieces, as they are now, on her newest full-length photo.
  */
 export async function startAgain(tryOnId: number, sql: Sql = db()): Promise<Started> {
-  const [row] = await sql<{ product_id: number | null; look_id: number | null; pieces: PieceSent[] | null }[]>`
-    select product_id::int as product_id, look_id::int as look_id, pieces from try_ons where id = ${tryOnId}
+  const [row] = await sql<{ product_id: number | null; look_id: number | null; pieces: PieceSent[] | null; outfit_key: string | null }[]>`
+    select product_id::int as product_id, look_id::int as look_id, pieces, outfit_key from try_ons where id = ${tryOnId}
   `
   if (!row) return { ok: false, message: 'That picture could not be found.' }
   const again = { again: true }
+  // An outfit made from anything: its garments are words on the outfit, not pieces or finds.
+  const described = describedOutfit(row.outfit_key)
+  if (described !== null) return startAskedOutfitTryOn(described, sql, again)
   if (row.product_id !== null) return startTryOn(row.product_id, sql, again)
   if (row.look_id !== null) return startLookTryOn(row.look_id, sql, again)
   // The same pieces and finds, whether or not she still has the finds saved: she is asking for this picture again.

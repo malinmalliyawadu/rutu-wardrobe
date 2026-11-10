@@ -57,7 +57,8 @@ reads it with its own key, and the app's sign-in is the only way to see one.
 R2 stores them encrypted and does nothing else with them. One is sent to the
 Claude API for the analysis call. One full-length photo is sent to the OpenAI
 Images API only for a try-on Rutu asks for, one at a time, together with the
-garment's own image. OpenAI does not train on API data. It keeps the request
+garment's own image (or, for an outfit from anything, the garments in words:
+see the extension below). OpenAI does not train on API data. It keeps the request
 and the result in abuse-monitoring logs for up to 30 days, processed in the
 US, and they cannot be deleted sooner without a zero-data-retention agreement.
 Results are stored with the photos, and "delete photos" removes them with the
@@ -65,6 +66,16 @@ photos. The Anthropic API does not train on API traffic either. The photos
 page has a "delete photos, keep the derived profile" action. (The rule Malin
 agreed for his app on 2026-11-04, carried across; Rutu should read and agree
 to it before her first photo goes up.)
+
+Extended by Malin on 2026-11-10, for an outfit from anything (Closet, Dress
+me): asking for one is itself the ask for its try-on. Her full-length photo
+goes to OpenAI as soon as the outfit is made, with each garment described in
+words and no garment photo, one image, one at a time, under the same terms and
+deleted the same way. There is no separate "See it on me" tap for it: the form
+says what will be sent above the button, before she taps, the button reads
+"Make it and show me in it", and that tap is the tap. It is never preselected.
+Nothing else in the app sends her photo without its own tap. Rutu has not yet
+agreed to this extension: it is part of what she reads at her first gate.
 
 Photos of her clothes (the closet) are a second kind: not of her. Each is
 stored like her photos, without metadata, served only through the app, and
@@ -94,7 +105,8 @@ photo, else its description. This is the one place photos of her clothes go
 to OpenAI without a tap: once a day for the option on show, and once more for
 each other option she turns to, one picture per look, kept until the look's
 pieces or their photos change. Her own photo is never part of it; she is in a
-picture only through "See it on me", on her tap.
+picture only through "See it on me" or an outfit from anything she asked for,
+each on her tap.
 
 ### 1.2 Style guide (what suits you)
 
@@ -535,7 +547,8 @@ at a nightly cost he is happy with.
 
 Nothing has been gated with her yet. In order:
 
-1. She reads the photo rule in 1.1 and agrees to it.
+1. She reads the photo rule in 1.1, with its extension for an outfit from
+   anything, and agrees to it.
 2. Her read on her own photos (daylight, a face photo and a full-length one):
    a season and proportions she agrees with.
 3. Her style guide and plan: things she would buy, in roughly that order.
